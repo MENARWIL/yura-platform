@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
+
+:root {
+    --primary-light: #ffcc33;
+    --primary-main: #f9d423;
+    --primary-dark: #d4ac0d;
+    --secondary-main: #a90329;
+    --accent-main: #e2725b;
+    --bg-dark: #1a1a2e;
+    --bg-glass: rgba(255, 255, 255, 0.7);
+    --bg-glass-dark: rgba(26, 26, 46, 0.85);
+    --border-glass: rgba(255, 255, 255, 0.3);
+    --text-main: #2d3436;
+    --text-white: #ffffff;
+    --shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    --shadow-premium: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: 'Outfit', sans-serif !important;
+    background-color: #f0f2f5;
+    color: var(--text-main);
+}
+
+/* Auth Pages Style */
+.auth-page-bg {
+    background: linear-gradient(rgba(26, 26, 46, 0.7), rgba(169, 3, 41, 0.4)), url('../img/yura_bg.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    color: var(--text-white);
+    padding: 20px;
+}
+
+/* Main Layout Improvements */
+.main-sidebar {
+    background: var(--bg-glass-dark) !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-right: 1px solid var(--border-glass) !important;
+}
+
+.brand-link {
+    border-bottom: 1px solid var(--border-glass) !important;
+    padding: 15px 20px !important;
+}
+
+.nav-sidebar .nav-link.active {
+    background: linear-gradient(45deg, var(--primary-main), var(--accent-main)) !important;
+    color: #000 !important;
+    box-shadow: 0 4px 15px rgba(249, 212, 35, 0.3);
+    border-radius: 12px;
+}
+
+.nav-sidebar .nav-link {
+    border-radius: 12px;
+    margin-bottom: 5px;
+    transition: all 0.3s ease;
+}
+
+.content-wrapper {
+    background: #f4f7f6 !important;
+}
+
+/* Premium Cards */
+.card-quechua {
+    background: var(--bg-glass) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px !important;
+    border: 1px solid var(--border-glass) !important;
+    box-shadow: var(--shadow-premium) !important;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-quechua:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+}
+
+.card-header-quechua {
+    background: linear-gradient(135deg, var(--bg-dark), var(--secondary-main)) !important;
+    color: white !important;
+    padding: 20px !important;
+    border: none !important;
+}
+
+/* Table Styling */
+.table {
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table thead th {
+    border: none !important;
+    color: #636e72;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+}
+
+.table tbody tr {
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+}
+
+.table tbody tr:hover {
+    transform: scale(1.01);
+    background-color: #fff !important;
+}
+
+.table td {
+    border: none !important;
+    padding: 1.25rem 0.75rem !important;
+}
+
+.table td:first-child { border-radius: 12px 0 0 12px; }
+.table td:last-child { border-radius: 0 12px 12px 0; }
+
+/* Dashboard Widgets */
+.small-box {
+    border-radius: 20px !important;
+    overflow: hidden;
+    border: 1px solid var(--border-glass) !important;
+    transition: all 0.3s ease;
+}
+
+.small-box:hover {
+    transform: scale(1.05);
+}
+
+.small-box .inner h3 {
+    font-weight: 700;
+}
+
+/* Custom Buttons */
+.btn-quechua {
+    background: linear-gradient(45deg, var(--primary-main), var(--accent-main));
+    border: none;
+    color: #000;
+    font-weight: 700;
+    padding: 10px 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(249, 212, 35, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-quechua:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(249, 212, 35, 0.4);
+    color: #000;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
