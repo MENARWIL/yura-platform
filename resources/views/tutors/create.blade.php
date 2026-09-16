@@ -10,7 +10,7 @@
                 <h3 class="card-title mb-0">Registrar tutor</h3>
             </div>
 
-            <form action="{{ route('tutors.store') }}" method="POST">
+            <form action="{{ route('tutors.store') }}" method="POST" autocomplete="off">
                 @csrf
 
                 <div class="card-body">
@@ -23,11 +23,13 @@
                                     type="text"
                                     id="ci"
                                     name="ci"
-                                    class="form-control @error('ci') is-invalid @enderror"
+                                    class="form-control js-person-field @error('ci') is-invalid @enderror"
+                                    data-rule="ci"
                                     value="{{ old('ci') }}"
                                     required
                                     maxlength="50"
                                 >
+                                <small class="invalid-feedback"></small>
                                 @error('ci')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -41,11 +43,13 @@
                                     type="tel"
                                     id="phone"
                                     name="phone"
-                                    class="form-control @error('phone') is-invalid @enderror"
+                                    class="form-control js-person-field @error('phone') is-invalid @enderror"
+                                    data-rule="phone"
                                     value="{{ old('phone') }}"
                                     required
                                     maxlength="20"
                                 >
+                                <small class="invalid-feedback"></small>
                                 @error('phone')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -61,11 +65,14 @@
                                     type="text"
                                     id="name"
                                     name="name"
-                                    class="form-control @error('name') is-invalid @enderror"
+                                    class="form-control js-person-field @error('name') is-invalid @enderror"
+                                    data-rule="name"
                                     value="{{ old('name') }}"
+                                    autocomplete="off"
                                     required
                                     maxlength="100"
                                 >
+                                <small class="invalid-feedback"></small>
                                 @error('name')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -79,11 +86,14 @@
                                     type="text"
                                     id="lastname"
                                     name="lastname"
-                                    class="form-control @error('lastname') is-invalid @enderror"
+                                    class="form-control js-person-field @error('lastname') is-invalid @enderror"
+                                    data-rule="name"
                                     value="{{ old('lastname') }}"
+                                    autocomplete="off"
                                     required
                                     maxlength="100"
                                 >
+                                <small class="invalid-feedback"></small>
                                 @error('lastname')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
@@ -97,11 +107,14 @@
                             type="email"
                             id="email"
                             name="email"
-                            class="form-control @error('email') is-invalid @enderror"
+                            class="form-control js-person-field @error('email') is-invalid @enderror"
+                            data-rule="email"
                             value="{{ old('email') }}"
+                            autocomplete="new-username"
                             required
                             maxlength="255"
                         >
+                        <small class="invalid-feedback"></small>
                         @error('email')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
@@ -113,70 +126,24 @@
                             type="password"
                             id="password"
                             name="password"
-                            class="form-control @error('password') is-invalid @enderror"
+                            class="form-control js-person-field @error('password') is-invalid @enderror"
+                            data-rule="password"
+                            autocomplete="new-password"
                             required
                             minlength="8"
                         >
                         <small class="form-text text-muted">Debe tener al menos 8 caracteres.</small>
+                        <small class="invalid-feedback"></small>
                         @error('password')
                             <span class="invalid-feedback">{{ $message }}</span>
                         @enderror
                     </div>
                     </div>
 
-                    <div class="mt-4">
-                        <button type="button" id="add-second-tutor" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-user-plus mr-1"></i> Agregar segundo tutor
-                        </button>
-                    </div>
-
-                    <div id="second-tutor-block" class="border rounded p-3 mt-3 d-none">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">Segundo tutor</h5>
-                            <button type="button" id="remove-second-tutor" class="btn btn-outline-danger btn-sm">
-                                <i class="fas fa-trash-alt mr-1"></i> Eliminar
-                            </button>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="second_ci">C.I.</label>
-                                    <input type="text" id="second_ci" name="second_tutor[ci]" class="form-control" maxlength="50" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="second_phone">Teléfono</label>
-                                    <input type="tel" id="second_phone" name="second_tutor[phone]" class="form-control" maxlength="20" disabled>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="second_name">Nombre</label>
-                                    <input type="text" id="second_name" name="second_tutor[name]" class="form-control" maxlength="100" disabled>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label for="second_lastname">Apellido</label>
-                                    <input type="text" id="second_lastname" name="second_tutor[lastname]" class="form-control" maxlength="100" disabled>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group mb-0">
-                            <label for="second_email">Correo electrónico</label>
-                            <input type="email" id="second_email" name="second_tutor[email]" class="form-control" maxlength="255" disabled>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="card-footer bg-white text-right">
-                    <a href="{{ route('students.create') }}" class="btn btn-link text-muted mr-2">Volver al registro de estudiante</a>
+                    <a href="{{ route('students.create', ['target' => $target]) }}" class="btn btn-link text-muted mr-2">Volver al registro de estudiante</a>
                     <button type="submit" class="btn btn-quechua px-5">
                         <i class="fas fa-save mr-1"></i> Guardar tutor
                     </button>
@@ -187,33 +154,6 @@
 </div>
 @endsection
 
-@section('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const addButton = document.getElementById('add-second-tutor');
-        const removeButton = document.getElementById('remove-second-tutor');
-        const secondTutorBlock = document.getElementById('second-tutor-block');
-
-        if (!addButton || !removeButton || !secondTutorBlock) return;
-
-        const secondTutorFields = secondTutorBlock.querySelectorAll('input');
-
-        addButton.addEventListener('click', function () {
-            secondTutorBlock.classList.remove('d-none');
-            addButton.classList.add('d-none');
-            secondTutorFields.forEach(function (field) {
-                field.disabled = false;
-            });
-        });
-
-        removeButton.addEventListener('click', function () {
-            secondTutorFields.forEach(function (field) {
-                field.value = '';
-                field.disabled = true;
-            });
-            secondTutorBlock.classList.add('d-none');
-            addButton.classList.remove('d-none');
-        });
-    });
-</script>
-@endsection
+@push('scripts')
+<script src="{{ asset('js/user-form-validation.js') }}"></script>
+@endpush

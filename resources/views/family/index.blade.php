@@ -54,7 +54,9 @@
                     <thead>
                         <tr>
                             <th>Estudiante</th>
+                            <th>Estado estudiante</th>
                             <th>Tutor principal</th>
+                            <th>Estado tutor</th>
                             <th>Relación</th>
                             @if(in_array(auth()->user()->role, ['admin', 'academic']))
                                 <th class="text-right">Acciones</th>
@@ -65,11 +67,24 @@
                         @forelse($familyMembers as $familyMember)
                             <tr>
                                 <td class="font-weight-bold">{{ $familyMember->student->name ?? 'N/A' }}</td>
+                                <td>
+                                    @php($studentActive = ($familyMember->student->status ?? $familyMember->student->estado ?? 'activo') === 'activo' || ($familyMember->student->status ?? $familyMember->student->estado ?? 'activo') === 'active')
+                                    <span class="badge {{ $studentActive ? 'badge-success' : 'badge-danger' }}">
+                                        {{ $studentActive ? 'Activo' : 'Inactivo' }}
+                                    </span>
+                                </td>
                                 <td>{{ $familyMember->user->name ?? 'N/A' }}</td>
+                                <td>
+                                    @php($tutorActive = in_array($familyMember->user->status, ['active', 'activo'], true))
+                                    <span class="badge {{ $tutorActive ? 'badge-success' : 'badge-danger' }}">
+                                        {{ $tutorActive ? 'Activo' : 'Inactivo' }}
+                                    </span>
+                                </td>
                                 <td><span class="badge badge-light border text-uppercase">{{ $familyMember->relation_type }}</span></td>
                                 @if(in_array(auth()->user()->role, ['admin', 'academic']))
                                     <td class="text-right">
                                         <a href="{{ route('students.edit', $familyMember->student) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit mr-1"></i> Editar</a>
+                                        <a href="{{ route('tutors.edit', $familyMember->user) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-user-edit mr-1"></i> Tutor</a>
                                         <form action="{{ route('family-members.destroy', $familyMember) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Quieres eliminar esta relación?')">
                                             @csrf
                                             @method('DELETE')
@@ -80,7 +95,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ in_array(auth()->user()->role, ['admin', 'academic']) ? '4' : '3' }}" class="text-center text-muted py-5">
+                                <td colspan="{{ in_array(auth()->user()->role, ['admin', 'academic']) ? '6' : '5' }}" class="text-center text-muted py-5">
                                     <i class="fas fa-users-slash fa-2x mb-2"></i><br>
                                     No hay relaciones activas para los filtros seleccionados.
                                 </td>

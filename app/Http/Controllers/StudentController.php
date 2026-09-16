@@ -24,17 +24,32 @@ class StudentController extends Controller
             'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
         ]);
 
-        $students = Student::with(['course', 'parallel', 'parent', 'teacher'])
-            ->when($filters['student_name'] ?? null, function ($query, $studentName) {
-                $query->where('name', 'like', '%' . $studentName . '%');
-            })
-            ->when($filters['course_id'] ?? null, function ($query, $courseId) {
-                $query->where('course_id', $courseId);
-            })
-            ->when($filters['parallel_id'] ?? null, function ($query, $parallelId) {
-                $query->where('parallel_id', $parallelId);
-            })
-            ->get();
+        $rawStudentName = $filters['student_name'] ?? null;
+        $studentName = $rawStudentName === null
+            ? null
+            : preg_replace('/\s+/', ' ', trim($rawStudentName));
+        $hasNameFilter = $rawStudentName !== null;
+        $hasOtherFilters = ! empty($filters['course_id']) || ! empty($filters['parallel_id']);
+        $user = Auth::user();
+
+        if ($hasNameFilter && $studentName === '' && ! $hasOtherFilters) {
+            $students = collect();
+        } else {
+            $students = Student::with(['course', 'parallel', 'parent', 'teacher'])
+                ->when($user->isProfesor(), function ($query) use ($user) {
+                    $query->where('teacher_user_id', $user->id);
+                })
+                ->when($studentName, function ($query, $studentName) {
+                    $query->where('name', 'like', '%' . $studentName . '%');
+                })
+                ->when($filters['course_id'] ?? null, function ($query, $courseId) {
+                    $query->where('course_id', $courseId);
+                })
+                ->when($filters['parallel_id'] ?? null, function ($query, $parallelId) {
+                    $query->where('parallel_id', $parallelId);
+                })
+                ->get();
+        }
 
         // Calculate real average from grades for each student
         foreach ($students as $student) {
@@ -90,7 +105,14 @@ class StudentController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('students.create', compact('courses', 'parallels', 'tutors', 'teachers'));
+        return view('students.create', [
+            'courses' => $courses,
+            'parallels' => $parallels,
+            'tutors' => $tutors,
+            'teachers' => $teachers,
+            'newTutorId' => request()->integer('new_tutor_id'),
+            'newTutorTarget' => request()->input('target', 'primary'),
+        ]);
     }
 
     public function store(Request $request)
@@ -102,16 +124,17 @@ class StudentController extends Controller
         }
 
         $request = $this->normalizeStudentFields($request);
+        $request->merge(['registration_date' => now()->toDateString()]);
 
         $rules = [
-            'name' => 'required|string|max:255',
-            'age' => 'required|integer|min:1|max:120',
+            'name' => 'required|string|max:255|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'age' => 'required|integer|min:0|max:120',
             'gender' => 'required|in:Masculino,Femenino',
             'level' => 'required|in:básico,intermedio,avanzado',
-            'registration_date' => 'required|date',
-            'course_id' => ['nullable', 'exists:courses,id'],
-            'parallel_id' => 'required|exists:parallels,id',
-            'parent_user_id' => ['nullable', Rule::exists('users', 'id')->where(function ($query) {
+            'registration_date' => 'required|date|before_or_equal:today',
+            'course_id' => ['nullable', 'integer', 'min:0', 'exists:courses,id'],
+            'parallel_id' => ['required', 'integer', 'min:0', 'exists:parallels,id'],
+            'parent_user_id' => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
                 $query->where(function ($query) {
                     $query->whereIn('role', ['padre', 'madre', 'tutor'])
                         ->orWhereIn('rol', ['padre', 'madre', 'tutor']);
@@ -119,14 +142,22 @@ class StudentController extends Controller
 
                 $query->whereIn('status', ['active', 'activo']);
             })],
-            'teacher_user_id' => ['nullable', Rule::exists('users', 'id')->where(function ($query) {
+            'secondary_parent_user_id' => ['nullable', 'integer', 'min:0', 'different:parent_user_id', Rule::exists('users', 'id')->where(function ($query) {
+                $query->where(function ($query) {
+                    $query->whereIn('role', ['padre', 'madre', 'tutor'])
+                        ->orWhereIn('rol', ['padre', 'madre', 'tutor']);
+                });
+
+                $query->whereIn('status', ['active', 'activo']);
+            })],
+            'teacher_user_id' => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
                 $query->whereIn('role', ['profesor', 'teacher'])
                     ->whereIn('status', ['active', 'activo']);
             })],
-            'score' => 'nullable|numeric|min:0|max:100',
-            'writing_score' => 'nullable|numeric|min:0|max:100',
-            'exam_score' => 'nullable|numeric|min:0|max:100',
-            'attendance' => 'nullable|numeric|min:0|max:100',
+            'score' => 'nullable|integer|min:0|max:100',
+            'writing_score' => 'nullable|integer|min:0|max:100',
+            'exam_score' => 'nullable|integer|min:0|max:100',
+            'attendance' => 'nullable|integer|min:0|max:100',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
 
@@ -148,6 +179,8 @@ class StudentController extends Controller
         $data['course'] = $parallel->course->name;
         $data['course_id'] = $parallel->course_id;
         $data['parallel_id'] = $parallel->id;
+        $secondaryTutorId = $data['secondary_parent_user_id'] ?? null;
+        unset($data['secondary_parent_user_id']);
 
         if ($request->hasFile('foto')) {
             $data['foto_path'] = $request->file('foto')->store('students', 'public');
@@ -161,6 +194,20 @@ class StudentController extends Controller
                 $familyUser->id => [
                     'relation_type' => $this->resolveFamilyRelationType($familyUser),
                     'is_primary' => true,
+                    'can_view' => true,
+                    'can_edit' => false,
+                    'can_receive_reports' => true,
+                    'active' => true,
+                ],
+            ]);
+        }
+
+        $secondaryFamilyUser = User::find($secondaryTutorId);
+        if ($secondaryFamilyUser) {
+            $student->familiares()->syncWithoutDetaching([
+                $secondaryFamilyUser->id => [
+                    'relation_type' => $this->resolveFamilyRelationType($secondaryFamilyUser),
+                    'is_primary' => false,
                     'can_view' => true,
                     'can_edit' => false,
                     'can_receive_reports' => true,
@@ -210,15 +257,14 @@ class StudentController extends Controller
         $teacherForeignKey = $studentModel->getTeacherUserForeignKey();
 
         $rules = [
-            'name' => 'required|string|max:255',
-            'age' => 'required|integer|min:1|max:120',
+            'name' => 'required|string|max:255|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'age' => 'required|integer|min:0|max:120',
             'gender' => 'required|in:Masculino,Femenino',
             'level' => 'required|in:básico,intermedio,avanzado',
-            'registration_date' => 'required|date',
+            'registration_date' => 'sometimes|nullable|date|before_or_equal:today',
             'status' => 'required|in:activo,inactivo',
-            'parallel_id' => 'required|exists:parallels,id',
-            'score' => 'nullable|numeric|min:0|max:100',
-            $parentForeignKey => ['nullable', Rule::exists('users', 'id')->where(function ($query) {
+            'parallel_id' => ['required', 'integer', 'min:0', 'exists:parallels,id'],
+            $parentForeignKey => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
                 $query->where(function ($query) {
                     $query->whereIn('role', ['padre', 'madre', 'tutor'])
                         ->orWhereIn('rol', ['padre', 'madre', 'tutor']);
@@ -226,7 +272,7 @@ class StudentController extends Controller
 
                 $query->whereIn('status', ['active', 'activo']);
             })],
-            $teacherForeignKey => ['nullable', Rule::exists('users', 'id')->where(function ($query) {
+            $teacherForeignKey => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
                 $query->where(function ($query) {
                     $query->whereIn('role', ['profesor', 'teacher'])
                         ->orWhereIn('rol', ['profesor', 'teacher']);
@@ -234,9 +280,6 @@ class StudentController extends Controller
 
                 $query->whereIn('status', ['active', 'activo']);
             })],
-            'writing_score' => 'nullable|numeric|min:0|max:100',
-            'exam_score' => 'nullable|numeric|min:0|max:100',
-            'attendance' => 'nullable|numeric|min:0|max:100',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
 
@@ -254,11 +297,13 @@ class StudentController extends Controller
         $data['parallel_id'] = $parallel->id;
 
         if ($request->hasFile('foto')) {
+            $newPhotoPath = $request->file('foto')->store('students', 'public');
+
             if ($student->foto_path) {
                 Storage::disk('public')->delete($student->foto_path);
             }
 
-            $data['foto_path'] = $request->file('foto')->store('students', 'public');
+            $data['foto_path'] = $newPhotoPath;
         }
 
         $student->update($data);
@@ -376,6 +421,7 @@ class StudentController extends Controller
             'name.required' => 'El nombre completo es obligatorio.',
             'name.string' => 'El nombre completo debe ser texto.',
             'name.max' => 'El nombre completo no puede superar los 255 caracteres.',
+            'name.regex' => 'El nombre solo puede contener letras y espacios.',
             'age.required' => 'La edad es obligatoria.',
             'age.integer' => 'La edad debe ser un número entero.',
             'age.min' => 'La edad debe ser como mínimo 1 año.',

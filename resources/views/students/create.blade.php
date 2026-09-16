@@ -8,6 +8,11 @@
         <a href="{{ route('students.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left mr-1"></i> Volver al Listado
         </a>
+        @if(auth()->user()->isAdmin() || auth()->user()->isAcademic())
+            <a href="{{ route('tutors.create') }}" class="btn btn-outline-primary ml-2">
+                <i class="fas fa-user-shield mr-1"></i> Crear tutor primero
+            </a>
+        @endif
     </div>
 
     <form action="{{ route('students.store') }}" method="POST" enctype="multipart/form-data">
@@ -28,7 +33,7 @@
                             </div>
                             <div class="col-md-3 form-group">
                                 <label for="age">Edad</label>
-                                <input type="number" name="age" id="age" class="form-control @error('age') is-invalid @enderror" value="{{ old('age') }}" min="1" max="120" required>
+                                <input type="number" name="age" id="age" class="form-control @error('age') is-invalid @enderror" value="{{ old('age') }}" min="0" max="120" required>
                                 @error('age') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-3 form-group">
@@ -87,9 +92,6 @@
                                     @endforeach
                                 </select>
                                 @error('teacher_user_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                                @if(auth()->user()->isAdmin() || auth()->user()->isAcademic())
-                                    <a href="{{ route('teachers.create') }}" class="small d-inline-block mt-2">Crear nuevo profesor</a>
-                                @endif
                             </div>
                         </div>
                         <div class="row">
@@ -104,8 +106,8 @@
                                 @error('level') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
-                                <label for="registration_date">Fecha de registro</label>
-                                <input type="date" name="registration_date" id="registration_date" class="form-control @error('registration_date') is-invalid @enderror" value="{{ old('registration_date', now()->toDateString()) }}" required>
+                                <label for="registration_date">Fecha de registro (automática)</label>
+                                <input type="date" name="registration_date" id="registration_date" class="form-control @error('registration_date') is-invalid @enderror" value="{{ now()->toDateString() }}" max="{{ now()->toDateString() }}" readonly>
                                 @error('registration_date') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
@@ -113,13 +115,20 @@
                                 <select name="parent_user_id" id="parent_user_id" class="form-control @error('parent_user_id') is-invalid @enderror">
                                     <option value="">Seleccionar tutor</option>
                                     @foreach($tutors as $tutor)
-                                        <option value="{{ $tutor->id }}" {{ old('parent_user_id') == $tutor->id ? 'selected' : '' }}>{{ $tutor->name }}</option>
+                                        <option value="{{ $tutor->id }}" {{ old('parent_user_id', $newTutorTarget === 'primary' ? $newTutorId : null) == $tutor->id ? 'selected' : '' }}>{{ $tutor->name }}</option>
                                     @endforeach
                                 </select>
                                 @error('parent_user_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                                @if(auth()->user()->isAdmin() || auth()->user()->isAcademic())
-                                    <a href="{{ route('tutors.create') }}" class="small d-inline-block mt-2">Crear nuevo tutor</a>
-                                @endif
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label for="secondary_parent_user_id">Tutor secundario <span class="text-muted">(opcional)</span></label>
+                                <select name="secondary_parent_user_id" id="secondary_parent_user_id" class="form-control @error('secondary_parent_user_id') is-invalid @enderror">
+                                    <option value="">Sin tutor secundario</option>
+                                    @foreach($tutors as $tutor)
+                                        <option value="{{ $tutor->id }}" {{ old('secondary_parent_user_id', $newTutorTarget === 'secondary' ? $newTutorId : null) == $tutor->id ? 'selected' : '' }}>{{ $tutor->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('secondary_parent_user_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                         </div>
                     </div>
@@ -140,45 +149,5 @@
         </div>
     </form>
 </div>
-@endsection
-
-@section('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.querySelector('form[enctype="multipart/form-data"]');
-        const draftKey = 'student-registration-draft';
-        const tutorLink = document.querySelector('a[href*="tutors/create"]');
-        const teacherLink = document.querySelector('a[href*="teachers/create"]');
-
-        if (!form) return;
-
-        const saveDraft = function () {
-            const values = {};
-            form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (field) {
-                if (field.type !== 'file') values[field.name] = field.value;
-            });
-            sessionStorage.setItem(draftKey, JSON.stringify(values));
-        };
-
-        const draft = sessionStorage.getItem(draftKey);
-        if (draft) {
-            try {
-                const values = JSON.parse(draft);
-                Object.keys(values).forEach(function (name) {
-                    const field = form.elements.namedItem(name);
-                    if (field) field.value = values[name];
-                });
-            } catch (error) {
-                sessionStorage.removeItem(draftKey);
-            }
-        }
-
-        tutorLink?.addEventListener('click', saveDraft);
-        teacherLink?.addEventListener('click', saveDraft);
-        form.addEventListener('submit', function () {
-            sessionStorage.removeItem(draftKey);
-        });
-    });
-</script>
 @endsection
 

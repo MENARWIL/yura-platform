@@ -19,7 +19,7 @@
                         <!-- Left Column -->
                         <div class="col-md-6 border-right pr-md-4">
                             <div class="d-flex align-items-center mb-4">
-                                <div class="bg-warning-light rounded-circle p-2 mr-3" style="background: rgba(249, 212, 35, 0.2);">
+                                <div class="bg-warning-light rounded-circle p-2 mr-3" style="background: rgba(155, 215, 173, 0.28);">
                                     <i class="fas fa-id-badge text-warning"></i>
                                 </div>
                                 <h5 class="mb-0 text-dark font-weight-bold">{{ __('messages.update_profile') }}</h5>
@@ -35,7 +35,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.age') }}</label>
-                                        <input type="number" name="age" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('age') is-invalid @enderror" value="{{ old('age', $student->age) }}" required style="font-size: 1rem;">
+                                        <input type="number" name="age" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('age') is-invalid @enderror" value="{{ old('age', $student->age) }}" min="0" max="120" required style="font-size: 1rem;">
                                         @error('age') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
@@ -61,7 +61,7 @@
                                 @error('level') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
 
                                 <label class="text-muted small text-uppercase font-weight-bold">Fecha de registro</label>
-                                <input type="date" name="registration_date" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('registration_date') is-invalid @enderror" value="{{ old('registration_date', optional($student->registration_date)->format('Y-m-d')) }}" required>
+                                <input type="date" name="registration_date" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('registration_date') is-invalid @enderror" value="{{ old('registration_date', optional($student->registration_date)->format('Y-m-d')) }}" max="{{ now()->toDateString() }}" readonly>
                                 @error('registration_date') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                             </div>
 
@@ -99,7 +99,7 @@
                                 <div class="bg-success-light rounded-circle p-2 mr-3" style="background: rgba(40, 167, 69, 0.15);">
                                     <i class="fas fa-sliders-h text-success"></i>
                                 </div>
-                                <h5 class="mb-0 text-dark font-weight-bold">Métricas y Asignación</h5>
+                                <h5 class="mb-0 text-dark font-weight-bold">Asignación académica</h5>
                             </div>
 
                             <div class="form-group mb-4">
@@ -145,27 +145,26 @@
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.writing') }}</label>
-                                        <input type="number" name="writing_score" class="form-control border-0 bg-light rounded-pill px-3" value="{{ old('writing_score', $student->writing_score) }}" min="0" max="100">
+                                        <input type="number" name="writing_score" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $student->writing_score }}" min="0" max="100" readonly tabindex="-1">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.exam') ?? 'Examen' }}</label>
-                                        <input type="number" name="exam_score" class="form-control border-0 bg-light rounded-pill px-3" value="{{ old('exam_score', $student->exam_score) }}" min="0" max="100">
+                                        <input type="number" name="exam_score" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $student->exam_score }}" min="0" max="100" readonly tabindex="-1">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.attendance_percent') }}</label>
-                                        <input type="number" name="attendance" class="form-control border-0 bg-light rounded-pill px-3" value="{{ old('attendance', $student->attendance) }}" min="0" max="100">
+                                        <input type="number" name="attendance" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $student->attendance }}" min="0" max="100" readonly tabindex="-1">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-group mb-0">
                                 <label class="text-muted small text-uppercase font-weight-bold text-warning">{{ __('messages.robot_score') }}</label>
-                                <input type="number" name="score" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('score') is-invalid @enderror" value="{{ old('score', $student->score) }}" min="0" max="100" style="font-size: 1rem;">
-                                @error('score') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                <input type="number" name="score" class="form-control form-control-lg border-0 bg-light rounded-pill px-4" value="{{ $student->score }}" min="0" max="100" readonly tabindex="-1" style="font-size: 1rem;">
                             </div>
                         </div>
                     </div>
