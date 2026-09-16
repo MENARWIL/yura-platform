@@ -13,6 +13,7 @@ use App\Models\Subject;
 use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class GradeController extends Controller
 {
@@ -462,22 +463,24 @@ class GradeController extends Controller
             ->exists()) {
             abort(403, __('messages.unauthorized'));
         }
-        $student = $parallel->students->first();
-
-        if (! $student) {
+        if ($parallel->students->isEmpty()) {
             return back()->with('error', 'No se pudo crear la actividad porque el paralelo no tiene estudiantes registrados.');
         }
 
-        Grade::create([
-            'student_id' => $student->id,
-            'subject_id' => $request->subject_id,
-            'score' => 0,
-            'type' => 'YURA',
-            'observations' => $request->description,
-            'status' => 'pending',
-            'activity_category' => $request->category,
-            'is_robot_activity' => true,
-        ]);
+        $robotActivityId = (string) Str::uuid();
+        foreach ($parallel->students as $student) {
+            Grade::create([
+                'student_id' => $student->id,
+                'subject_id' => $request->subject_id,
+                'score' => 0,
+                'type' => 'robot',
+                'observations' => $request->description,
+                'status' => 'pending',
+                'activity_category' => $request->category,
+                'is_robot_activity' => true,
+                'robot_activity_id' => $robotActivityId,
+            ]);
+        }
 
         return redirect()->route('grades.index')->with('success', 'Actividad de YURA registrada en estado pendiente.');
     }

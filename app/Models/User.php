@@ -278,14 +278,17 @@ class User extends Authenticatable
     public function scopeActive($query, string $status = 'activo')
     {
         $table = $query->getModel()->getTable();
+        $statuses = in_array($status, ['active', 'activo'], true)
+            ? ['active', 'activo']
+            : [$status];
 
-        return $query->where(function ($query) use ($table, $status) {
+        return $query->where(function ($query) use ($table, $statuses) {
             if (Schema::hasColumn($table, 'status')) {
-                $query->where("{$table}.status", $status);
+                $query->whereIn("{$table}.status", $statuses);
             }
 
             if (Schema::hasColumn($table, 'estado')) {
-                $query->orWhere("{$table}.estado", $status);
+                $query->orWhereIn("{$table}.estado", $statuses);
             }
         });
     }

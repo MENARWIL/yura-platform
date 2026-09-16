@@ -19,10 +19,19 @@ class Grade extends Model
         'score',
         'type',
         'observations',
+        'status',
+        'activity_category',
+        'is_robot_activity',
+        'robot_activity_id',
+        'quarter',
+        'activity_number',
     ];
 
     protected $casts = [
         'score' => 'float',
+        'is_robot_activity' => 'boolean',
+        'quarter' => 'integer',
+        'activity_number' => 'integer',
     ];
 
     public function student(): BelongsTo

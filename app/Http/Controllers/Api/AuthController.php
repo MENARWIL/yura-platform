@@ -27,7 +27,7 @@ class AuthController extends Controller
 
         $userStatus = $user->status ?? $user->estado;
 
-        if ($userStatus !== 'activo') {
+        if (! in_array(strtolower(trim((string) $userStatus)), ['active', 'activo'], true)) {
             return response()->json([
                 'message' => 'Tu cuenta está suspendida. Contacta al administrador.'
             ], 403);

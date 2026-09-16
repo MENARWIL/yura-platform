@@ -90,8 +90,8 @@ class StudentController extends Controller
                 });
 
                 $query->where(function ($query) {
-                    $query->where('status', 'activo')
-                        ->orWhere('estado', 'activo');
+                        $query->whereIn('status', ['active', 'activo'])
+                        ->orWhereIn('estado', ['active', 'activo']);
                 });
             })],
             'profesor_id' => ['nullable', Rule::exists('users', 'id')->where(function ($query) {
@@ -101,8 +101,8 @@ class StudentController extends Controller
                 });
 
                 $query->where(function ($query) {
-                    $query->where('status', 'activo')
-                        ->orWhere('estado', 'activo');
+                        $query->whereIn('status', ['active', 'activo'])
+                        ->orWhereIn('estado', ['active', 'activo']);
                 });
             })],
             'puntaje' => 'nullable|numeric|min:0|max:100',

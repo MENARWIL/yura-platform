@@ -55,7 +55,10 @@ class UserController extends Controller
 
     public function toggleStatus(User $user)
     {
-        $user->estado = ($user->estado == 'activo') ? 'inactivo' : 'activo';
+        $currentStatus = strtolower(trim((string) $user->status));
+        $user->status = in_array($currentStatus, ['active', 'activo'], true)
+            ? 'inactive'
+            : 'active';
         $user->save();
 
         return response()->json([
