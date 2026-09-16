@@ -359,3 +359,21 @@ La cobertura pendiente más importante corresponde a:
 ## Conclusión
 
 La plataforma web cuenta con una base funcional para gestión académica, usuarios, familias, profesores, calificaciones, asistencia y actividades robot. Para completar un plan de pruebas formal todavía es necesario proporcionar la especificación de la APK, del robot físico, las reglas académicas oficiales, los requisitos no funcionales y los criterios de aceptación.
+
+## Estado de remediación
+
+Se corrigieron los riesgos verificables de esta fase:
+
+- La API acepta estados de usuario `active` y `activo`.
+- Los resultados del robot usan `subject_id` y no confunden curso con asignatura.
+- Cada actividad robot conserva un `robot_activity_id` estable.
+- Una actividad web genera un registro pendiente para cada estudiante del paralelo.
+- El resultado del robot actualiza al estudiante y la actividad exactos.
+- Se agregaron pruebas de login API, sincronización robot y actividades con varios estudiantes.
+
+Pendientes para la siguiente fase:
+
+- Definir el contrato final entre el cerebro YURA, la API y la aplicación móvil.
+- Definir grupos, sorteo, reintentos y funcionamiento sin conexión.
+- Confirmar la fórmula académica oficial de puntajes y promedios.
+- Probar hardware, voz, conectividad y recepción real de resultados.
