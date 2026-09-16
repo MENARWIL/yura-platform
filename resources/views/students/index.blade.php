@@ -11,15 +11,22 @@
             </h3>
             <div class="card-tools d-flex align-items-center">
                 <div class="mr-3">
-                    <a href="{{ route('students.create') }}" class="btn btn-primary btn-sm px-3 rounded-pill shadow-sm mr-2">
-                        <i class="fas fa-user-plus mr-1"></i> Registrar Estudiante
-                    </a>
-                    <a href="{{ route('students.export.pdf.all') }}" class="btn btn-outline-danger btn-sm px-3 rounded-pill mr-2 shadow-sm">
-                        <i class="fas fa-file-pdf mr-1"></i> {{ __('messages.export_pdf') }}
-                    </a>
-                    <a href="{{ route('students.export.excel.all') }}" class="btn btn-outline-success btn-sm px-3 rounded-pill shadow-sm">
-                        <i class="fas fa-file-excel mr-1"></i> {{ __('messages.export_excel') }}
-                    </a>
+                    @if(auth()->user()->isAdmin() || auth()->user()->isAcademic())
+                        <a href="{{ route('students.create') }}" class="btn btn-primary btn-sm px-3 rounded-pill shadow-sm mr-2">
+                            <i class="fas fa-user-plus mr-1"></i> Registrar Estudiante
+                        </a>
+                        <a href="{{ route('tutors.create') }}" class="btn btn-outline-primary btn-sm px-3 rounded-pill shadow-sm mr-2">
+                            <i class="fas fa-user-shield mr-1"></i> Registrar Tutor
+                        </a>
+                    @endif
+                    @if(auth()->user()->isAdmin() || auth()->user()->isAcademic())
+                        <a href="{{ route('students.export.pdf.all') }}" class="btn btn-outline-danger btn-sm px-3 rounded-pill mr-2 shadow-sm">
+                            <i class="fas fa-file-pdf mr-1"></i> {{ __('messages.export_pdf') }}
+                        </a>
+                        <a href="{{ route('students.export.excel.all') }}" class="btn btn-outline-success btn-sm px-3 rounded-pill shadow-sm">
+                            <i class="fas fa-file-excel mr-1"></i> {{ __('messages.export_excel') }}
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -143,4 +150,9 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+</script>
 @endsection

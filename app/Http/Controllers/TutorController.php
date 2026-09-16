@@ -9,10 +9,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class TutorController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
         $user = Auth::user();
 
@@ -20,7 +21,67 @@ class TutorController extends Controller
             abort(403, __('messages.unauthorized'));
         }
 
-        return view('tutors.create');
+        return view('tutors.create', [
+            'target' => $request->input('target', 'primary'),
+        ]);
+    }
+
+    public function edit(User $tutor)
+    {
+        abort_unless($tutor->isResponsibleRole(), 404);
+
+        return view('tutors.edit', compact('tutor'));
+    }
+
+    public function update(Request $request, User $tutor): RedirectResponse
+    {
+        abort_unless($tutor->isResponsibleRole(), 404);
+
+        $request->merge([
+            'name' => preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('name'))),
+            'phone' => trim((string) $request->input('phone')),
+            'email' => strtolower(trim((string) $request->input('email'))),
+        ]);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:200', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($tutor->id)],
+            'status' => ['required', 'in:active,activo,inactive,inactivo'],
+            'password' => ['nullable', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+        ], [
+            'name.required' => __('messages.validation.required'),
+            'name.regex' => __('messages.validation.name'),
+            'phone.required' => __('messages.validation.required'),
+            'phone.regex' => __('messages.validation.phone'),
+            'email.required' => __('messages.validation.required'),
+            'email.email' => __('messages.validation.email'),
+            'email.unique' => __('messages.validation.unique'),
+            'password.*' => __('messages.validation.password'),
+        ]);
+
+        $tutor->name = $data['name'];
+        $tutor->phone = $data['phone'];
+        $tutor->email = $data['email'];
+        $tutor->status = in_array($data['status'], ['active', 'activo'], true) ? 'active' : 'inactive';
+
+        if (!empty($data['password'])) {
+            $tutor->password = Hash::make($data['password']);
+        }
+
+        $tutor->save();
+
+        return redirect()->route('family-members.index')->with('success', __('messages.tutor_updated'));
+    }
+
+    public function toggleStatus(User $tutor): RedirectResponse
+    {
+        abort_unless($tutor->isResponsibleRole(), 404);
+
+        $tutor->status = in_array($tutor->status, ['active', 'activo'], true) ? 'inactive' : 'active';
+        $tutor->save();
+
+        return redirect()->route('family-members.index')->with('success', __('messages.tutor_status_updated'));
     }
 
     public function myChildren(Request $request)
@@ -88,27 +149,42 @@ class TutorController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'ci' => ['required', 'string', 'max:50', Rule::unique('users', 'ci')],
-            'name' => ['required', 'string', 'max:100'],
-            'lastname' => ['required', 'string', 'max:100'],
-            'phone' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8'],
-        ], [
-            'ci.required' => 'The identification number is required.',
-            'ci.unique' => 'The identification number is already registered.',
-            'name.required' => 'The first name is required.',
-            'lastname.required' => 'The last name is required.',
-            'phone.required' => 'The phone number is required.',
-            'email.required' => 'The email address is required.',
-            'email.email' => 'The email address must be valid.',
-            'email.unique' => 'The email address is already registered.',
-            'password.required' => 'The password is required.',
-            'password.min' => 'The password must contain at least 8 characters.',
+        $request->merge([
+            'ci' => $request->input('ci') !== null ? trim($request->input('ci')) : null,
+            'name' => $request->input('name') !== null ? preg_replace('/\s+/', ' ', trim($request->input('name'))) : null,
+            'lastname' => $request->input('lastname') !== null ? preg_replace('/\s+/', ' ', trim($request->input('lastname'))) : null,
+            'phone' => $request->input('phone') !== null ? preg_replace('/\s+/', ' ', trim($request->input('phone'))) : null,
+            'email' => $request->input('email') !== null ? strtolower(trim($request->input('email'))) : null,
         ]);
 
-        User::create([
+        $validated = $request->validate([
+            'ci' => ['required', 'string', 'max:50', 'regex:/^[0-9A-Za-z-]+$/', Rule::unique('users', 'ci')],
+            'name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'lastname' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+            'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+        ], [
+            'ci.required' => __('messages.validation.required'),
+            'ci.unique' => __('messages.validation.unique'),
+            'name.required' => __('messages.validation.required'),
+            'name.regex' => __('messages.validation.name'),
+            'lastname.required' => __('messages.validation.required'),
+            'lastname.regex' => __('messages.validation.name'),
+            'phone.required' => __('messages.validation.required'),
+            'phone.regex' => __('messages.validation.phone'),
+            'email.required' => __('messages.validation.required'),
+            'email.email' => __('messages.validation.email'),
+            'email.unique' => __('messages.validation.unique'),
+            'password.required' => __('messages.validation.required'),
+            'password.min' => __('messages.validation.password'),
+            'password.letters' => __('messages.validation.password'),
+            'password.mixed' => __('messages.validation.password'),
+            'password.numbers' => __('messages.validation.password'),
+            'password.symbols' => __('messages.validation.password'),
+        ]);
+
+        $tutor = User::create([
             'ci' => $validated['ci'],
             'name' => trim($validated['name'] . ' ' . $validated['lastname']),
             'phone' => $validated['phone'],
@@ -119,7 +195,10 @@ class TutorController extends Controller
         ]);
 
         return redirect()
-            ->route('students.create')
-            ->with('success', 'Tutor registered successfully.');
+            ->route('students.create', [
+                'new_tutor_id' => $tutor->id,
+                'target' => $request->input('target', 'primary'),
+            ])
+            ->with('success', __('messages.tutor_created'));
     }
 }
