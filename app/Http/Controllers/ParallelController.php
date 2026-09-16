@@ -54,4 +54,11 @@ class ParallelController extends Controller
 
         return redirect()->route('parallels.index')->with('success', 'Capacidad de paralelo actualizada correctamente.');
     }
+
+    public function destroy(Parallel $parallel)
+    {
+        $parallel->delete();
+
+        return redirect()->route('parallels.index')->with('success', 'Paralelo eliminado correctamente.');
+    }
 }

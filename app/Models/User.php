@@ -37,6 +37,7 @@ class User extends Authenticatable
         'status',
         'foto_path',
         'main_course_id',
+        'main_subject_id',
     ];
 
     /**
@@ -53,6 +54,11 @@ class User extends Authenticatable
     public function students(): HasMany
     {
         return $this->hasMany(Student::class, $this->getTeacherUserForeignKey());
+    }
+
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class, 'teacher_user_id');
     }
 
     /**
@@ -243,6 +249,11 @@ class User extends Authenticatable
     public function mainCourse()
     {
         return $this->belongsTo(Course::class, 'main_course_id');
+    }
+
+    public function mainSubject()
+    {
+        return $this->belongsTo(Subject::class, 'main_subject_id');
     }
 
     public function isResponsibleRole(): bool

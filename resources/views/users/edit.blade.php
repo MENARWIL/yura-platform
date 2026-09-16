@@ -17,14 +17,16 @@
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Nombre Completo</label>
-                                <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required>
+                                <input type="text" name="name" class="form-control js-user-field" data-rule="name" value="{{ old('name', $user->name) }}" required>
+                                <small class="invalid-feedback"></small>
                                 @error('name') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Correo Electrónico</label>
-                                <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                                <input type="email" name="email" class="form-control js-user-field" data-rule="email" value="{{ old('email', $user->email) }}" required>
+                                <small class="invalid-feedback"></small>
                                 @error('email') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -59,7 +61,8 @@
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Teléfono (Opcional)</label>
-                                <input type="text" name="telefono" class="form-control" value="{{ old('telefono', $user->telefono) }}">
+                                <input type="tel" name="telefono" class="form-control js-user-field" data-rule="phone" inputmode="tel" value="{{ old('telefono', $user->telefono) }}">
+                                <small class="invalid-feedback"></small>
                             </div>
                         </div>
                     </div>
@@ -84,8 +87,9 @@
 
                     <div class="form-group mb-3 mt-3 border-top pt-3">
                         <label>Cambiar Contraseña (Dejar en blanco para mantener la actual)</label>
-                        <input type="password" name="password" class="form-control">
+                        <input type="password" name="password" class="form-control js-user-field" data-rule="password">
                         <small class="text-muted">Solo si desea actualizar la contraseña del usuario.</small>
+                        <small class="invalid-feedback"></small>
                         @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -99,4 +103,7 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script src="{{ asset('js/user-form-validation.js') }}"></script>
+@endpush
 @endsection
