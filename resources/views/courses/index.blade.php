@@ -21,7 +21,16 @@
                             <tr>
                                 <td>{{ $course->name }}</td>
                                 <td>{{ $course->parallels_count }}</td>
-                                <td class="text-right"><a href="{{ route('courses.edit', $course) }}" class="btn btn-sm btn-outline-primary">Editar</a></td>
+                                <td class="text-right">
+                                    <a href="{{ route('courses.edit', $course) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <form action="{{ route('courses.destroy', $course) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar este registro?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="3" class="text-center text-muted py-4">No hay cursos registrados.</td></tr>
