@@ -12,15 +12,23 @@
         </div>
 
         <div class="card-body bg-white p-4">
-            <!-- FILTRO DE CURSO -->
+            <!-- FILTROS DEL CUADERNO -->
             <div class="form-group mb-4">
-                <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.select_course') }}</label>
-                <form method="GET" action="{{ route('grades.index') }}" class="d-flex flex-wrap">
-                    <select name="course_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
-                        <option value="">{{ __('messages.all_courses') }}</option>
-                        @foreach($courses as $course)
-                            <option value="{{ $course->id }}" {{ $selectedCourseId == $course->id ? 'selected' : '' }}>
-                                {{ $course->name }}
+                <label class="text-muted small text-uppercase font-weight-bold">Seleccionar asignatura y paralelo</label>
+                <form method="GET" action="{{ route('grades.index') }}" class="d-flex flex-wrap align-items-center">
+                    <select name="subject_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
+                        <option value="">Todas las asignaturas</option>
+                        @foreach($subjects as $subject)
+                            <option value="{{ $subject->id }}" {{ $selectedSubjectId == $subject->id ? 'selected' : '' }}>
+                                {{ $subject->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="parallel_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
+                        <option value="">Todos los paralelos</option>
+                        @foreach($parallels as $parallel)
+                            <option value="{{ $parallel->id }}" {{ $selectedParallelId == $parallel->id ? 'selected' : '' }}>
+                                {{ $parallel->course->name }} - {{ $parallel->name }}
                             </option>
                         @endforeach
                     </select>
@@ -29,16 +37,24 @@
                         <option value="2" {{ $selectedQuarter == 2 ? 'selected' : '' }}>Segundo Trimestre</option>
                         <option value="3" {{ $selectedQuarter == 3 ? 'selected' : '' }}>Tercer Trimestre</option>
                     </select>
+                    @if($selectedSubjectId && $selectedParallelId)
+                        <button type="button" id="save-all-grades" class="btn btn-success btn-lg rounded-pill px-4 ml-2 mb-2">
+                            <i class="fas fa-save mr-1"></i> Guardar notas
+                        </button>
+                    @endif
                 </form>
             </div>
 
             <!-- FORMULARIO DE CALIFICACIONES INTERACTIVAS -->
-            @if(empty($selectedCourseId))
+            @if(empty($selectedSubjectId) || empty($selectedParallelId))
                 <div class="card border-warning shadow-sm my-4">
                     <div class="card-body text-center py-5">
                         <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
-                        <h5 class="font-weight-bold">Por favor, seleccione un curso específico en el menú superior para comenzar a registrar asistencias y calificaciones.</h5>
-                        <p class="text-muted mb-0">El modo "Todos los cursos" está habilitado actualmente. Seleccione un curso concreto para evitar mezclar registros entre grados.</p>
+                        <h5 class="font-weight-bold">Seleccione una asignatura y un paralelo para comenzar.</h5>
+                        <p class="text-muted mb-0">Elija ambos filtros. Las notas y asistencias se registrarán dentro de la asignación docente seleccionada.</p>
+                        @if($subjects->isEmpty() || $parallels->isEmpty())
+                            <p class="text-danger mt-3 mb-0">No tienes asignaciones docentes activas disponibles.</p>
+                        @endif
                     </div>
                 </div>
             @else
@@ -108,7 +124,7 @@
                                 <span class="badge badge-quechua-gold px-3">{{ strtoupper($student->level ?? $student->nivel ?? '6TO') }}</span>
                             </td>
                             <td class="align-middle">
-                                <select name="attendance[{{ $student->id }}]" class="form-control form-control-sm attendance-select" data-student-id="{{ $student->id }}" data-course-id="{{ $selectedCourseId }}">
+                                <select name="attendance[{{ $student->id }}]" class="form-control form-control-sm attendance-select" data-student-id="{{ $student->id }}" data-subject-id="{{ $selectedSubjectId }}">
                                     <option value="">Seleccionar...</option>
                                     @foreach($attendanceStatuses as $status)
                                         <option value="{{ $status }}" {{ optional($todayAttendance[$student->id] ?? null)->status == $status ? 'selected' : '' }}>{{ $status }}</option>
@@ -185,6 +201,14 @@
                         <select name="parallel_id" class="form-control custom-select">
                             @foreach($parallels as $parallel)
                                 <option value="{{ $parallel->id }}">{{ $parallel->name ?? $parallel->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold text-secondary">Asignatura:</label>
+                        <select name="subject_id" class="form-control custom-select" required>
+                            @foreach($subjects as $subject)
+                                <option value="{{ $subject->id }}" {{ $selectedSubjectId == $subject->id ? 'selected' : '' }}>{{ $subject->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -329,11 +353,12 @@
             const score = parseGradeValue(input.value);
 
             if (score === null || score < 0 || score > 100) {
-                return;
+                return false;
             }
 
             const payload = {
                 student_id: studentId,
+                subject_id: '{{ $selectedSubjectId }}',
                 type: type,
                 activity_number: activityNumber,
                 quarter: '{{ $selectedQuarter }}',
@@ -362,9 +387,11 @@
 
                 markInputSaved(input);
                 showSaveToast('✓ Calificación guardada');
+                return true;
             } catch (error) {
                 markInputError(input);
                 console.error('Error en la petición:', error);
+                return false;
             }
         }
 
@@ -382,6 +409,21 @@
                 saveGrade(this);
             });
         });
+
+        const saveAllButton = document.getElementById('save-all-grades');
+        if (saveAllButton) {
+            saveAllButton.addEventListener('click', async function () {
+                const originalText = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+                const results = await Promise.all(Array.from(gradeInputs).map(saveGrade));
+                this.disabled = false;
+                this.innerHTML = originalText;
+                if (results.some(Boolean)) {
+                    showSaveToast('✓ Notas guardadas correctamente');
+                }
+            });
+        }
 
         // Attendance select auto-save
         const attendanceSelects = document.querySelectorAll('.attendance-select');
@@ -413,7 +455,7 @@
 
         async function saveAttendance(select) {
             const studentId = select.dataset.studentId || select.closest('tr')?.datasetStudentId || select.closest('tr')?.dataset?.studentId;
-            const courseId = select.dataset.courseId || '{{ $selectedCourseId }}';
+            const subjectId = select.dataset.subjectId || '{{ $selectedSubjectId }}';
             const status = select.value;
 
             // don't save empty
@@ -425,7 +467,7 @@
 
             const payload = {
                 student_id: studentId,
-                course_id: courseId,
+                subject_id: subjectId,
                 status: status,
                 date: today,
             };

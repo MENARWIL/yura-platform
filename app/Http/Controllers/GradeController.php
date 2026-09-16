@@ -9,6 +9,8 @@ use App\Models\Parallel;
 use App\Models\Student;
 use App\Models\Attendance;
 use App\Models\User;
+use App\Models\Subject;
+use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,24 +21,37 @@ class GradeController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (!$user->isAdmin() && !$user->isProfesor()) {
+        if (!$user->isAdmin() && !$user->isAcademic() && !$user->isProfesor()) {
             abort(403, __('messages.unauthorized'));
         }
 
-        $courses = Course::all();
-        $parallels = Parallel::all();
-        $selectedCourseId = $request->query('course_id');
+        $subjects = Subject::where('active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $parallels = Parallel::with('course')->orderBy('course_id')->orderBy('name')->get();
+        $selectedSubjectId = $request->integer('subject_id');
+        $selectedParallelId = $request->integer('parallel_id');
         $selectedQuarter = $request->input('quarter', 1);
 
         $query = Student::with(['parent', 'teacher', 'parallel']);
 
         if ($user->isProfesor()) {
-            $teacherForeignKey = (new Student())->getTeacherUserForeignKey();
-            $query->where($teacherForeignKey, $user->id);
-        }
+            $query->where('teacher_user_id', $user->id)
+                ->when($selectedParallelId, function ($query) use ($selectedParallelId) {
+                    return $query->where('parallel_id', $selectedParallelId);
+                });
 
-        if ($selectedCourseId) {
-            $query->where('course_id', $selectedCourseId);
+            $assignedSubjectIds = TeachingAssignment::where('teacher_user_id', $user->id)
+                ->where('active', true)
+                ->distinct()
+                ->pluck('subject_id');
+            $ownedParallelIds = Student::where('teacher_user_id', $user->id)
+                ->whereNotNull('parallel_id')
+                ->distinct()
+                ->pluck('parallel_id');
+
+            $subjects = $subjects->whereIn('id', $assignedSubjectIds)->values();
+            $parallels = $parallels->whereIn('id', $ownedParallelIds)->values();
+        } elseif ($selectedParallelId) {
+            $query->where('parallel_id', $selectedParallelId);
         }
 
         $students = $query->get();
@@ -44,8 +59,8 @@ class GradeController extends Controller
         $today = now()->toDateString();
 
         $todayAttendance = Attendance::whereIn('student_id', $studentIds)
-            ->when($selectedCourseId, function ($query) use ($selectedCourseId) {
-                return $query->where('subject_id', $selectedCourseId);
+            ->when($selectedSubjectId, function ($query) use ($selectedSubjectId) {
+                return $query->where('subject_id', $selectedSubjectId);
             })
             ->whereDate('date', $today)
             ->get()
@@ -54,8 +69,8 @@ class GradeController extends Controller
         $gradesByStudent = Grade::whereIn('student_id', $studentIds)
             ->where('status', 'completed')
             ->where('quarter', $selectedQuarter)
-            ->when($selectedCourseId, function ($query) use ($selectedCourseId) {
-                return $query->where('subject_id', $selectedCourseId);
+            ->when($selectedSubjectId, function ($query) use ($selectedSubjectId) {
+                return $query->where('subject_id', $selectedSubjectId);
             })
             ->get()
             ->groupBy('student_id')
@@ -76,7 +91,7 @@ class GradeController extends Controller
             'Lugares',
         ];
 
-        return view('grades.index', compact('students', 'courses', 'parallels', 'selectedCourseId', 'selectedQuarter', 'attendanceStatuses', 'robotCategories', 'todayAttendance', 'gradesByStudent'));
+        return view('grades.index', compact('students', 'subjects', 'parallels', 'selectedSubjectId', 'selectedParallelId', 'selectedQuarter', 'attendanceStatuses', 'robotCategories', 'todayAttendance', 'gradesByStudent'));
     }
 
     public function show(Student $student)
@@ -84,7 +99,11 @@ class GradeController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (!$user->isAdmin() && !$user->isAcademic() && !($user->isProfesor() && $student->getAttribute($student->getTeacherUserForeignKey()) == $user->id)) {
+        if (!$user->isAdmin() && !$user->isAcademic() && !($user->isProfesor()
+            && (TeachingAssignment::where('teacher_user_id', $user->id)
+                ->where('parallel_id', $student->parallel_id)
+                ->where('active', true)
+                ->exists() || (int) $student->teacher_user_id === (int) $user->id))) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -96,13 +115,34 @@ class GradeController extends Controller
         return view('grades.show', compact('student', 'grades', 'history'));
     }
 
+    public function historyForStudent(Student $student)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user->isAdmin() && !$user->isAcademic() && !($user->isProfesor()
+            && (TeachingAssignment::where('teacher_user_id', $user->id)
+                ->where('parallel_id', $student->parallel_id)
+                ->where('active', true)
+                ->exists() || (int) $student->teacher_user_id === (int) $user->id))) {
+            abort(403, __('messages.unauthorized'));
+        }
+
+        $grade = $student->grades()->with('subject')->latest()->first();
+        $history = GradeHistory::whereHas('grade', function ($query) use ($student) {
+            $query->where('student_id', $student->id);
+        })->with(['grade', 'user'])->latest()->paginate(15);
+
+        return view('grades.history', compact('student', 'grade', 'history'));
+    }
+
     public function edit(Grade $grade)
     {
         /** @var User $user */
         $user = Auth::user();
         $student = $grade->student;
 
-        if (!$user->isAdmin() && !($user->isProfesor() && $student->getAttribute($student->getTeacherUserForeignKey()) == $user->id)) {
+        if (!$user->isProfesor() || ! $this->hasTeachingAssignment($user, $student, (int) $grade->subject_id)) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -115,7 +155,7 @@ class GradeController extends Controller
         $user = Auth::user();
         $student = $grade->student;
 
-        if (!$user->isAdmin() && !($user->isProfesor() && $student->getAttribute($student->getTeacherUserForeignKey()) == $user->id)) {
+        if (!$user->isProfesor() || ! $this->hasTeachingAssignment($user, $student, (int) $grade->subject_id)) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -175,12 +215,12 @@ class GradeController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (!$user->isAdmin() && !$user->isProfesor()) {
+        if (!$user->isProfesor()) {
             abort(403, __('messages.unauthorized'));
         }
 
         $data = $request->validate([
-            'course_id' => 'nullable|integer|exists:courses,id',
+            'subject_id' => 'required|integer|exists:subjects,id',
             'attendance' => 'array',
             'attendance.*' => 'nullable|string|in:Presente,Falta,Atraso',
             'activity_score' => 'array',
@@ -189,9 +229,6 @@ class GradeController extends Controller
             'exam_score.*' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $teacherForeignKey = (new Student())->getTeacherUserForeignKey();
-        $attendanceCourseId = $data['course_id'] ?? null;
-
         $studentIds = array_unique(array_merge(
             array_keys($data['attendance'] ?? []),
             array_keys($data['activity_score'] ?? []),
@@ -199,8 +236,8 @@ class GradeController extends Controller
         ));
 
         foreach ($studentIds as $studentId) {
-            $student = Student::where($teacherForeignKey, $user->id)->find($studentId);
-            if (! $student) {
+            $student = Student::find($studentId);
+            if (! $student || ! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
                 continue;
             }
 
@@ -208,7 +245,7 @@ class GradeController extends Controller
                 Attendance::updateOrCreate(
                     [
                         'student_id' => $student->id,
-                        'subject_id' => $attendanceCourseId ?? $student->course_id,
+                        'subject_id' => $data['subject_id'],
                         'date' => now()->toDateString(),
                     ],
                     [
@@ -238,7 +275,7 @@ class GradeController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (!$user->isAdmin() && !$user->isProfesor()) {
+        if (!$user->isProfesor()) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -248,16 +285,15 @@ class GradeController extends Controller
             'activity_number' => 'required|integer|min:1|max:3',
             'quarter' => 'required|integer|in:1,2,3',
             'score' => 'required|numeric|min:0|max:100',
-            'subject_id' => 'nullable|integer|exists:courses,id',
+            'subject_id' => 'required|integer|exists:subjects,id',
         ]);
 
         $student = Student::findOrFail($data['student_id']);
-        $teacherForeignKey = (new Student())->getTeacherUserForeignKey();
-        if ($user->isProfesor() && $student->getAttribute($teacherForeignKey) != $user->id) {
+        if (! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
             abort(403, __('messages.unauthorized'));
         }
 
-        $subjectId = $data['subject_id'] ?? $student->course_id;
+        $subjectId = (int) $data['subject_id'];
 
         $grade = Grade::where('student_id', $student->id)
             ->where('type', $data['type'])
@@ -276,8 +312,21 @@ class GradeController extends Controller
             $grade->status = 'completed';
         }
 
+        $oldScore = $grade->exists ? $grade->score : null;
         $grade->score = $data['score'];
         $grade->save();
+
+        if ($grade->wasRecentlyCreated || (string) $oldScore === (string) $data['score']) {
+            return response()->json(['success' => true, 'grade_id' => $grade->id]);
+        }
+
+        GradeHistory::create([
+            'grade_id' => $grade->id,
+            'user_id' => $user->id,
+            'old_score' => $oldScore,
+            'new_score' => $data['score'],
+            'reason' => 'Actualización desde el cuaderno pedagógico',
+        ]);
 
         return response()->json(['success' => true, 'grade_id' => $grade->id]);
     }
@@ -287,7 +336,7 @@ class GradeController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (! $user->isAdmin() && ! $user->isProfesor()) {
+        if (! $user->isProfesor()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized.',
@@ -296,7 +345,7 @@ class GradeController extends Controller
 
         $data = $request->validate([
             'student_id' => ['required', 'integer', 'exists:students,id'],
-            'subject_id' => ['required', 'integer', 'exists:courses,id'],
+            'subject_id' => ['required', 'integer', 'exists:subjects,id'],
             'first_period' => ['nullable', 'required_without_all:second_period,exam', 'numeric', 'min:0', 'max:100'],
             'second_period' => ['nullable', 'required_without_all:first_period,exam', 'numeric', 'min:0', 'max:100'],
             'exam' => ['nullable', 'required_without_all:first_period,second_period', 'numeric', 'min:0', 'max:100'],
@@ -311,7 +360,7 @@ class GradeController extends Controller
         ]);
 
         $student = Student::findOrFail($data['student_id']);
-        if ($user->isProfesor() && $student->getAttribute($student->getTeacherUserForeignKey()) != $user->id) {
+        if (! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized.',
@@ -353,7 +402,7 @@ class GradeController extends Controller
         $student = $grade->student;
 
         if (! $user || (! $user->isAdmin() && ! $user->isAcademic() && ! ($user->isProfesor()
-            && $student->getAttribute($student->getTeacherUserForeignKey()) == $user->id))) {
+            && TeachingAssignment::where('teacher_user_id', $user->id)->where('parallel_id', $student->parallel_id)->where('active', true)->exists()))) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -362,7 +411,7 @@ class GradeController extends Controller
             ->latest()
             ->paginate(10);
 
-        return view('grades.history', compact('grade', 'history'));
+        return view('grades.history', compact('student', 'grade', 'history'));
     }
 
     public function createRobotActivity()
@@ -375,6 +424,7 @@ class GradeController extends Controller
         }
 
         $parallels = Parallel::with('course')->get();
+        $subjects = Subject::where('active', true)->orderBy('sort_order')->orderBy('name')->get();
         $categories = [
             'Alimentos' => 'robot_alimentos',
             'Colores' => 'robot_colores',
@@ -385,7 +435,7 @@ class GradeController extends Controller
             'Lugares' => 'robot_lugares_items',
         ];
 
-        return view('robot.create', compact('parallels', 'categories'));
+        return view('robot.create', compact('parallels', 'subjects', 'categories'));
     }
 
     public function storeRobotActivity(Request $request)
@@ -399,12 +449,19 @@ class GradeController extends Controller
 
         $request->validate([
             'parallel_id' => 'required|exists:parallels,id',
-            'course_id' => 'required|exists:courses,id',
+            'subject_id' => 'required|exists:subjects,id',
             'category' => 'required|string|in:Alimentos,Colores,Elementos de Casa,Elementos Naturales,Familia,Herramientas,Lugares',
             'description' => 'nullable|string|max:500',
         ]);
 
         $parallel = Parallel::with('students')->findOrFail($request->parallel_id);
+        if (! TeachingAssignment::where('teacher_user_id', $user->id)
+            ->where('subject_id', $request->subject_id)
+            ->where('parallel_id', $parallel->id)
+            ->where('active', true)
+            ->exists()) {
+            abort(403, __('messages.unauthorized'));
+        }
         $student = $parallel->students->first();
 
         if (! $student) {
@@ -413,7 +470,7 @@ class GradeController extends Controller
 
         Grade::create([
             'student_id' => $student->id,
-            'subject_id' => $request->course_id,
+            'subject_id' => $request->subject_id,
             'score' => 0,
             'type' => 'YURA',
             'observations' => $request->description,
@@ -430,20 +487,19 @@ class GradeController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (! $user->isAdmin() && ! $user->isProfesor()) {
+        if (! $user->isProfesor()) {
             abort(403, __('messages.unauthorized'));
         }
 
         $data = $request->validate([
             'student_id' => 'required|integer|exists:students,id',
-            'course_id' => 'nullable|integer|exists:courses,id',
+            'subject_id' => 'required|integer|exists:subjects,id',
             'status' => 'required|string',
             'date' => 'required|date',
         ]);
 
         $student = Student::findOrFail($data['student_id']);
-        $teacherForeignKey = (new Student())->getTeacherUserForeignKey();
-        if ($user->isProfesor() && $student->getAttribute($teacherForeignKey) != $user->id) {
+        if (! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -451,7 +507,7 @@ class GradeController extends Controller
             Attendance::updateOrCreate(
                 [
                     'student_id' => $student->id,
-                    'subject_id' => $data['course_id'] ?? null,
+                    'subject_id' => $data['subject_id'],
                     'date' => $data['date'],
                 ],
                 [
@@ -468,5 +524,18 @@ class GradeController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function hasTeachingAssignment(User $user, Student $student, int $subjectId): bool
+    {
+        $assignmentQuery = TeachingAssignment::where('teacher_user_id', $user->id)
+            ->where('subject_id', $subjectId)
+            ->where('active', true);
+
+        if ((int) $student->teacher_user_id === (int) $user->id) {
+            return $assignmentQuery->exists();
+        }
+
+        return $assignmentQuery->where('parallel_id', $student->parallel_id)->exists();
     }
 }
