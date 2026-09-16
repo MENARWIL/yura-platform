@@ -173,6 +173,169 @@ class FamilyAndStudentAuthTest extends TestCase
             ->assertDontSee('Alumno de otro profesor');
     }
 
+    public function test_professor_student_list_is_scoped_to_his_students_and_hides_register_button(): void
+    {
+        $teacher = User::factory()->create([
+            'rol' => 'profesor',
+            'estado' => 'activo',
+        ]);
+
+        $otherTeacher = User::factory()->create([
+            'rol' => 'profesor',
+            'estado' => 'activo',
+        ]);
+
+        $course = Course::create(['name' => '2° Básico']);
+        $parallel = Parallel::create(['name' => '2A', 'course_id' => $course->id, 'max_students' => 25]);
+
+        Student::create([
+            'name' => 'Estudiante del profesor',
+            'course' => '2° Básico',
+            'course_id' => $course->id,
+            'parallel_id' => $parallel->id,
+            'teacher_user_id' => $teacher->id,
+            'edad' => 11,
+            'genero' => 'Masculino',
+            'nivel' => 'básico',
+            'registration_date' => '2026-05-27',
+            'puntaje' => 78,
+        ]);
+
+        Student::create([
+            'name' => 'Estudiante de otro profesor',
+            'course' => '2° Básico',
+            'course_id' => $course->id,
+            'parallel_id' => $parallel->id,
+            'teacher_user_id' => $otherTeacher->id,
+            'edad' => 12,
+            'genero' => 'Femenino',
+            'nivel' => 'intermedio',
+            'registration_date' => '2026-05-28',
+            'puntaje' => 86,
+        ]);
+
+        $this->actingAs($teacher)
+            ->get('/students')
+            ->assertOk()
+            ->assertSee('Estudiante del profesor')
+            ->assertDontSee('Estudiante de otro profesor')
+            ->assertDontSeeText('Registrar Estudiante');
+    }
+
+    public function test_tutor_dashboard_shows_only_assigned_children_and_blocks_student_list(): void
+    {
+        $tutor = User::factory()->create([
+            'rol' => 'tutor',
+            'estado' => 'activo',
+        ]);
+
+        $course = Course::create(['name' => '1° Básico']);
+        $parallel = Parallel::create(['name' => '1A', 'course_id' => $course->id, 'max_students' => 25]);
+
+        Student::create([
+            'name' => 'Hijo del tutor',
+            'course' => '1° Básico',
+            'course_id' => $course->id,
+            'parallel_id' => $parallel->id,
+            'parent_user_id' => $tutor->id,
+            'edad' => 10,
+            'genero' => 'Masculino',
+            'nivel' => 'básico',
+            'registration_date' => '2026-05-25',
+            'puntaje' => 80,
+        ]);
+
+        $this->actingAs($tutor)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Hijo del tutor')
+            ->assertSee('Mis hijos');
+
+        $this->actingAs($tutor)
+            ->get('/students')
+            ->assertRedirect('/');
+    }
+
+    public function test_tutor_with_more_than_three_children_gets_a_child_selector(): void
+    {
+        $tutor = User::factory()->create([
+            'rol' => 'tutor',
+            'estado' => 'activo',
+        ]);
+
+        $course = Course::create(['name' => '1° Básico']);
+        $parallel = Parallel::create(['name' => '1A', 'course_id' => $course->id, 'max_students' => 25]);
+
+        foreach (range(1, 4) as $number) {
+            Student::create([
+                'name' => "Hijo {$number}",
+                'course' => '1° Básico',
+                'course_id' => $course->id,
+                'parallel_id' => $parallel->id,
+                'parent_user_id' => $tutor->id,
+                'edad' => 10,
+                'genero' => 'Masculino',
+                'nivel' => 'básico',
+                'registration_date' => '2026-05-25',
+                'puntaje' => 80,
+            ]);
+        }
+
+        $this->actingAs($tutor)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('id="child-selector"', false)
+            ->assertSee('Hijo 1')
+            ->assertSee('Hijo 4');
+    }
+
+    public function test_student_can_be_registered_with_primary_and_secondary_tutors(): void
+    {
+        $admin = User::factory()->create([
+            'rol' => 'admin',
+            'estado' => 'activo',
+        ]);
+        $primaryTutor = User::factory()->create([
+            'rol' => 'tutor',
+            'estado' => 'activo',
+        ]);
+        $secondaryTutor = User::factory()->create([
+            'rol' => 'tutor',
+            'estado' => 'activo',
+        ]);
+
+        $course = Course::create(['name' => '1° Básico']);
+        $parallel = Parallel::create(['name' => '1A', 'course_id' => $course->id, 'max_students' => 25]);
+
+        $this->actingAs($admin)
+            ->post('/students', [
+                'name' => 'Estudiante con dos tutores',
+                'age' => 10,
+                'gender' => 'Masculino',
+                'level' => 'básico',
+                'registration_date' => '2026-05-25',
+                'parallel_id' => $parallel->id,
+                'parent_user_id' => $primaryTutor->id,
+                'secondary_parent_user_id' => $secondaryTutor->id,
+            ])
+            ->assertRedirect(route('students.index'));
+
+        $student = Student::where('name', 'Estudiante con dos tutores')->firstOrFail();
+
+        $this->assertDatabaseHas('student_family_members', [
+            'student_id' => $student->id,
+            'user_id' => $primaryTutor->id,
+            'is_primary' => true,
+            'active' => true,
+        ]);
+        $this->assertDatabaseHas('student_family_members', [
+            'student_id' => $student->id,
+            'user_id' => $secondaryTutor->id,
+            'is_primary' => false,
+            'active' => true,
+        ]);
+    }
+
     public function test_student_account_is_not_created_automatically(): void
     {
         $admin = User::factory()->create([
