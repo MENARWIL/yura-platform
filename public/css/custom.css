@@ -1,11 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
 
 :root {
-    --primary-light: #ffcc33;
-    --primary-main: #f9d423;
-    --primary-dark: #d4ac0d;
+    --primary-light: #d9f3df;
+    --primary-main: #9bd7ad;
+    --primary-dark: #5eaa78;
     --secondary-main: #a90329;
-    --accent-main: #e2725b;
+    --accent-main: #69c7bd;
     --bg-dark: #1a1a2e;
     --bg-glass: rgba(255, 255, 255, 0.7);
     --bg-glass-dark: rgba(26, 26, 46, 0.85);
@@ -60,8 +60,8 @@ body {
 
 .nav-sidebar .nav-link.active {
     background: linear-gradient(45deg, var(--primary-main), var(--accent-main)) !important;
-    color: #000 !important;
-    box-shadow: 0 4px 15px rgba(249, 212, 35, 0.3);
+    color: #18352a !important;
+    box-shadow: 0 4px 15px rgba(105, 199, 189, 0.3);
     border-radius: 12px;
 }
 
@@ -154,18 +154,39 @@ body {
 .btn-quechua {
     background: linear-gradient(45deg, var(--primary-main), var(--accent-main));
     border: none;
-    color: #000;
+    color: #18352a;
     font-weight: 700;
     padding: 10px 25px;
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(249, 212, 35, 0.2);
+    box-shadow: 0 4px 15px rgba(105, 199, 189, 0.2);
     transition: all 0.3s ease;
 }
 
 .btn-quechua:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(249, 212, 35, 0.4);
-    color: #000;
+    box-shadow: 0 8px 25px rgba(105, 199, 189, 0.4);
+    color: #18352a;
+}
+
+/* Robot palette: soft green replaces the former yellow warning/gold accents. */
+.bg-warning,
+.badge-warning,
+.btn-warning,
+.badge-quechua-gold {
+    background-color: var(--primary-main) !important;
+    border-color: var(--primary-dark) !important;
+    color: #18352a !important;
+}
+
+.text-warning,
+.text-quechua-gold,
+.border-warning {
+    color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+}
+
+.progress-bar.bg-warning {
+    background-color: var(--primary-dark) !important;
 }
 
 /* Animations */

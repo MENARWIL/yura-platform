@@ -75,7 +75,7 @@
                 <div class="info">
                     <a href="{{ route('profile.edit') }}" class="d-block text-white small">
                         {{ Auth::user()->name }}<br>
-                        <span class="badge badge-warning" style="font-size: 10px; background-color: #f39c12; color: #fff;">{{ strtoupper(Auth::user()->role ?? Auth::user()->rol ?? 'PROFESOR') }}</span>
+                        <span class="badge badge-warning" style="font-size: 10px; background-color: #9bd7ad; color: #18352a;">{{ strtoupper(Auth::user()->role ?? Auth::user()->rol ?? 'PROFESOR') }}</span>
                     </a>
                 </div>
             </div>
@@ -84,32 +84,35 @@
             <nav class="mt-2">
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-header text-uppercase small opacity-50 text-white mb-2">{{ __('messages.main_menu') ?? 'MENÚ' }}</li>
+                    @php
+                        $userRole = strtolower(Auth::user()->role ?? Auth::user()->rol ?? '');
+                    @endphp
                     <li class="nav-item">
                         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-chart-line"></i>
                             <p>{{ __('messages.dashboard') ?? 'Dashboard' }}</p>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="{{ route('students.index') }}" class="nav-link {{ request()->is('students*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-graduation-cap"></i>
-                            <p>{{ __('messages.students') ?? 'Estudiantes' }}</p>
-                        </a>
-                    </li>
+                    @if($userRole !== 'tutor')
+                        <li class="nav-item">
+                            <a href="{{ route('students.index') }}" class="nav-link {{ request()->is('students*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-graduation-cap"></i>
+                                <p>{{ __('messages.students') ?? 'Estudiantes' }}</p>
+                            </a>
+                        </li>
+                    @endif
 
-                    @php
-                        $userRole = strtolower(Auth::user()->role ?? Auth::user()->rol ?? '');
-                    @endphp
-
-                    <!-- Menu de Gestion Academica de profesores y administrativos -->
-                    @if(in_array($userRole, ['admin', 'academic', 'teacher', 'profesor']))
+                    <!-- Menú docente y administrativo -->
+                    @if(in_array($userRole, ['admin', 'academic']))
                     <li class="nav-item">
                         <a href="{{ route('family-members.index') }}" class="nav-link {{ request()->is('family-members*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
                             <p>Gestión Académica</p>
                         </a>
                     </li>
-                    @if(Auth::user()->role !== "academic")
+                    @endif
+
+                    @if(in_array($userRole, ['admin', 'academic', 'teacher', 'profesor']))
                         <li class="nav-item">
                             <a href="{{ route('grades.index') }}" class="nav-link {{ request()->is('grades*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-book"></i>
@@ -117,17 +120,7 @@
                             </a>
                         </li>
                     @endif
-                    @endif
 
-                    @if(in_array($userRole, ['tutor', 'padre', 'madre']))
-                    <li class="nav-item">
-                        <a href="{{ route('tutor.dashboard') }}" class="nav-link {{ request()->is('tutor*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-user-check"></i>
-                            <p>Portal Tutor</p>
-                        </a>
-                    </li>
-                    @endif
-                    
                     @if(in_array($userRole, ['admin', 'academic']))
                     <li class="nav-header text-uppercase small opacity-50 text-white mt-3 mb-2">{{ __('messages.administration') ?? 'ADMINISTRACIÓN' }}</li>
                     <li class="nav-item">
@@ -137,21 +130,27 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ route('parallels.create') }}" class="nav-link {{ request()->is('parallels/create') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-plus-circle"></i>
-                            <p>Crear paralelo</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a href="{{ route('courses.index') }}" class="nav-link {{ request()->is('courses*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-book-open"></i>
                             <p>Cursos</p>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a href="{{ route('courses.create') }}" class="nav-link {{ request()->is('courses/create') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-plus-circle"></i>
-                            <p>Crear curso</p>
+                        <a href="{{ route('subjects.index') }}" class="nav-link {{ request()->is('subjects*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-book"></i>
+                            <p>Asignaturas</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('teachers.index') }}" class="nav-link {{ request()->is('teachers*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-chalkboard-teacher"></i>
+                            <p>Profesores</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('teaching-assignments.index') }}" class="nav-link {{ request()->is('teaching-assignments*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-user-tie"></i>
+                            <p>Asignaciones docentes</p>
                         </a>
                     </li>
                     @endif
@@ -220,3 +219,4 @@
 <!-- ./wrapper -->
 
 <!-- Scripts Requeridos -->
+@stack('scripts')

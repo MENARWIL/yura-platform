@@ -13,7 +13,7 @@
         td { padding: 8px; border-bottom: 1px solid #eee; }
         .badge { padding: 3px 8px; border-radius: 10px; font-weight: bold; font-size: 8px; }
         .badge-success { background-color: #d4edda; color: #155724; }
-        .badge-warning { background-color: #fff3cd; color: #856404; }
+        .badge-warning { background-color: #d9f3df; color: #376b49; }
         .badge-danger { background-color: #f8d7da; color: #721c24; }
         .footer { position: fixed; bottom: 0; width: 100%; text-align: right; font-size: 8px; color: #999; border-top: 1px solid #eee; padding-top: 5px; }
         .summary { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 10px; }
