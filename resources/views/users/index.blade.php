@@ -16,8 +16,16 @@
             </div>
         </div>
         <div class="card-body p-4 bg-white">
+            <div class="form-group mb-4">
+                <label for="user-search" class="sr-only">{{ __('messages.search') }}</label>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+                    <input type="search" id="user-search" class="form-control" placeholder="{{ __('messages.search_users') }}" autocomplete="off">
+                </div>
+                <small id="user-search-count" class="form-text text-muted"></small>
+            </div>
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle" id="users-table">
                     <thead>
                             <tr>
                             <th class="px-4">{{ __('messages.profile') }}</th>
@@ -31,7 +39,7 @@
                     </thead>
                     <tbody>
                         @foreach($users as $user)
-                        <tr>
+                        <tr class="user-row">
                             <td class="px-4">
                                 <div class="d-flex align-items-center">
                                     @if($user->foto_path)
@@ -152,4 +160,27 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('user-search');
+    const rows = Array.from(document.querySelectorAll('#users-table .user-row'));
+    const count = document.getElementById('user-search-count');
+    const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+    function filterUsers() {
+        const term = normalize(input.value.trim());
+        let visible = 0;
+        rows.forEach(row => {
+            const matches = !term || normalize(row.textContent).includes(term);
+            row.classList.toggle('d-none', !matches);
+            if (matches) visible++;
+        });
+        count.textContent = term ? `${visible} {{ __('messages.search_results') }}` : '';
+    }
+
+    input.addEventListener('input', filterUsers);
+});
+</script>
+@endpush
 @endsection

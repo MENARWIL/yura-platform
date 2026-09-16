@@ -27,6 +27,11 @@ class Parallel extends Model
         return $this->hasMany(Student::class);
     }
 
+    public function teachingAssignments(): HasMany
+    {
+        return $this->hasMany(TeachingAssignment::class);
+    }
+
     public function studentCount(): int
     {
         return $this->students()->count();

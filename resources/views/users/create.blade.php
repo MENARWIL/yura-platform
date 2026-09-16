@@ -16,14 +16,16 @@
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Nombre Completo</label>
-                                <input type="text" name="name" class="form-control" placeholder="Ej. Juan Perez" value="{{ old('name') }}" required>
+                                <input type="text" name="name" class="form-control js-user-field" data-rule="name" placeholder="Ej. Juan Perez" value="{{ old('name') }}" required>
+                                <small class="invalid-feedback"></small>
                                 @error('name') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Correo Electrónico</label>
-                                <input type="email" name="email" class="form-control" placeholder="usuario@yura.com" value="{{ old('email') }}" required>
+                                <input type="email" name="email" class="form-control js-user-field" data-rule="email" placeholder="usuario@yura.com" value="{{ old('email') }}" required>
+                                <small class="invalid-feedback"></small>
                                 @error('email') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -58,7 +60,8 @@
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Teléfono (Opcional)</label>
-                                <input type="text" name="telefono" class="form-control" placeholder="+591 ..." value="{{ old('telefono') }}">
+                                <input type="tel" name="telefono" class="form-control js-user-field" data-rule="phone" inputmode="tel" placeholder="+591 ..." value="{{ old('telefono') }}">
+                                <small class="invalid-feedback"></small>
                             </div>
                         </div>
                     </div>
@@ -72,8 +75,9 @@
 
                     <div class="form-group mb-3">
                         <label>Contraseña Temporal</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <input type="password" name="password" class="form-control js-user-field" data-rule="password" required>
                         <small class="text-muted">Mínimo 8 caracteres, incluir mayúsculas, números y símbolos.</small>
+                        <small class="invalid-feedback"></small>
                         @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -87,4 +91,7 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script src="{{ asset('js/user-form-validation.js') }}"></script>
+@endpush
 @endsection

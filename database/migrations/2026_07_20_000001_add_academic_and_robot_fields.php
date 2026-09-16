@@ -11,7 +11,8 @@ return new class extends Migration
         if (Schema::hasTable('users')) {
             Schema::table('users', function (Blueprint $table) {
                 if (!Schema::hasColumn('users', 'main_course_id')) {
-                    $table->foreignId('main_course_id')->nullable()->after('estado')->constrained('courses')->nullOnDelete();
+                    $position = Schema::hasColumn('users', 'estado') ? 'estado' : 'status';
+                    $table->foreignId('main_course_id')->nullable()->after($position)->constrained('courses')->nullOnDelete();
                 }
             });
         }
