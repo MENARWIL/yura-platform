@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('messages.grade_history') . ' - ' . $grade->student->nombre)
+@section('title', __('messages.grade_history') . ' - ' . $student->nombre)
 
 @section('content')
 <div class="animate-fade-in">
@@ -13,8 +13,15 @@
 
         <div class="card-body bg-white p-4">
             <div class="mb-4 p-3 bg-light rounded">
-                <p class="mb-1"><strong>{{ __('messages.student') }}:</strong> {{ $grade->student->nombre }}</p>
-                <p class="mb-0"><strong>{{ __('messages.subject') }}:</strong> {{ $grade->subject_display_name }}</p>
+                <div class="d-flex align-items-center">
+                    @if($student->foto_path)
+                        <img src="{{ asset('storage/' . $student->foto_path) }}" alt="{{ __('messages.photo_of', ['name' => $student->nombre]) }}" class="rounded-circle mr-3" style="width:64px;height:64px;object-fit:cover;">
+                    @endif
+                    <div>
+                        <p class="mb-1"><strong>{{ __('messages.student') }}:</strong> {{ $student->nombre }}</p>
+                        <p class="mb-0"><strong>{{ __('messages.subject') }}:</strong> {{ $grade?->subject_display_name ?? __('messages.na') }}</p>
+                    </div>
+                </div>
             </div>
 
             <div class="table-responsive">
@@ -58,7 +65,7 @@
         </div>
     </div>
 
-    <a href="{{ route('grades.show', $grade->student->id) }}" class="btn btn-secondary mt-3">
+    <a href="{{ route('grades.show', $student->id) }}" class="btn btn-secondary mt-3">
         <i class="fas fa-arrow-left mr-2"></i> {{ __('messages.back') }}
     </a>
 </div>

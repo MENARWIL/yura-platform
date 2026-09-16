@@ -13,6 +13,11 @@
                     </h3>
                 </div>
                 <div class="card-body bg-white p-4">
+                    @if($student->foto_path)
+                        <div class="text-center mb-4">
+                            <img src="{{ asset('storage/' . $student->foto_path) }}" alt="{{ __('messages.photo_of', ['name' => $student->nombre]) }}" class="rounded-circle shadow-sm" style="width:110px;height:110px;object-fit:cover;">
+                        </div>
+                    @endif
                     <div class="row mb-4">
                         <div class="col-md-3">
                             <p class="text-muted small text-uppercase font-weight-bold mb-1">{{ __('messages.level') }}</p>
@@ -61,7 +66,7 @@
                                     <td><small class="text-muted">{{ $grade->type ?? __('messages.na') }}</small></td>
                                     <td><small class="text-muted">{{ Str::limit($grade->observations ?? __('messages.na'), 30) }}</small></td>
                                     <td class="text-right">
-                                        @if(!auth()->user()->isAcademic())
+                                        @if(auth()->user()->isProfesor())
                                             <button class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#editGradeModal{{ $grade->id }}" title="{{ __('messages.edit_grade') }}">
                                                 <i class="fas fa-edit"></i>
                                             </button>
@@ -123,7 +128,7 @@
     </a>
 </div>
 
-@if(!auth()->user()->isAcademic())
+@if(auth()->user()->isProfesor())
 @forelse($grades as $grade)
 <!-- Edit Modal -->
 <div class="modal fade" id="editGradeModal{{ $grade->id }}" tabindex="-1">

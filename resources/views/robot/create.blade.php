@@ -31,14 +31,14 @@
                     </div>
 
                     <div class="form-group col-md-6">
-                        <label class="text-muted small text-uppercase font-weight-bold">Curso / Materia</label>
-                        <select name="course_id" class="form-control form-control-lg rounded-pill @error('course_id') is-invalid @enderror" required>
+                        <label class="text-muted small text-uppercase font-weight-bold">Asignatura</label>
+                        <select name="subject_id" class="form-control form-control-lg rounded-pill @error('subject_id') is-invalid @enderror" required>
                             <option value="">Selecciona una materia</option>
-                            @foreach(\App\Models\Course::all() as $course)
-                                <option value="{{ $course->id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>{{ $course->name }}</option>
+                            @foreach($subjects as $subject)
+                                <option value="{{ $subject->id }}" {{ old('subject_id') == $subject->id ? 'selected' : '' }}>{{ $subject->name }}</option>
                             @endforeach
                         </select>
-                        @error('course_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                        @error('subject_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
