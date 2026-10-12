@@ -13,7 +13,6 @@ use App\Models\Subject;
 use App\Models\TeachingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class GradeController extends Controller
 {
@@ -57,15 +56,6 @@ class GradeController extends Controller
 
         $students = $query->get();
         $studentIds = $students->pluck('id')->all();
-        $today = now()->toDateString();
-
-        $todayAttendance = Attendance::whereIn('student_id', $studentIds)
-            ->when($selectedSubjectId, function ($query) use ($selectedSubjectId) {
-                return $query->where('subject_id', $selectedSubjectId);
-            })
-            ->whereDate('date', $today)
-            ->get()
-            ->keyBy('student_id');
 
         $gradesByStudent = Grade::whereIn('student_id', $studentIds)
             ->where('status', 'completed')
@@ -81,18 +71,63 @@ class GradeController extends Controller
                 })];
             });
 
-        $attendanceStatuses = ['Presente', 'Falta', 'Atraso'];
-        $robotCategories = [
-            'Alimentos',
-            'Colores',
-            'Casa',
-            'Naturaleza',
-            'Familia',
-            'Herramientas',
-            'Lugares',
-        ];
+        return view('grades.index', compact('students', 'subjects', 'parallels', 'selectedSubjectId', 'selectedParallelId', 'selectedQuarter', 'gradesByStudent'));
+    }
 
-        return view('grades.index', compact('students', 'subjects', 'parallels', 'selectedSubjectId', 'selectedParallelId', 'selectedQuarter', 'attendanceStatuses', 'robotCategories', 'todayAttendance', 'gradesByStudent'));
+    public function exportPdf(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user->isAdmin() && !$user->isAcademic() && !$user->isProfesor()) {
+            abort(403, __('messages.unauthorized'));
+        }
+
+        $selectedSubjectId = $request->integer('subject_id');
+        $selectedParallelId = $request->integer('parallel_id');
+        $selectedQuarter = $request->input('quarter', 1);
+
+        $subject = $selectedSubjectId ? Subject::find($selectedSubjectId) : null;
+        $parallel = $selectedParallelId ? Parallel::with('course')->find($selectedParallelId) : null;
+
+        $query = Student::with(['parent', 'teacher', 'parallel']);
+
+        if ($user->isProfesor()) {
+            $query->where('teacher_user_id', $user->id)
+                ->when($selectedParallelId, function ($query) use ($selectedParallelId) {
+                    return $query->where('parallel_id', $selectedParallelId);
+                });
+        } elseif ($selectedParallelId) {
+            $query->where('parallel_id', $selectedParallelId);
+        }
+
+        $students = $query->get();
+        $studentIds = $students->pluck('id')->all();
+
+        $gradesByStudent = Grade::whereIn('student_id', $studentIds)
+            ->where('status', 'completed')
+            ->where('quarter', $selectedQuarter)
+            ->when($selectedSubjectId, function ($query) use ($selectedSubjectId) {
+                return $query->where('subject_id', $selectedSubjectId);
+            })
+            ->get()
+            ->groupBy('student_id')
+            ->mapWithKeys(function ($grades, $studentId) {
+                return [$studentId => $grades->groupBy('type')->map(function ($typeGrades) {
+                    return $typeGrades->keyBy('activity_number');
+                })];
+            });
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.grades_pdf', compact(
+            'students',
+            'gradesByStudent',
+            'subject',
+            'parallel',
+            'selectedQuarter'
+        ));
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->download('cuaderno_pedagogico_' . date('Ymd_His') . '.pdf');
     }
 
     public function show(Student $student)
@@ -104,7 +139,8 @@ class GradeController extends Controller
             && (TeachingAssignment::where('teacher_user_id', $user->id)
                 ->where('parallel_id', $student->parallel_id)
                 ->where('active', true)
-                ->exists() || (int) $student->teacher_user_id === (int) $user->id))) {
+                ->exists() || (int) $student->teacher_user_id === (int) $user->id))
+            && !($user->isResponsibleRole() && $user->isFamilyOf($student))) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -125,7 +161,8 @@ class GradeController extends Controller
             && (TeachingAssignment::where('teacher_user_id', $user->id)
                 ->where('parallel_id', $student->parallel_id)
                 ->where('active', true)
-                ->exists() || (int) $student->teacher_user_id === (int) $user->id))) {
+                ->exists() || (int) $student->teacher_user_id === (int) $user->id))
+            && !($user->isResponsibleRole() && $user->isFamilyOf($student))) {
             abort(403, __('messages.unauthorized'));
         }
 
@@ -282,12 +319,32 @@ class GradeController extends Controller
 
         $data = $request->validate([
             'student_id' => 'required|integer|exists:students,id',
-            'type' => 'required|string|in:activity,exam,robot',
-            'activity_number' => 'required|integer|min:1|max:3',
+            // activity = dimensión SER, exam = dimensión SABER, robot = dimensión HACER,
+            // autoeval = autoevaluación del estudiante (cuaderno pedagógico SER/SABER/HACER).
+            'type' => 'required|string|in:activity,exam,robot,autoeval',
+            'activity_number' => 'required|integer|min:1|max:5',
             'quarter' => 'required|integer|in:1,2,3',
-            'score' => 'required|numeric|min:0|max:100',
+            'score' => 'required|numeric|min:0',
             'subject_id' => 'required|integer|exists:subjects,id',
         ]);
+
+        if ($data['type'] === 'robot') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Las calificaciones HACER se registran al recibir los resultados de una actividad Yura.',
+            ], 422);
+        }
+
+        // La autoevaluación se califica directamente sobre 5 puntos; el resto de
+        // columnas (SER/SABER/HACER) se ingresan en escala 0-100 y se escalan
+        // a los puntos de su dimensión al mostrarse en el cuaderno.
+        $maxScore = $data['type'] === 'autoeval' ? 5 : 100;
+        if ($data['score'] > $maxScore) {
+            return response()->json([
+                'success' => false,
+                'message' => "La nota no puede superar {$maxScore} puntos para este campo.",
+            ], 422);
+        }
 
         $student = Student::findOrFail($data['student_id']);
         if (! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
@@ -394,139 +451,6 @@ class GradeController extends Controller
             'message' => 'Scores updated successfully.',
             'grades' => $updatedGrades,
         ]);
-    }
-
-    public function history(Grade $grade)
-    {
-        /** @var User $user */
-        $user = Auth::user();
-        $student = $grade->student;
-
-        if (! $user || (! $user->isAdmin() && ! $user->isAcademic() && ! ($user->isProfesor()
-            && TeachingAssignment::where('teacher_user_id', $user->id)->where('parallel_id', $student->parallel_id)->where('active', true)->exists()))) {
-            abort(403, __('messages.unauthorized'));
-        }
-
-        $history = GradeHistory::where('grade_id', $grade->id)
-            ->with('user')
-            ->latest()
-            ->paginate(10);
-
-        return view('grades.history', compact('student', 'grade', 'history'));
-    }
-
-    public function createRobotActivity()
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        if (! $user->isProfesor()) {
-            abort(403, __('messages.unauthorized'));
-        }
-
-        $parallels = Parallel::with('course')->get();
-        $subjects = Subject::where('active', true)->orderBy('sort_order')->orderBy('name')->get();
-        $categories = [
-            'Alimentos' => 'robot_alimentos',
-            'Colores' => 'robot_colores',
-            'Elementos de Casa' => 'robot_casa_items',
-            'Elementos Naturales' => 'robot_naturaleza_items',
-            'Familia' => 'robot_familia_items',
-            'Herramientas' => 'robot_herramientas_items',
-            'Lugares' => 'robot_lugares_items',
-        ];
-
-        return view('robot.create', compact('parallels', 'subjects', 'categories'));
-    }
-
-    public function storeRobotActivity(Request $request)
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        if (! $user->isProfesor()) {
-            abort(403, __('messages.unauthorized'));
-        }
-
-        $request->validate([
-            'parallel_id' => 'required|exists:parallels,id',
-            'subject_id' => 'required|exists:subjects,id',
-            'category' => 'required|string|in:Alimentos,Colores,Elementos de Casa,Elementos Naturales,Familia,Herramientas,Lugares',
-            'description' => 'nullable|string|max:500',
-        ]);
-
-        $parallel = Parallel::with('students')->findOrFail($request->parallel_id);
-        if (! TeachingAssignment::where('teacher_user_id', $user->id)
-            ->where('subject_id', $request->subject_id)
-            ->where('parallel_id', $parallel->id)
-            ->where('active', true)
-            ->exists()) {
-            abort(403, __('messages.unauthorized'));
-        }
-        if ($parallel->students->isEmpty()) {
-            return back()->with('error', 'No se pudo crear la actividad porque el paralelo no tiene estudiantes registrados.');
-        }
-
-        $robotActivityId = (string) Str::uuid();
-        foreach ($parallel->students as $student) {
-            Grade::create([
-                'student_id' => $student->id,
-                'subject_id' => $request->subject_id,
-                'score' => 0,
-                'type' => 'robot',
-                'observations' => $request->description,
-                'status' => 'pending',
-                'activity_category' => $request->category,
-                'is_robot_activity' => true,
-                'robot_activity_id' => $robotActivityId,
-            ]);
-        }
-
-        return redirect()->route('grades.index')->with('success', 'Actividad de YURA registrada en estado pendiente.');
-    }
-
-    public function saveAttendance(Request $request)
-    {
-        /** @var User $user */
-        $user = Auth::user();
-
-        if (! $user->isProfesor()) {
-            abort(403, __('messages.unauthorized'));
-        }
-
-        $data = $request->validate([
-            'student_id' => 'required|integer|exists:students,id',
-            'subject_id' => 'required|integer|exists:subjects,id',
-            'status' => 'required|string',
-            'date' => 'required|date',
-        ]);
-
-        $student = Student::findOrFail($data['student_id']);
-        if (! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
-            abort(403, __('messages.unauthorized'));
-        }
-
-        try {
-            Attendance::updateOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'subject_id' => $data['subject_id'],
-                    'date' => $data['date'],
-                ],
-                [
-                    'status' => $data['status'],
-                ]
-            );
-
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            // Log the exception for debugging (optional)
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
     }
 
     private function hasTeachingAssignment(User $user, Student $student, int $subjectId): bool

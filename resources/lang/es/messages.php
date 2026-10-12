@@ -182,5 +182,13 @@ return [
     'grade_updated' => 'Calificación actualizada correctamente.',
     'unauthorized' => 'No autorizado',
     'no_history' => 'Sin cambios registrados',
+    'launch_robot_activity' => 'Lanzar Actividad al Robot YURA',
+    'academic_management' => 'Gestión Académica',
+    'pedagogical_notebook' => 'Cuaderno Pedagógico',
+    'courses_parallels' => 'Cursos y Paralelos',
+    'subjects' => 'Asignaturas',
+    'teachers' => 'Profesores',
+    'teaching_assignments' => 'Asignaciones docentes',
+    'system_audit' => 'Auditoría del Sistema',
 ];
 

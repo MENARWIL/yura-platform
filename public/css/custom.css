@@ -1,30 +1,70 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap');
 
+/* =====================================================================
+   YURA - Paleta institucional ROJO / BLANCO / AZUL
+   Azul domina, rojo es acento, blanco es superficie.
+   ===================================================================== */
 :root {
-    --primary-light: #d9f3df;
-    --primary-main: #9bd7ad;
-    --primary-dark: #5eaa78;
-    --secondary-main: #a90329;
-    --accent-main: #69c7bd;
-    --bg-dark: #1a1a2e;
-    --bg-glass: rgba(255, 255, 255, 0.7);
-    --bg-glass-dark: rgba(26, 26, 46, 0.85);
-    --border-glass: rgba(255, 255, 255, 0.3);
-    --text-main: #2d3436;
-    --text-white: #ffffff;
-    --shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    --shadow-premium: 0 15px 35px rgba(0, 0, 0, 0.1);
+    --yura-blue: #0B3D91;
+    --yura-blue-dark: #082C6C;
+    --yura-blue-light: #E7EEF9;
+    --yura-red: #C8102E;
+    --yura-red-dark: #9E0B24;
+    --yura-red-light: #FCE8EB;
+    --yura-white: #FFFFFF;
+    --yura-bg: #F4F6FA;
+    --yura-text: #1F2937;
+    --yura-muted: #5B6474;
+    --yura-border: #DDE3EC;
+    --yura-tricolor: linear-gradient(90deg, #C8102E 0 33.33%, #FFFFFF 33.33% 66.66%, #0B3D91 66.66% 100%);
+
+    /* Botones: "azul de accion" vivo, distinto del azul marino institucional */
+    --yura-action: #1E56D6;
+    --yura-action-top: #2F6FED;
+    --yura-action-hover: #1847B5;
+    --yura-action-soft: #EEF3FD;
+    --yura-action-border: #C9D6F2;
+    --yura-action-ring: rgba(47, 111, 237, 0.35);
+    --yura-action-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 6px 16px -4px rgba(30, 86, 214, 0.45);
+
+    /* Semantica (se conserva el significado) */
+    --yura-amber: #F2B705;
+    --yura-amber-text: #8A5A00;
+
+    /* Nombres heredados: re-apuntados a la nueva paleta */
+    --primary-light: var(--yura-blue-light);
+    --primary-main: var(--yura-blue);
+    --primary-dark: var(--yura-blue-dark);
+    --secondary-main: var(--yura-red);
+    --accent-main: var(--yura-red);
+    --bg-dark: var(--yura-blue-dark);
+    --bg-glass: var(--yura-white);
+    --bg-glass-dark: var(--yura-blue-dark);
+    --border-glass: var(--yura-border);
+    --text-main: var(--yura-text);
+    --text-white: var(--yura-white);
+    --shadow-soft: 0 6px 20px rgba(8, 44, 108, 0.10);
+    --shadow-premium: 0 10px 28px rgba(8, 44, 108, 0.08);
 }
 
 body {
     font-family: 'Outfit', sans-serif !important;
-    background-color: #f0f2f5;
-    color: var(--text-main);
+    background-color: var(--yura-bg);
+    color: var(--yura-text);
+}
+
+a {
+    color: var(--yura-blue);
+}
+
+a:hover,
+a:focus {
+    color: var(--yura-blue-dark);
 }
 
 /* Auth Pages Style */
 .auth-page-bg {
-    background: linear-gradient(rgba(26, 26, 46, 0.7), rgba(169, 3, 41, 0.4)), url('../img/yura_bg.png');
+    background: linear-gradient(rgba(8, 44, 108, 0.78), rgba(11, 61, 145, 0.55)), url('../img/yura_bg.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -45,43 +85,320 @@ body {
     padding: 20px;
 }
 
-/* Main Layout Improvements */
-.main-sidebar {
-    background: var(--bg-glass-dark) !important;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-right: 1px solid var(--border-glass) !important;
+/* ---------------------------------------------------------------------
+   Navbar superior (azul institucional + franja tricolor)
+   --------------------------------------------------------------------- */
+.main-header.navbar {
+    background: var(--yura-blue) !important;
+    border-top: 4px solid transparent;
+    border-image: var(--yura-tricolor) 1;
+    border-bottom: 0 !important;
 }
 
-.brand-link {
-    border-bottom: 1px solid var(--border-glass) !important;
+.main-header.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.main-header.navbar .nav-link:hover,
+.main-header.navbar .nav-link:focus {
+    color: var(--yura-white) !important;
+}
+
+.main-header .dropdown-menu .dropdown-item:active,
+.main-header .dropdown-menu .dropdown-item.active {
+    background-color: var(--yura-blue);
+    color: var(--yura-white);
+}
+
+.btn-yura-logout {
+    background: var(--yura-red) !important;
+    color: var(--yura-white) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.btn-yura-logout:hover,
+.btn-yura-logout:focus {
+    background: var(--yura-red-dark) !important;
+    color: var(--yura-white) !important;
+    transform: none;
+}
+
+/* ---------------------------------------------------------------------
+   Sidebar
+   --------------------------------------------------------------------- */
+.main-sidebar,
+.main-sidebar.bg-dark {
+    background: linear-gradient(180deg, var(--yura-blue-dark) 0%, #072659 100%) !important;
+    border-right: 0 !important;
+}
+
+.main-sidebar .brand-link {
+    background: var(--yura-blue-dark);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
     padding: 15px 20px !important;
+    color: var(--yura-white);
 }
 
-.nav-sidebar .nav-link.active {
-    background: linear-gradient(45deg, var(--primary-main), var(--accent-main)) !important;
-    color: #18352a !important;
-    box-shadow: 0 4px 15px rgba(105, 199, 189, 0.3);
-    border-radius: 12px;
+.main-sidebar .brand-link:hover {
+    color: var(--yura-white);
+}
+
+.main-sidebar .border-secondary,
+.main-sidebar .user-panel {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.yura-avatar {
+    background: var(--yura-red) !important;
+    color: var(--yura-white) !important;
+}
+
+.yura-role-badge {
+    background-color: var(--yura-white) !important;
+    color: var(--yura-blue) !important;
+}
+
+.main-sidebar .nav-header {
+    color: rgba(255, 255, 255, 0.6) !important;
 }
 
 .nav-sidebar .nav-link {
-    border-radius: 12px;
+    border-radius: 8px;
     margin-bottom: 5px;
-    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.main-sidebar .nav-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.main-sidebar .nav-sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--yura-white);
+}
+
+.nav-sidebar .nav-link.active,
+.nav-pills.nav-sidebar .nav-link.active,
+.main-sidebar .nav-sidebar > .nav-item > .nav-link.active {
+    background: var(--yura-blue) !important;
+    color: var(--yura-white) !important;
+    border-left-color: var(--yura-red);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    border-radius: 8px;
 }
 
 .content-wrapper {
-    background: #f4f7f6 !important;
+    background: var(--yura-bg) !important;
+}
+
+.content-header h1 {
+    color: var(--yura-blue);
+}
+
+/* ---------------------------------------------------------------------
+   Bootstrap / AdminLTE: primario azul, peligro rojo
+   --------------------------------------------------------------------- */
+.bg-primary,
+.badge-primary {
+    background-color: var(--yura-blue) !important;
+    color: var(--yura-white) !important;
+}
+
+.text-primary {
+    color: var(--yura-blue) !important;
+}
+
+.border-primary {
+    border-color: var(--yura-blue) !important;
+}
+
+/* =====================================================================
+   BOTONES - sistema moderno
+   Principal: azul de accion solido. Sobre fondo azul: blanco invertido.
+   Contorno/secundario: blanco con borde fino. Rojo solo para peligro.
+   ===================================================================== */
+.btn {
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background-color .18s ease, box-shadow .18s ease, transform .18s ease, color .18s ease;
+}
+
+.btn-primary,
+.btn-info {
+    background: linear-gradient(180deg, var(--yura-action-top) 0%, var(--yura-action) 100%);
+    border: 1px solid var(--yura-action);
+    color: var(--yura-white);
+    box-shadow: var(--yura-action-shadow);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-info:hover,
+.btn-info:focus {
+    background: var(--yura-action-hover);
+    border-color: var(--yura-action-hover);
+    color: var(--yura-white);
+    transform: translateY(-1px);
+}
+
+.btn-primary:not(:disabled):not(.disabled):active,
+.btn-primary:not(:disabled):not(.disabled).active,
+.btn-info:not(:disabled):not(.disabled):active {
+    background: var(--yura-action-hover);
+    border-color: var(--yura-action-hover);
+    color: var(--yura-white);
+    transform: translateY(0);
+}
+
+.btn:focus-visible,
+.btn-primary:focus,
+.btn-info:focus,
+.btn-outline-primary:focus,
+.btn-outline-info:focus {
+    box-shadow: 0 0 0 3px var(--yura-action-ring) !important;
+}
+
+.btn-outline-primary,
+.btn-outline-info {
+    color: var(--yura-action);
+    border: 1px solid var(--yura-action-border);
+    background-color: var(--yura-white);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:not(:disabled):not(.disabled):active,
+.btn-outline-info:hover,
+.btn-outline-info:not(:disabled):not(.disabled):active {
+    background-color: var(--yura-action-soft);
+    border-color: var(--yura-action);
+    color: var(--yura-action-hover);
+}
+
+/* Secundarios (Cancelar / Volver): neutros */
+.btn-secondary,
+.btn-outline-secondary {
+    background-color: var(--yura-white);
+    border: 1px solid var(--yura-border);
+    color: var(--yura-text);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    background-color: var(--yura-bg);
+    border-color: #C3CCD9;
+    color: var(--yura-blue-dark);
+}
+
+.bg-danger,
+.badge-danger {
+    background-color: var(--yura-red) !important;
+    color: var(--yura-white) !important;
+}
+
+.text-danger {
+    color: var(--yura-red) !important;
+}
+
+.border-danger {
+    border-color: var(--yura-red) !important;
+}
+
+.btn-danger {
+    background-color: var(--yura-red);
+    border-color: var(--yura-red);
+    color: var(--yura-white);
+}
+
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:not(:disabled):not(.disabled):active {
+    background-color: var(--yura-red-dark);
+    border-color: var(--yura-red-dark);
+    color: var(--yura-white);
+}
+
+.btn-outline-danger {
+    color: var(--yura-red);
+    border-color: var(--yura-red);
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--yura-red);
+    border-color: var(--yura-red);
+    color: var(--yura-white);
+}
+
+.alert-danger {
+    background-color: var(--yura-red-light);
+    border-color: #F5C2CA;
+    color: var(--yura-red-dark);
+}
+
+.alert-info {
+    background-color: var(--yura-blue-light);
+    border-color: #C5D5EE;
+    color: var(--yura-blue-dark);
+}
+
+.card-primary:not(.card-outline) > .card-header {
+    background-color: var(--yura-blue);
+    color: var(--yura-white);
+}
+
+.card-primary.card-outline {
+    border-top: 3px solid var(--yura-blue);
+}
+
+.card-danger.card-outline {
+    border-top: 3px solid var(--yura-red);
+}
+
+.page-link {
+    color: var(--yura-blue);
+}
+
+.page-link:hover {
+    color: var(--yura-blue-dark);
+    background-color: var(--yura-blue-light);
+}
+
+.page-item.active .page-link {
+    background-color: var(--yura-blue);
+    border-color: var(--yura-blue);
+    color: var(--yura-white);
+}
+
+.form-control:focus,
+.custom-select:focus {
+    border-color: var(--yura-blue);
+    box-shadow: 0 0 0 0.2rem rgba(11, 61, 145, 0.15);
+}
+
+.custom-control-input:checked ~ .custom-control-label::before {
+    background-color: var(--yura-blue);
+    border-color: var(--yura-blue);
+}
+
+.progress-bar {
+    background-color: var(--yura-blue);
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+    background-color: var(--yura-blue);
+    color: var(--yura-white);
 }
 
 /* Premium Cards */
 .card-quechua {
-    background: var(--bg-glass) !important;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 20px !important;
-    border: 1px solid var(--border-glass) !important;
+    background: var(--yura-white) !important;
+    border-radius: 16px !important;
+    border: 1px solid var(--yura-border) !important;
     box-shadow: var(--shadow-premium) !important;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -89,15 +406,17 @@ body {
 
 .card-quechua:hover {
     transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+    box-shadow: 0 16px 32px rgba(8, 44, 108, 0.12) !important;
 }
 
 .card-header-quechua {
-    background: linear-gradient(135deg, var(--bg-dark), var(--secondary-main)) !important;
-    color: white !important;
+    background: linear-gradient(135deg, var(--yura-blue), var(--yura-blue-dark)) !important;
+    color: var(--yura-white) !important;
     padding: 20px !important;
     border: none !important;
+    border-bottom: 3px solid var(--yura-red) !important;
 }
+
 
 /* Table Styling */
 .table {
@@ -107,7 +426,8 @@ body {
 
 .table thead th {
     border: none !important;
-    color: #636e72;
+    background-color: var(--yura-blue-light);
+    color: var(--yura-blue);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
@@ -115,15 +435,15 @@ body {
 }
 
 .table tbody tr {
-    background: #fff;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    background: var(--yura-white);
+    box-shadow: 0 2px 10px rgba(8, 44, 108, 0.03);
     border-radius: 12px;
     transition: transform 0.2s ease;
 }
 
 .table tbody tr:hover {
     transform: scale(1.01);
-    background-color: #fff !important;
+    background-color: var(--yura-white) !important;
 }
 
 .table td {
@@ -136,9 +456,9 @@ body {
 
 /* Dashboard Widgets */
 .small-box {
-    border-radius: 20px !important;
+    border-radius: 16px !important;
     overflow: hidden;
-    border: 1px solid var(--border-glass) !important;
+    border: 1px solid var(--yura-border) !important;
     transition: all 0.3s ease;
 }
 
@@ -152,41 +472,70 @@ body {
 
 /* Custom Buttons */
 .btn-quechua {
-    background: linear-gradient(45deg, var(--primary-main), var(--accent-main));
-    border: none;
-    color: #18352a;
-    font-weight: 700;
-    padding: 10px 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(105, 199, 189, 0.2);
-    transition: all 0.3s ease;
+    background: linear-gradient(180deg, var(--yura-action-top) 0%, var(--yura-action) 100%);
+    border: 1px solid var(--yura-action);
+    color: var(--yura-white);
+    font-weight: 600;
+    padding: 10px 22px;
+    border-radius: 10px;
+    box-shadow: var(--yura-action-shadow);
 }
 
-.btn-quechua:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(105, 199, 189, 0.4);
-    color: #18352a;
+.btn-quechua:hover,
+.btn-quechua:focus {
+    background: var(--yura-action-hover);
+    border-color: var(--yura-action-hover);
+    transform: translateY(-1px);
+    color: var(--yura-white);
 }
 
-/* Robot palette: soft green replaces the former yellow warning/gold accents. */
+/* Sobre cabeceras azules: boton blanco invertido (maximo contraste) */
+.card-header-quechua .btn-primary,
+.card-header-quechua .btn-quechua,
+.card-header-quechua .btn-info {
+    background: var(--yura-white);
+    border-color: var(--yura-white);
+    color: var(--yura-blue);
+    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.35);
+}
+.card-header-quechua .btn-primary:hover,
+.card-header-quechua .btn-quechua:hover,
+.card-header-quechua .btn-info:hover {
+    background: var(--yura-action-soft);
+    border-color: var(--yura-action-soft);
+    color: var(--yura-blue-dark);
+}
+
+/* Advertencia: se mantiene ambar (significado semantico). */
 .bg-warning,
 .badge-warning,
-.btn-warning,
-.badge-quechua-gold {
-    background-color: var(--primary-main) !important;
-    border-color: var(--primary-dark) !important;
-    color: #18352a !important;
+.btn-warning {
+    background-color: var(--yura-amber) !important;
+    border-color: var(--yura-amber) !important;
+    color: var(--yura-text) !important;
 }
 
-.text-warning,
-.text-quechua-gold,
+.text-warning {
+    color: var(--yura-amber-text) !important;
+}
+
 .border-warning {
-    color: var(--primary-dark) !important;
-    border-color: var(--primary-dark) !important;
+    border-color: var(--yura-amber) !important;
 }
 
 .progress-bar.bg-warning {
-    background-color: var(--primary-dark) !important;
+    background-color: var(--yura-amber) !important;
+}
+
+/* Insignia institucional (nivel / curso): azul suave. */
+.badge-quechua-gold {
+    background-color: var(--yura-blue-light) !important;
+    border: 1px solid #C5D5EE;
+    color: var(--yura-blue) !important;
+}
+
+.text-quechua-gold {
+    color: var(--yura-blue) !important;
 }
 
 /* Animations */
@@ -195,6 +544,15 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* No `forwards` fill-mode on purpose: once the 0.6s animation ends, the
+   element must fall back to its un-animated `transform` (which is `none`,
+   since this class sets none on its own). Animating `transform` with
+   `forwards` always leaves a resolved matrix (never the literal `none`)
+   even when the keyframe target is `translateY(0)`/`none`, and any
+   non-`none` transform on an ancestor breaks `position: fixed` for
+   descendants (e.g. Bootstrap modals), trapping them inside the page flow
+   instead of floating over the whole viewport. `opacity`'s un-animated
+   fallback is already 1, so dropping `forwards` causes no visible flicker. */
 .animate-fade-in {
-    animation: fadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    animation: fadeIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
 }

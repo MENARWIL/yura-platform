@@ -32,7 +32,7 @@ class DashboardController extends Controller
             $data['total_profesores'] = User::ofRole('profesor')->count();
             $data['total_padres'] = User::ofRole(['padre', 'madre', 'tutor'])->count();
             $data['recientes'] = Student::when($selectedCourseId, function ($q) use ($selectedCourseId) { return $q->where('course_id', $selectedCourseId); })->with('padre')->latest()->take(5)->get();
-        } elseif ($user->isTutor()) {
+        } elseif ($user->isResponsibleRole()) {
             $parentForeignKey = (new Student())->getParentUserForeignKey();
 
             $children = Student::where(function ($query) use ($parentForeignKey, $user) {
@@ -146,9 +146,11 @@ class DashboardController extends Controller
                 'avanzado' => $students->where($levelColumn, 'avanzado')->count(),
             ];
         } elseif ($user->isEstudiante()) {
+            // Computed from real grades/attendance (Student::real*()) instead of the
+            // legacy static columns, which are not kept in sync.
             $data['mi_estudiante'] = $user->studentProfile()->with(['profesor', 'padre'])->first();
-            $data['mi_promedio'] = $data['mi_estudiante']?->promedio ?? 0;
-            $data['mi_asistencia'] = $data['mi_estudiante']?->attendance ?? 0;
+            $data['mi_promedio'] = $data['mi_estudiante']?->realOverallAverage() ?? 0;
+            $data['mi_asistencia'] = $data['mi_estudiante']?->realAttendancePercent() ?? 0;
             $data['mi_profesor'] = $data['mi_estudiante']?->profesor?->name;
             $data['mi_nivel'] = $data['mi_estudiante']?->level;
         } else {
@@ -161,7 +163,8 @@ class DashboardController extends Controller
                 ->with('profesor')
                 ->get()
                 ->map(function ($student) {
-                    $student->promedio = $student->promedio ?? 0;
+                    // Computed from real grades instead of the legacy static column.
+                    $student->promedio = $student->realOverallAverage() ?? 0;
 
                     return $student;
                 });
@@ -170,11 +173,26 @@ class DashboardController extends Controller
 
         $data['total_students'] = $selectedCourseId ? Student::where('course_id', $selectedCourseId)->count() : $totalStudents;
         $data['total_courses'] = $totalCourses;
-        // Mock metrics for dashboard cards
-        $data['today_attendance'] = '94%';
-        $data['robot_challenges'] = 12;
-        $data['role'] = $user->rol;
-        $data['rol'] = $user->rol;
+
+        // Metrics for dashboard cards, calculated from real data.
+        $todaysAttendance = \App\Models\Attendance::whereDate('date', today())->get();
+        $todaysAttendanceTotal = $todaysAttendance->count();
+        $todaysAttendancePresent = $todaysAttendance->filter(
+            fn ($attendance) => strtolower(trim((string) $attendance->status)) === 'presente'
+        )->count();
+        // No hay registros de asistencia hoy: se muestra 0% en vez de un porcentaje inventado.
+        $data['today_attendance'] = $todaysAttendanceTotal
+            ? round(($todaysAttendancePresent / $todaysAttendanceTotal) * 100) . '%'
+            : '0%';
+
+        // Retos de robot lanzados este mes (no el histórico total), para reflejar la actividad reciente del aula.
+        $data['robot_challenges'] = \App\Models\Grade::where('is_robot_activity', true)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+
+        $data['role'] = $user->role;
+        $data['rol'] = $user->role;
 
         return view('dashboard', compact('data', 'courses', 'selectedCourseId'));
     }

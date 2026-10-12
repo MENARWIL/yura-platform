@@ -23,6 +23,7 @@ class RobotUserSeeder extends Seeder
             ]
         );
 
+        $robot->tokens()->delete();
         $token = $robot->createToken('robot-api-token')->plainTextToken;
 
         $this->command->info("Robot API token: {$token}");

@@ -26,6 +26,9 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
+        'second_last_name',
         'email',
         'password',
         'rol',
@@ -102,24 +105,28 @@ class User extends Authenticatable
     /**
      * Role check helpers.
      */
-    public function getRolAttribute(): ?string
+    public function getRoleAttribute(): ?string
     {
-        return $this->attributes['role'] ?? $this->attributes['rol'] ?? null;
-    }
-
-    public function setRolAttribute(string $value): void
-    {
-        $this->writeCompatAttribute('role', 'rol', $value);
+        return $this->attributes['role'] ?? null;
     }
 
     public function setRoleAttribute(string $value): void
     {
-        $this->writeCompatAttribute('role', 'rol', $value);
+        $this->attributes['role'] = $value;
     }
 
-    public function getRoleAttribute(): ?string
+    // Alias de compatibilidad: la columna legada "rol" fue eliminada (era una
+    // duplicada de "role", confirmada desincronizada en la auditoría de base
+    // de datos). Se mantiene este alias para no romper código que aún llame
+    // ->rol, pero la columna real y única es "role".
+    public function getRolAttribute(): ?string
     {
-        return $this->getRolAttribute();
+        return $this->getRoleAttribute();
+    }
+
+    public function setRolAttribute(string $value): void
+    {
+        $this->setRoleAttribute($value);
     }
 
     public function getPhoneAttribute($value)
@@ -258,7 +265,7 @@ class User extends Authenticatable
 
     public function isResponsibleRole(): bool
     {
-        return in_array($this->rol, ['padre', 'madre', 'tutor'], true);
+        return in_array($this->role, ['padre', 'madre', 'tutor'], true);
     }
 
     public function scopeOfRole($query, array|string $roles)

@@ -21,7 +21,7 @@
                     <div class="row mb-4">
                         <div class="col-md-3">
                             <p class="text-muted small text-uppercase font-weight-bold mb-1">{{ __('messages.level') }}</p>
-                            <p class="h5 font-weight-bold">{{ strtoupper($student->level ?? $student->nivel) }}</p>
+                            <p class="h5 font-weight-bold">{{ mb_strtoupper($student->level ?? $student->nivel, 'UTF-8') }}</p>
                         </div>
                         <div class="col-md-3">
                             <p class="text-muted small text-uppercase font-weight-bold mb-1">{{ __('messages.age') }}</p>
@@ -123,13 +123,13 @@
         </div>
     </div>
 
-    <a href="{{ auth()->user()->isAcademic() ? route('students.index') : route('grades.index') }}" class="btn btn-secondary">
+    <a href="{{ (auth()->user()->isAcademic() || auth()->user()->isResponsibleRole()) ? route('students.index') : route('grades.index') }}" class="btn btn-secondary">
         <i class="fas fa-arrow-left mr-2"></i> {{ __('messages.back') }}
     </a>
 </div>
 
-@if(auth()->user()->isProfesor())
 @forelse($grades as $grade)
+@if(auth()->user()->isProfesor())
 <!-- Edit Modal -->
 <div class="modal fade" id="editGradeModal{{ $grade->id }}" tabindex="-1">
     <div class="modal-dialog">
@@ -165,8 +165,9 @@
         </div>
     </div>
 </div>
+@endif
 
-<!-- History Modal -->
+<!-- History Modal (visible para cualquier rol con acceso a esta ficha: la consulta es de solo lectura) -->
 <div class="modal fade" id="historyModal{{ $grade->id }}" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -217,6 +218,5 @@
 </div>
 @empty
 @endforelse
-@endif
 
 @endsection

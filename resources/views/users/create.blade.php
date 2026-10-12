@@ -13,14 +13,33 @@
                 @csrf
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
-                                <label>Nombre Completo</label>
-                                <input type="text" name="name" class="form-control js-user-field" data-rule="name" placeholder="Ej. Juan Perez" value="{{ old('name') }}" required>
+                                <label>Apellido paterno</label>
+                                <input type="text" name="last_name" class="form-control js-user-field" data-rule="name" placeholder="Ej. Perez" value="{{ old('last_name') }}" required>
                                 <small class="invalid-feedback"></small>
-                                @error('name') <span class="text-danger small">{{ $message }}</span> @enderror
+                                @error('last_name') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label>Apellido materno</label>
+                                <input type="text" name="second_last_name" class="form-control js-user-field" data-rule="name" placeholder="Ej. Gonzales" value="{{ old('second_last_name') }}" required>
+                                <small class="invalid-feedback"></small>
+                                @error('second_last_name') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label>Nombre(s)</label>
+                                <input type="text" name="first_name" class="form-control js-user-field" data-rule="name" placeholder="Ej. Juan" value="{{ old('first_name') }}" required>
+                                <small class="invalid-feedback"></small>
+                                @error('first_name') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Correo Electrónico</label>

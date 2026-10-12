@@ -182,5 +182,13 @@ return [
     'grade_updated' => 'Nota allinllachu ruwachisqa.',
     'unauthorized' => 'Mana llaquichiychu',
     'no_history' => 'Mana cambioschu',
+    'launch_robot_activity' => 'Robot YURA-man Actividad kachay',
+    'academic_management' => 'Yachay kamachiy',
+    'pedagogical_notebook' => 'Yachachiy libro',
+    'courses_parallels' => 'Kursokuna y Paralelokuna',
+    'subjects' => 'Asignaturakuna',
+    'teachers' => 'Yachachiqkuna',
+    'teaching_assignments' => 'Yachachiqpa asignacionninkuna',
+    'system_audit' => 'Sistemap qhawariynin',
 ];
 

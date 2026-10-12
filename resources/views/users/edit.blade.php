@@ -13,15 +13,37 @@
                 @csrf
                 @method('PUT')
                 <div class="card-body">
+                    @if(! $user->last_name && ! $user->first_name)
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle mr-1"></i> Nombre actual registrado: <strong>{{ $user->name }}</strong>. Complete los 3 campos de abajo para dividirlo.</p>
+                    @endif
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
-                                <label>Nombre Completo</label>
-                                <input type="text" name="name" class="form-control js-user-field" data-rule="name" value="{{ old('name', $user->name) }}" required>
+                                <label>Apellido paterno</label>
+                                <input type="text" name="last_name" class="form-control js-user-field" data-rule="name" value="{{ old('last_name', $user->last_name) }}" required>
                                 <small class="invalid-feedback"></small>
-                                @error('name') <span class="text-danger small">{{ $message }}</span> @enderror
+                                @error('last_name') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label>Apellido materno</label>
+                                <input type="text" name="second_last_name" class="form-control js-user-field" data-rule="name" value="{{ old('second_last_name', $user->second_last_name) }}" required>
+                                <small class="invalid-feedback"></small>
+                                @error('second_last_name') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label>Nombre(s)</label>
+                                <input type="text" name="first_name" class="form-control js-user-field" data-rule="name" value="{{ old('first_name', $user->first_name) }}" required>
+                                <small class="invalid-feedback"></small>
+                                @error('first_name') <span class="text-danger small">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label>Correo Electrónico</label>
@@ -37,12 +59,12 @@
                             <div class="form-group mb-3">
                                 <label>Rol del Usuario</label>
                                 <select name="rol" class="form-control" required>
-                                    <option value="padre" {{ old('rol', $user->rol) == 'padre' ? 'selected' : '' }}>Padre</option>
-                                    <option value="madre" {{ old('rol', $user->rol) == 'madre' ? 'selected' : '' }}>Madre</option>
-                                    <option value="tutor" {{ old('rol', $user->rol) == 'tutor' ? 'selected' : '' }}>Tutor</option>
-                                    <option value="profesor" {{ old('rol', $user->rol) == 'profesor' ? 'selected' : '' }}>Profesor</option>
-                                    <option value="admin" {{ old('rol', $user->rol) == 'admin' ? 'selected' : '' }}>Administrador</option>
-                                    <option value="estudiante" {{ old('rol', $user->rol) == 'estudiante' ? 'selected' : '' }}>Estudiante</option>
+                                    <option value="padre" {{ old('rol', $user->role) == 'padre' ? 'selected' : '' }}>Padre</option>
+                                    <option value="madre" {{ old('rol', $user->role) == 'madre' ? 'selected' : '' }}>Madre</option>
+                                    <option value="tutor" {{ old('rol', $user->role) == 'tutor' ? 'selected' : '' }}>Tutor</option>
+                                    <option value="profesor" {{ old('rol', $user->role) == 'profesor' ? 'selected' : '' }}>Profesor</option>
+                                    <option value="admin" {{ old('rol', $user->role) == 'admin' ? 'selected' : '' }}>Administrador</option>
+                                    <option value="estudiante" {{ old('rol', $user->role) == 'estudiante' ? 'selected' : '' }}>Estudiante</option>
                                 </select>
                             </div>
                         </div>

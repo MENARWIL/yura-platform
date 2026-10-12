@@ -25,6 +25,21 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
+
+            /** @var \App\Models\User $authenticatedUser */
+            $authenticatedUser = Auth::user();
+            $userStatus = $authenticatedUser->status ?? $authenticatedUser->estado;
+
+            if (! in_array(strtolower(trim((string) $userStatus)), ['active', 'activo'], true)) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Tu cuenta está suspendida. Contacta al administrador.',
+                ])->onlyInput('email');
+            }
+
             return redirect()->intended('dashboard');
         }
 

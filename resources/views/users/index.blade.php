@@ -51,7 +51,6 @@
                                     @endif
                                     <div>
                                         <span class="font-weight-bold d-block text-dark">{{ $user->name }}</span>
-                                        <small class="text-muted">{{ __('messages.id_label') }}: #{{ $user->id }}</small>
                                     </div>
                                 </div>
                             </td>
@@ -63,7 +62,7 @@
                             </td>
                             <td class="text-center">
                                     <span class="badge badge-light border px-3 py-2 text-uppercase rounded-pill" style="font-size: 0.7rem; letter-spacing: 1px;">
-                                    {{ $user->rol }}
+                                    {{ $user->role }}
                                 </span>
                             </td>
                             <td class="text-center text-muted">{{ optional($user->mainCourse)->name ?? '-' }}</td>
@@ -76,7 +75,7 @@
                             </td>
                             <td class="text-center">
                                     <span class="badge rounded-pill px-3 py-1 {{ $user->estado == 'activo' ? 'bg-success' : 'bg-danger' }}" style="font-size: 0.75rem;">
-                                    {{ strtoupper($user->estado) }}
+                                    {{ mb_strtoupper($user->estado, 'UTF-8') }}
                                 </span>
                             </td>
                             <td class="text-right px-4">
@@ -93,10 +92,10 @@
                                         </button>
                                     </form>
 
-                                    <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar este usuario?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
                                     </form>
                                 </div>
                             </td>

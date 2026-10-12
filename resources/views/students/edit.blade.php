@@ -19,17 +19,38 @@
                         <!-- Left Column -->
                         <div class="col-md-6 border-right pr-md-4">
                             <div class="d-flex align-items-center mb-4">
-                                <div class="bg-warning-light rounded-circle p-2 mr-3" style="background: rgba(155, 215, 173, 0.28);">
-                                    <i class="fas fa-id-badge text-warning"></i>
+                                <div class="bg-warning-light rounded-circle p-2 mr-3" style="background: var(--yura-blue-light);">
+                                    <i class="fas fa-id-badge text-primary"></i>
                                 </div>
                                 <h5 class="mb-0 text-dark font-weight-bold">{{ __('messages.update_profile') }}</h5>
                             </div>
 
-                            <div class="form-group mb-4">
-                                <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.full_name') }}</label>
-                                <input type="text" name="name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('name') is-invalid @enderror" value="{{ old('name', $student->name) }}" required style="font-size: 1rem;">
-                                @error('name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group mb-4">
+                                        <label class="text-muted small text-uppercase font-weight-bold">Apellido paterno</label>
+                                        <input type="text" name="last_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('last_name') is-invalid @enderror" value="{{ old('last_name', $student->last_name) }}" required style="font-size: 1rem;">
+                                        @error('last_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-4">
+                                        <label class="text-muted small text-uppercase font-weight-bold">Apellido materno</label>
+                                        <input type="text" name="second_last_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name', $student->second_last_name) }}" required style="font-size: 1rem;">
+                                        @error('second_last_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group mb-4">
+                                        <label class="text-muted small text-uppercase font-weight-bold">Nombre(s)</label>
+                                        <input type="text" name="first_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('first_name') is-invalid @enderror" value="{{ old('first_name', $student->first_name) }}" required style="font-size: 1rem;">
+                                        @error('first_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
                             </div>
+                            @if(! $student->last_name && ! $student->first_name)
+                                <p class="text-muted small mb-4"><i class="fas fa-info-circle mr-1"></i> Nombre actual registrado: <strong>{{ $student->name }}</strong>. Complete los 3 campos de arriba para dividirlo.</p>
+                            @endif
 
                             <div class="row">
                                 <div class="col-md-6">
@@ -107,7 +128,7 @@
                                 <select name="parent_user_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('parent_user_id') is-invalid @enderror" style="font-size: 1rem;">
                                     @foreach($padres as $padre)
                                         <option value="{{ $padre->id }}" {{ old('parent_user_id', $student->parent_user_id) == $padre->id ? 'selected' : '' }}>
-                                            {{ $padre->name }} ({{ ucfirst($padre->rol) }})
+                                            {{ $padre->name }} ({{ ucfirst($padre->role) }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -141,30 +162,37 @@
                                 @error('teacher_user_id') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                             </div>
 
+                            @php
+                                $realWriting = $student->realWritingScore();
+                                $realExam = $student->realExamScore();
+                                $realAttendance = $student->realAttendancePercent();
+                                $realRobot = $student->realRobotScore();
+                            @endphp
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.writing') }}</label>
-                                        <input type="number" name="writing_score" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $student->writing_score }}" min="0" max="100" readonly tabindex="-1">
+                                        <input type="text" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $realWriting !== null ? $realWriting . '%' : 'Sin datos' }}" readonly tabindex="-1">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.exam') ?? 'Examen' }}</label>
-                                        <input type="number" name="exam_score" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $student->exam_score }}" min="0" max="100" readonly tabindex="-1">
+                                        <input type="text" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $realExam !== null ? $realExam . '%' : 'Sin datos' }}" readonly tabindex="-1">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.attendance_percent') }}</label>
-                                        <input type="number" name="attendance" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $student->attendance }}" min="0" max="100" readonly tabindex="-1">
+                                        <input type="text" class="form-control border-0 bg-light rounded-pill px-3" value="{{ $realAttendance !== null ? $realAttendance . '%' : 'Sin datos' }}" readonly tabindex="-1">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-group mb-0">
                                 <label class="text-muted small text-uppercase font-weight-bold text-warning">{{ __('messages.robot_score') }}</label>
-                                <input type="number" name="score" class="form-control form-control-lg border-0 bg-light rounded-pill px-4" value="{{ $student->score }}" min="0" max="100" readonly tabindex="-1" style="font-size: 1rem;">
+                                <input type="text" class="form-control form-control-lg border-0 bg-light rounded-pill px-4" value="{{ $realRobot !== null ? $realRobot . '%' : 'Sin datos' }}" readonly tabindex="-1" style="font-size: 1rem;">
+                                <small class="text-muted">Estos valores se calculan en tiempo real desde el Cuaderno Pedagógico y el módulo de Asistencia; no se editan aquí.</small>
                             </div>
                         </div>
                     </div>

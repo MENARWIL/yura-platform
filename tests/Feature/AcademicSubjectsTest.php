@@ -48,7 +48,9 @@ class AcademicSubjectsTest extends TestCase
 
         $this->actingAs($admin)
             ->post('/teachers', [
-                'name' => 'Profesora Quechua',
+                'last_name' => 'Quechua',
+                'second_last_name' => 'Apellido',
+                'first_name' => 'Profesora',
                 'email' => 'profesora.quechua@example.test',
                 'password' => 'Password!123',
                 'telefono' => '70000000',

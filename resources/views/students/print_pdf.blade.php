@@ -22,7 +22,7 @@
     <div class="student-info">
         <strong>Código:</strong> {{ $student->id ?? '-' }}<br>
         <strong>Curso:</strong> {{ $student->course ?? '-' }}<br>
-        <strong>Promedio acumulado:</strong> {{ isset($student->promedio_acumulado) ? $student->promedio_acumulado . '%' : '-' }}
+        <strong>Promedio acumulado:</strong> {{ ($realAverage = $student->realOverallAverage()) !== null ? $realAverage . '%' : '-' }}
     </div>
 
     <h4>Notas</h4>

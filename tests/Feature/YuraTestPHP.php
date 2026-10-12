@@ -17,7 +17,14 @@ const YURA_TEACHER_EMAIL = 'prof.vargas@school.bo';
 const YURA_TUTOR_EMAIL = 'juan.quispe@school.bo';
 const YURA_TUTOR_CI = '7894561';
 const YURA_TUTOR_PHONE = '70111222';
-const YURA_STUDENT_NAME = 'María Quispe';
+const YURA_TUTOR_LAST_NAME = 'Quispe';
+const YURA_TUTOR_SECOND_LAST_NAME = 'Mamani';
+const YURA_TUTOR_FIRST_NAME = 'Juan';
+const YURA_TUTOR_FULL_NAME = 'Quispe Mamani Juan';
+const YURA_STUDENT_LAST_NAME = 'Quispe';
+const YURA_STUDENT_SECOND_LAST_NAME = 'Mamani';
+const YURA_STUDENT_FIRST_NAME = 'María';
+const YURA_STUDENT_NAME = 'Quispe Mamani María';
 
 beforeEach(function () {
     $this->admin = User::factory()->create([
@@ -62,8 +69,9 @@ it('inicia sesión con credenciales válidas y redirige al dashboard', function 
 it('registra un tutor activo en users con rol tutor', function () {
     $response = $this->actingAs($this->admin)->post('/tutors', [
         'ci' => YURA_TUTOR_CI,
-        'name' => 'Juan',
-        'lastname' => 'Quispe',
+        'last_name' => YURA_TUTOR_LAST_NAME,
+        'second_last_name' => YURA_TUTOR_SECOND_LAST_NAME,
+        'first_name' => YURA_TUTOR_FIRST_NAME,
         'phone' => YURA_TUTOR_PHONE,
         'email' => YURA_TUTOR_EMAIL,
         'password' => YURA_ADMIN_PASSWORD,
@@ -73,7 +81,7 @@ it('registra un tutor activo en users con rol tutor', function () {
 
     $this->assertDatabaseHas('users', [
         'ci' => YURA_TUTOR_CI,
-        'name' => 'Juan Quispe',
+        'name' => YURA_TUTOR_FULL_NAME,
         'phone' => YURA_TUTOR_PHONE,
         'email' => YURA_TUTOR_EMAIL,
         'role' => 'tutor',
@@ -85,7 +93,9 @@ it('registra un alumno y lo asigna al tutor y al profesor', function () {
     $tutor = registerYuraTutor($this->admin);
 
     $response = $this->actingAs($this->admin)->post('/students', [
-        'name' => YURA_STUDENT_NAME,
+        'last_name' => YURA_STUDENT_LAST_NAME,
+        'second_last_name' => YURA_STUDENT_SECOND_LAST_NAME,
+        'first_name' => YURA_STUDENT_FIRST_NAME,
         'age' => 11,
         'gender' => 'Femenino',
         'level' => 'básico',
@@ -154,8 +164,9 @@ function registerYuraTutor(User $admin): User
 {
     test()->actingAs($admin)->post('/tutors', [
         'ci' => YURA_TUTOR_CI,
-        'name' => 'Juan',
-        'lastname' => 'Quispe',
+        'last_name' => YURA_TUTOR_LAST_NAME,
+        'second_last_name' => YURA_TUTOR_SECOND_LAST_NAME,
+        'first_name' => YURA_TUTOR_FIRST_NAME,
         'phone' => YURA_TUTOR_PHONE,
         'email' => YURA_TUTOR_EMAIL,
         'password' => YURA_ADMIN_PASSWORD,
@@ -169,7 +180,9 @@ function registerYuraStudent(User $admin, User $teacher, Parallel $parallel): St
     $tutor = registerYuraTutor($admin);
 
     test()->actingAs($admin)->post('/students', [
-        'name' => YURA_STUDENT_NAME,
+        'last_name' => YURA_STUDENT_LAST_NAME,
+        'second_last_name' => YURA_STUDENT_SECOND_LAST_NAME,
+        'first_name' => YURA_STUDENT_FIRST_NAME,
         'age' => 11,
         'gender' => 'Femenino',
         'level' => 'básico',

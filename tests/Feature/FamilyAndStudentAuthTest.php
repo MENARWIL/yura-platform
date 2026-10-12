@@ -93,7 +93,9 @@ class FamilyAndStudentAuthTest extends TestCase
         $parallel = Parallel::create(['name' => '1A', 'course_id' => $course->id, 'max_students' => 25]);
 
         $response = $this->actingAs($admin)->post('/students', [
-            'nombre' => 'Maria del Sol',
+            'last_name' => 'Perez',
+            'second_last_name' => 'Gomez',
+            'first_name' => 'Maria',
             'edad' => 10,
             'genero' => 'Femenino',
             'nivel' => 'intermedio',
@@ -109,7 +111,7 @@ class FamilyAndStudentAuthTest extends TestCase
 
         $response->assertRedirect('/students');
 
-        $student = Student::where('name', 'Maria del Sol')->firstOrFail();
+        $student = Student::where('name', 'Perez Gomez Maria')->firstOrFail();
 
         $this->assertNull($student->user_id);
         $this->assertDatabaseHas('student_family_members', [
@@ -309,7 +311,9 @@ class FamilyAndStudentAuthTest extends TestCase
 
         $this->actingAs($admin)
             ->post('/students', [
-                'name' => 'Estudiante con dos tutores',
+                'last_name' => 'Flores',
+                'second_last_name' => 'Rojas',
+                'first_name' => 'Estudiante',
                 'age' => 10,
                 'gender' => 'Masculino',
                 'level' => 'básico',
@@ -320,7 +324,7 @@ class FamilyAndStudentAuthTest extends TestCase
             ])
             ->assertRedirect(route('students.index'));
 
-        $student = Student::where('name', 'Estudiante con dos tutores')->firstOrFail();
+        $student = Student::where('name', 'Flores Rojas Estudiante')->firstOrFail();
 
         $this->assertDatabaseHas('student_family_members', [
             'student_id' => $student->id,
@@ -352,7 +356,9 @@ class FamilyAndStudentAuthTest extends TestCase
         $parallel = Parallel::create(['name' => '1A', 'course_id' => $course->id, 'max_students' => 25]);
 
         $this->actingAs($admin)->post('/students', [
-            'nombre' => 'Luciano Quispe',
+            'last_name' => 'Quispe',
+            'second_last_name' => 'Mamani',
+            'first_name' => 'Luciano',
             'edad' => 11,
             'genero' => 'Masculino',
             'nivel' => 'básico',
@@ -366,7 +372,7 @@ class FamilyAndStudentAuthTest extends TestCase
             'asistencia' => 95,
         ]);
 
-        $student = Student::where('name', 'Luciano Quispe')->firstOrFail();
+        $student = Student::where('name', 'Quispe Mamani Luciano')->firstOrFail();
 
         $this->assertNull($student->user_id);
         $this->assertDatabaseMissing('users', [
@@ -390,7 +396,9 @@ class FamilyAndStudentAuthTest extends TestCase
         $parallel = Parallel::create(['name' => '1A', 'course_id' => $course->id, 'max_students' => 25]);
 
         $this->actingAs($admin)->post('/students', [
-            'nombre' => 'Sofia Ramos',
+            'last_name' => 'Ramos',
+            'second_last_name' => 'Vargas',
+            'first_name' => 'Sofia',
             'edad' => 9,
             'genero' => 'Femenino',
             'nivel' => 'intermedio',
@@ -404,7 +412,7 @@ class FamilyAndStudentAuthTest extends TestCase
             'asistencia' => 96,
         ]);
 
-        $student = Student::where('name', 'Sofia Ramos')->firstOrFail();
+        $student = Student::where('name', 'Ramos Vargas Sofia')->firstOrFail();
 
         $this->actingAs($admin)->post('/family-members', [
             'student_id' => $student->id,

@@ -10,9 +10,21 @@
             @csrf
             @method('PUT')
             <div class="card-body bg-white">
-                <label for="name">Nombre del curso</label>
-                <input id="name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $course->name) }}" required maxlength="255">
-                @error('name')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                <div class="form-group">
+                    <label for="name">Nombre del curso</label>
+                    <input id="name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $course->name) }}" required maxlength="255">
+                    @error('name')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                </div>
+                <div class="form-group mb-0">
+                    <label for="nivel_educativo">Nivel educativo</label>
+                    <select id="nivel_educativo" name="nivel_educativo" class="form-control @error('nivel_educativo') is-invalid @enderror" required>
+                        <option value="">Seleccione un nivel...</option>
+                        @foreach(\App\Models\Course::NIVELES as $value => $label)
+                            <option value="{{ $value }}" {{ old('nivel_educativo', $course->nivel_educativo) == $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('nivel_educativo')<span class="invalid-feedback">{{ $message }}</span>@enderror
+                </div>
             </div>
             <div class="card-footer bg-white text-right"><a href="{{ route('courses.index') }}" class="btn btn-link">Cancelar</a><button class="btn btn-primary">Guardar cambios</button></div>
         </form>

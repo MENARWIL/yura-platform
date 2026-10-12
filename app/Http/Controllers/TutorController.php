@@ -38,20 +38,28 @@ class TutorController extends Controller
         abort_unless($tutor->isResponsibleRole(), 404);
 
         $request->merge([
-            'name' => preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('name'))),
+            'last_name' => preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('last_name'))),
+            'second_last_name' => preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('second_last_name'))),
+            'first_name' => preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('first_name'))),
             'phone' => trim((string) $request->input('phone')),
             'email' => strtolower(trim((string) $request->input('email'))),
         ]);
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:200', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($tutor->id)],
             'status' => ['required', 'in:active,activo,inactive,inactivo'],
             'password' => ['nullable', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ], [
-            'name.required' => __('messages.validation.required'),
-            'name.regex' => __('messages.validation.name'),
+            'last_name.required' => __('messages.validation.required'),
+            'last_name.regex' => __('messages.validation.name'),
+            'second_last_name.required' => __('messages.validation.required'),
+            'second_last_name.regex' => __('messages.validation.name'),
+            'first_name.required' => __('messages.validation.required'),
+            'first_name.regex' => __('messages.validation.name'),
             'phone.required' => __('messages.validation.required'),
             'phone.regex' => __('messages.validation.phone'),
             'email.required' => __('messages.validation.required'),
@@ -60,7 +68,10 @@ class TutorController extends Controller
             'password.*' => __('messages.validation.password'),
         ]);
 
-        $tutor->name = $data['name'];
+        $tutor->last_name = $data['last_name'];
+        $tutor->second_last_name = $data['second_last_name'];
+        $tutor->first_name = $data['first_name'];
+        $tutor->name = trim(preg_replace('/\s+/', ' ', $data['last_name'] . ' ' . $data['second_last_name'] . ' ' . $data['first_name']));
         $tutor->phone = $data['phone'];
         $tutor->email = $data['email'];
         $tutor->status = in_array($data['status'], ['active', 'activo'], true) ? 'active' : 'inactive';
@@ -89,7 +100,7 @@ class TutorController extends Controller
         /** @var User|null $tutor */
         $tutor = $request->user();
 
-        if (! $tutor || $tutor->role !== 'tutor' || $tutor->status !== 'active') {
+        if (! $tutor || ! $tutor->isResponsibleRole() || ! in_array($tutor->status, ['active', 'activo'], true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized.',
@@ -129,9 +140,11 @@ class TutorController extends Controller
             return [
                 'id' => $student->id,
                 'name' => $student->name,
-                'course' => $student->course ? [
-                    'id' => $student->course->id,
-                    'name' => $student->course->name,
+                // getCourseModel() usa la relación precargada (evita N+1 por
+                // la colisión con la columna de texto students.course).
+                'course' => ($courseModel = $student->getCourseModel()) ? [
+                    'id' => $courseModel->id,
+                    'name' => $courseModel->name,
                 ] : null,
                 'parallel' => $student->parallel ? [
                     'id' => $student->parallel->id,
@@ -151,26 +164,30 @@ class TutorController extends Controller
     {
         $request->merge([
             'ci' => $request->input('ci') !== null ? trim($request->input('ci')) : null,
-            'name' => $request->input('name') !== null ? preg_replace('/\s+/', ' ', trim($request->input('name'))) : null,
-            'lastname' => $request->input('lastname') !== null ? preg_replace('/\s+/', ' ', trim($request->input('lastname'))) : null,
+            'last_name' => $request->input('last_name') !== null ? preg_replace('/\s+/', ' ', trim($request->input('last_name'))) : null,
+            'second_last_name' => $request->input('second_last_name') !== null ? preg_replace('/\s+/', ' ', trim($request->input('second_last_name'))) : null,
+            'first_name' => $request->input('first_name') !== null ? preg_replace('/\s+/', ' ', trim($request->input('first_name'))) : null,
             'phone' => $request->input('phone') !== null ? preg_replace('/\s+/', ' ', trim($request->input('phone'))) : null,
             'email' => $request->input('email') !== null ? strtolower(trim($request->input('email'))) : null,
         ]);
 
         $validated = $request->validate([
             'ci' => ['required', 'string', 'max:50', 'regex:/^[0-9A-Za-z-]+$/', Rule::unique('users', 'ci')],
-            'name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
-            'lastname' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ], [
             'ci.required' => __('messages.validation.required'),
             'ci.unique' => __('messages.validation.unique'),
-            'name.required' => __('messages.validation.required'),
-            'name.regex' => __('messages.validation.name'),
-            'lastname.required' => __('messages.validation.required'),
-            'lastname.regex' => __('messages.validation.name'),
+            'last_name.required' => __('messages.validation.required'),
+            'last_name.regex' => __('messages.validation.name'),
+            'second_last_name.required' => __('messages.validation.required'),
+            'second_last_name.regex' => __('messages.validation.name'),
+            'first_name.required' => __('messages.validation.required'),
+            'first_name.regex' => __('messages.validation.name'),
             'phone.required' => __('messages.validation.required'),
             'phone.regex' => __('messages.validation.phone'),
             'email.required' => __('messages.validation.required'),
@@ -186,7 +203,10 @@ class TutorController extends Controller
 
         $tutor = User::create([
             'ci' => $validated['ci'],
-            'name' => trim($validated['name'] . ' ' . $validated['lastname']),
+            'last_name' => $validated['last_name'],
+            'second_last_name' => $validated['second_last_name'],
+            'first_name' => $validated['first_name'],
+            'name' => trim(preg_replace('/\s+/', ' ', $validated['last_name'] . ' ' . $validated['second_last_name'] . ' ' . $validated['first_name'])),
             'phone' => $validated['phone'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),

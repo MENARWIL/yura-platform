@@ -84,26 +84,12 @@ class StudentController extends Controller
             'fecha_registro' => 'required|date',
             'parallel_id' => 'required|exists:parallels,id',
             'usuario_id' => ['required', Rule::exists('users', 'id')->where(function ($query) {
-                $query->where(function ($query) {
-                    $query->whereIn('role', ['padre', 'madre', 'tutor'])
-                        ->orWhereIn('rol', ['padre', 'madre', 'tutor']);
-                });
-
-                $query->where(function ($query) {
-                        $query->whereIn('status', ['active', 'activo'])
-                        ->orWhereIn('estado', ['active', 'activo']);
-                });
+                $query->whereIn('role', ['padre', 'madre', 'tutor'])
+                    ->whereIn('status', ['active', 'activo']);
             })],
             'profesor_id' => ['nullable', Rule::exists('users', 'id')->where(function ($query) {
-                $query->where(function ($query) {
-                    $query->whereIn('role', ['profesor'])
-                        ->orWhereIn('rol', ['profesor']);
-                });
-
-                $query->where(function ($query) {
-                        $query->whereIn('status', ['active', 'activo'])
-                        ->orWhereIn('estado', ['active', 'activo']);
-                });
+                $query->whereIn('role', ['profesor'])
+                    ->whereIn('status', ['active', 'activo']);
             })],
             'puntaje' => 'nullable|numeric|min:0|max:100',
             'nota_escritura' => 'nullable|numeric|min:0|max:100',
@@ -151,7 +137,7 @@ class StudentController extends Controller
 
     private function resolveFamilyRelationType(User $user): string
     {
-        return match ($user->rol) {
+        return match ($user->role) {
             'padre' => 'padre',
             'madre' => 'madre',
             default => 'tutor',

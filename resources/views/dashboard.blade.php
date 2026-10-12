@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    @if(!Auth::user()->isTutor())
+    @if(!Auth::user()->isResponsibleRole())
         <div class="row mb-3">
             <div class="col-12">
                 <form method="GET" action="{{ route('dashboard') }}" class="d-flex align-items-center">
@@ -30,7 +30,7 @@
         </div>
     @endif
 
-    @if(Auth::user()->isTutor())
+    @if(Auth::user()->isResponsibleRole())
         <div class="row mb-4">
             @php($tutorReport = $data['tutor_report'] ?? [])
             <div class="col-xl-4 col-md-6 mb-4">
@@ -50,7 +50,7 @@
                 </div>
             </div>
             <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm bg-warning text-dark h-100 rounded-lg" style="background-color: #9bd7ad !important;">
+                <div class="card border-0 shadow-sm bg-warning text-dark h-100 rounded-lg" style="background-color: var(--yura-blue-dark) !important; color: var(--yura-white) !important;">
                     <div class="card-body d-flex align-items-center justify-content-between p-4">
                         <div><h6 class="text-uppercase text-white-50 font-weight-bold small mb-1">Asistencia familiar</h6><h2 class="font-weight-bold mb-0">{{ $tutorReport['attendance_percent'] !== null ? $tutorReport['attendance_percent'] . '%' : 'N/A' }}</h2></div>
                         <div class="display-4 text-white-50"><i class="fas fa-calendar-check"></i></div>
@@ -68,7 +68,7 @@
                     </label>
                     <select id="child-selector" class="form-control custom-select">
                         @foreach($children as $student)
-                            <option value="{{ $student->id }}">{{ $student->name }} · {{ $student->course?->name ?? $student->getRawOriginal('course') ?? 'Sin curso' }}</option>
+                            <option value="{{ $student->id }}">{{ $student->name }} · {{ $student->course_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -85,7 +85,7 @@
                     <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center flex-wrap">
                         <div>
                             <h4 class="font-weight-bold mb-1 text-dark"><i class="fas fa-user-graduate mr-2 text-primary"></i>{{ $student->name }}</h4>
-                            <p class="text-muted mb-0">{{ $student->course?->name ?? $student->getRawOriginal('course') ?? 'Sin curso' }} · {{ $student->parallel?->name ?? 'Sin paralelo' }}</p>
+                            <p class="text-muted mb-0">{{ $student->course_name }} · {{ $student->parallel?->name ?? 'Sin paralelo' }}</p>
                         </div>
                         <span class="badge badge-light px-3 py-2 mt-2 mt-md-0">Reporte académico</span>
                     </div>
@@ -162,7 +162,7 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm bg-warning text-dark h-100 rounded-lg" style="background-color: #9bd7ad !important;">
+                <div class="card border-0 shadow-sm bg-warning text-dark h-100 rounded-lg" style="background-color: var(--yura-blue-dark) !important; color: var(--yura-white) !important;">
                     <div class="card-body d-flex align-items-center justify-content-between p-4">
                         <div><h6 class="text-uppercase text-white-50 font-weight-bold small mb-1">Asistencia hoy</h6><h2 class="font-weight-bold mb-0">{{ number_format((float) ($data['asistencia_hoy'] ?? 0), 1) }}%</h2></div>
                         <div class="display-4 text-white-50"><i class="fas fa-calendar-check"></i></div>
@@ -217,7 +217,7 @@
                                 <tbody>
                                     @if(!empty($data['ranking'] ?? []))
                                         @foreach($data['ranking'] as $student)
-                                            <tr><td>{{ $student->name }}</td><td>{{ $student->course?->name ?? 'Sin curso' }}</td><td class="text-right font-weight-bold text-success">{{ number_format((float) $student->promedio_academico, 1) }}%</td></tr>
+                                            <tr><td>{{ $student->name }}</td><td>{{ $student->course_name }}</td><td class="text-right font-weight-bold text-success">{{ number_format((float) $student->promedio_academico, 1) }}%</td></tr>
                                         @endforeach
                                     @else
                                         <tr><td colspan="3" class="text-center text-muted py-4">Aún no hay notas registradas.</td></tr>
@@ -247,7 +247,7 @@
                                             @php($studentAverage = $student->grades->where('status', 'completed')->filter(fn($grade) => is_numeric($grade->score))->count() ? round($student->grades->where('status', 'completed')->filter(fn($grade) => is_numeric($grade->score))->avg('score'), 2) : 0)
                                             <tr>
                                                 <td>{{ $student->name }}</td>
-                                                <td>{{ $student->course?->name ?? 'Sin curso' }}</td>
+                                                <td>{{ $student->course_name }}</td>
                                                 <td>{{ $student->parallel?->name ?? 'Sin paralelo' }}</td>
                                                 <td>{{ $student->level ?? '-' }}</td>
                                                 <td><span class="font-weight-bold {{ $studentAverage >= 70 ? 'text-success' : ($studentAverage >= 50 ? 'text-warning' : 'text-danger') }}">{{ number_format((float) $studentAverage, 1) }}%</span></td>
@@ -290,25 +290,13 @@
                 </div>
             </div>
         </div>
-    @elseif(empty($selectedCourseId))
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="text-center my-4 p-5 border rounded-lg bg-light shadow-sm mx-auto" style="max-width: 800px;">
-                    <div class="display-4 text-warning mb-3">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <h4 class="font-weight-bold text-dark mb-2">Selección de Curso Requerida</h4>
-                    <p class="text-muted mb-0">Por favor, seleccione un curso en el menú superior para visualizar las estadísticas de rendimiento, asistencia y robótica correspondientes.</p>
-                </div>
-            </div>
-        </div>
     @else
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card border-0 shadow-sm bg-primary text-white h-100 rounded-lg">
                     <div class="card-body d-flex align-items-center justify-content-between p-4">
                         <div>
-                            <h6 class="text-uppercase text-white-50 font-weight-bold small mb-1">Total Estudiantes</h6>
+                            <h6 class="text-uppercase text-white-50 font-weight-bold small mb-1">{{ $selectedCourseId ? 'Total Estudiantes' : 'Total Estudiantes (todos los cursos)' }}</h6>
                             <h2 class="font-weight-bold mb-0">{{ $data['total_students'] ?? 0 }}</h2>
                         </div>
                         <div class="display-4 text-white-50"><i class="fas fa-users"></i></div>
@@ -317,7 +305,7 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm bg-warning text-dark h-100 rounded-lg" style="background-color: #9bd7ad !important;">
+                <div class="card border-0 shadow-sm bg-warning text-dark h-100 rounded-lg" style="background-color: var(--yura-blue-dark) !important; color: var(--yura-white) !important;">
                     <div class="card-body d-flex align-items-center justify-content-between p-4">
                         <div>
                             <h6 class="text-uppercase text-white-50 font-weight-bold small mb-1">Total Cursos</h6>
@@ -383,8 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 label: 'Promedio de Rendimiento General',
                 data: [72.4, 0, 0],
-                backgroundColor: ['rgba(54, 162, 235, 0.6)', 'rgba(255, 206, 86, 0.6)', 'rgba(75, 192, 192, 0.6)'],
-                borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)'],
+                backgroundColor: ['rgba(11, 61, 145, 0.75)', 'rgba(200, 16, 46, 0.75)', 'rgba(8, 44, 108, 0.45)'],
+                borderColor: ['#0B3D91', '#C8102E', '#082C6C'],
                 borderWidth: 1
             }]
         },

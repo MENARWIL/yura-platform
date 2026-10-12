@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RobotActivityController;
+use App\Http\Controllers\Api\RobotActivityQueueController;
 use App\Http\Controllers\TutorController;
 
 Route::post('/login', [AuthController::class, 'loginApi']);
@@ -29,4 +30,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users', [UserController::class, 'store']);
     Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus']);
     Route::post('/v1/robot/activity', [RobotActivityController::class, 'store']);
+    Route::get('/v1/robot/activities/next', [RobotActivityQueueController::class, 'next']);
+    Route::get('/v1/robot/activities/{activityId}/attempts/{attemptId}/status', [RobotActivityQueueController::class, 'status'])
+        ->whereUuid('activityId')
+        ->whereUuid('attemptId');
+    Route::post('/v1/robot/activities/{activityId}/results', [RobotActivityQueueController::class, 'results'])
+        ->whereUuid('activityId');
 });

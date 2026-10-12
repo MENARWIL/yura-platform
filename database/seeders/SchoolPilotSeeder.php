@@ -6,6 +6,8 @@ use App\Models\Course;
 use App\Models\Parallel;
 use App\Models\Student;
 use App\Models\StudentFamilyMember;
+use App\Models\Subject;
+use App\Models\TeachingAssignment;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -99,6 +101,22 @@ class SchoolPilotSeeder extends Seeder
                 ['max_students' => 20]
             );
             $parallels[] = $parallel;
+        }
+
+        // 5b. Teaching assignments (docente ↔ materia ↔ paralelo). Sin esto,
+        // GradeController::hasTeachingAssignment() bloquea a todos los
+        // profesores aunque ya tengan estudiantes asignados directamente
+        // (hallazgo de la auditoría de base de datos, 2026-09-17).
+        $mainSubject = Subject::firstOrCreate(['name' => 'Quechua'], ['code' => 'QUE', 'active' => true]);
+        foreach ($parallels as $parallelIndex => $parallel) {
+            TeachingAssignment::updateOrCreate(
+                [
+                    'teacher_user_id' => $teachers[$parallelIndex % count($teachers)]->id,
+                    'subject_id' => $mainSubject->id,
+                    'parallel_id' => $parallel->id,
+                ],
+                ['active' => true]
+            );
         }
 
         // 6. Create Tutors with Bolivian surnames (20 total)

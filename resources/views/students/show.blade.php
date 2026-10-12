@@ -37,7 +37,7 @@
                     <h2 class="font-weight-bold mb-1">{{ $student->nombre ?? $student->name }}</h2>
                     <div class="mb-2">
                         <span class="badge badge-quechua-gold px-3 py-2 font-weight-bold">{{ $student->course ?? $student->course_id ?? 'N/A' }}</span>
-                        <small class="text-muted ml-2">{{ strtoupper($student->level ?? $student->nivel ?? '') }}</small>
+                        <small class="text-muted ml-2">{{ mb_strtoupper($student->level ?? $student->nivel ?? '', 'UTF-8') }}</small>
                     </div>
 
                     <div class="row mt-4">
