@@ -3,6 +3,38 @@
 @section('title', __('messages.grades_management'))
 
 @section('content')
+<style>
+    /* Cuaderno pedagógico estilo planilla SER/SABER/HACER */
+    .cuaderno-ser-saber-hacer th, .cuaderno-ser-saber-hacer td { font-size: 0.78rem; }
+    .cuaderno-ser-saber-hacer thead th { vertical-align: middle; }
+    .cuaderno-ser-saber-hacer .banner-evaluacion {
+        background-color: var(--yura-blue); color: var(--yura-white); font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    }
+    .cuaderno-ser-saber-hacer .grupo-ser {
+        background-color: var(--yura-blue-light); color: var(--yura-blue-dark); font-weight: 700; text-transform: uppercase;
+    }
+    .cuaderno-ser-saber-hacer .grupo-saber,
+    .cuaderno-ser-saber-hacer .grupo-hacer {
+        background-color: var(--yura-red-light); color: var(--yura-red-dark); font-weight: 700; text-transform: uppercase;
+    }
+    .cuaderno-ser-saber-hacer .prom-ser,
+    .cuaderno-ser-saber-hacer .prom-saber,
+    .cuaderno-ser-saber-hacer .prom-hacer {
+        background-color: var(--yura-bg); color: var(--yura-text); font-weight: 700;
+    }
+    .cuaderno-ser-saber-hacer .col-total { background-color: var(--yura-blue-light); color: var(--yura-blue); font-weight: 700; }
+    .cuaderno-ser-saber-hacer .col-autoeval { background-color: var(--yura-bg); color: var(--yura-text); font-weight: 700; }
+    .cuaderno-ser-saber-hacer .col-nota { background-color: var(--yura-blue); color: var(--yura-white); font-weight: 700; }
+    .cuaderno-ser-saber-hacer .vertical-text {
+        writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; letter-spacing: 1px;
+    }
+    .cuaderno-ser-saber-hacer .dim-cell.dim-ser { background-color: #F7F9FD; }
+    .cuaderno-ser-saber-hacer .dim-cell.dim-saber,
+    .cuaderno-ser-saber-hacer .dim-cell.dim-hacer { background-color: #FEF6F7; }
+    .cuaderno-ser-saber-hacer .total-cell { background-color: var(--yura-blue-light); }
+    .cuaderno-ser-saber-hacer .nota-bimestral-cell { background-color: var(--yura-blue-light); font-size: 0.95rem; }
+    .cuaderno-ser-saber-hacer .robot-hint { color: #1f9d55; margin-left: 2px; font-size: 0.7rem; }
+</style>
 <div class="animate-fade-in">
     <div class="card card-quechua border-0 shadow-sm">
         <div class="card-header card-header-quechua d-flex align-items-center justify-content-between">
@@ -12,6 +44,12 @@
         </div>
 
         <div class="card-body bg-white p-4">
+            @unless(auth()->user()->isProfesor())
+                <div class="alert alert-info mb-4" role="alert">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Modo solo lectura: solo el profesor asignado puede registrar o modificar calificaciones.
+                </div>
+            @endunless
             <!-- FILTROS DEL CUADERNO -->
             <div class="form-group mb-4">
                 <label class="text-muted small text-uppercase font-weight-bold">Seleccionar asignatura y paralelo</label>
@@ -38,9 +76,14 @@
                         <option value="3" {{ $selectedQuarter == 3 ? 'selected' : '' }}>Tercer Trimestre</option>
                     </select>
                     @if($selectedSubjectId && $selectedParallelId)
-                        <button type="button" id="save-all-grades" class="btn btn-success btn-lg rounded-pill px-4 ml-2 mb-2">
-                            <i class="fas fa-save mr-1"></i> Guardar notas
-                        </button>
+                        @if(auth()->user()->isProfesor())
+                            <button type="button" id="save-all-grades" class="btn btn-success btn-lg rounded-pill px-4 ml-2 mb-2">
+                                <i class="fas fa-save mr-1"></i> Guardar notas
+                            </button>
+                        @endif
+                        <a href="{{ route('grades.export.pdf', ['subject_id' => $selectedSubjectId, 'parallel_id' => $selectedParallelId, 'quarter' => $selectedQuarter]) }}" class="btn btn-outline-danger btn-lg rounded-pill px-4 ml-2 mb-2">
+                            <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
+                        </a>
                     @endif
                 </form>
             </div>
@@ -59,52 +102,74 @@
                 </div>
             @else
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle" id="gradesTable">
+                    <table class="table table-hover align-middle table-bordered cuaderno-ser-saber-hacer" id="gradesTable">
                     <thead>
                         <tr>
-                            <th rowspan="2" class="px-3 text-center">ID</th>
-                            <th rowspan="2" class="px-4">{{ __('messages.student_name') }}</th>
-                            <th rowspan="2">{{ __('messages.level') }}</th>
-                            <th rowspan="2">{{ __('messages.attendance') }}</th>
-                            <th colspan="3" class="text-center">Actividades</th>
-                            <th colspan="3" class="text-center">Exámenes</th>
-                            <th colspan="3" class="text-center">Plataforma Yura</th>
-                            <th rowspan="2" class="text-center">Promedio Final</th>
-                            <th rowspan="2" class="text-right px-4">{{ __('messages.actions') }}</th>
+                            <th rowspan="3" class="px-3 text-center align-middle">ID</th>
+                            <th rowspan="3" class="px-4 align-middle">{{ __('messages.student_name') }}</th>
+                            <th rowspan="3" class="align-middle">{{ __('messages.level') }}</th>
+                            <th colspan="16" class="text-center banner-evaluacion">EVALUACIÓN MAESTRO(A)</th>
+                            <th rowspan="3" class="text-center align-middle col-total">TOTAL<br>(90 PTS)</th>
+                            <th rowspan="3" class="text-center align-middle col-autoeval">AUTOEVALUACIÓN<br>TOTAL (5 PTS)</th>
+                            <th rowspan="3" class="text-center align-middle col-nota">NOTA<br>BIMESTRAL<br>(100 PTS)</th>
                         </tr>
                         <tr>
-                            <th class="text-center">Act. 1</th>
-                            <th class="text-center">Act. 2</th>
-                            <th class="text-center">Act. 3</th>
-                            <th class="text-center">Ev. 1</th>
-                            <th class="text-center">Ev. 2</th>
-                            <th class="text-center">Ev. 3</th>
-                            <th class="text-center">Yura 1</th>
-                            <th class="text-center">Yura 2</th>
-                            <th class="text-center">Yura 3</th>
+                            <th colspan="3" class="text-center grupo-ser">SER</th>
+                            <th rowspan="2" class="text-center align-middle vertical-text prom-ser">PROMEDIO<br>DIMENSIÓN<br>(10 PTS)</th>
+                            <th colspan="5" class="text-center grupo-saber">SABER</th>
+                            <th rowspan="2" class="text-center align-middle vertical-text prom-saber">PROMEDIO<br>DIMENSIÓN<br>(45 PTS)</th>
+                            <th colspan="5" class="text-center grupo-hacer">HACER</th>
+                            <th rowspan="2" class="text-center align-middle vertical-text prom-hacer">PROMEDIO<br>DIMENSIÓN<br>(40 PTS)</th>
+                        </tr>
+                        <tr>
+                            <th class="text-center">Ser 1</th>
+                            <th class="text-center">Ser 2</th>
+                            <th class="text-center">Ser 3</th>
+                            <th class="text-center">Saber 1</th>
+                            <th class="text-center">Saber 2</th>
+                            <th class="text-center">Saber 3</th>
+                            <th class="text-center">Saber 4</th>
+                            <th class="text-center">Saber 5</th>
+                            <th class="text-center">Hacer 1 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center">Hacer 2 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center">Hacer 3 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center">Hacer 4 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center">Hacer 5 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
                         </tr>
                     </thead>
                     <tbody>
+                        @php
+                            // Dimensiones del cuaderno pedagógico (SER/SABER/HACER) y sus puntos máximos.
+                            // Cada nota se ingresa en escala 0-100 y se escala proporcionalmente a los
+                            // puntos de su dimensión; AUTOEVALUACIÓN se ingresa directamente sobre 5.
+                            $dimensionPoints = ['ser' => 10, 'saber' => 45, 'hacer' => 40];
+                            $scaleToDimension = function (array $scores, int $maxPoints) {
+                                $numeric = array_values(array_filter($scores, fn ($v) => is_numeric($v) && $v !== ''));
+                                if (empty($numeric)) {
+                                    return null;
+                                }
+                                $avg = array_sum($numeric) / count($numeric);
+                                return round(($avg / 100) * $maxPoints, 2);
+                            };
+                        @endphp
                         @forelse($students as $student)
                         @php
                             $studentGrades = $gradesByStudent[$student->id] ?? null;
-                            $activity1 = data_get($studentGrades, 'activity.1.score', '');
-                            $activity2 = data_get($studentGrades, 'activity.2.score', '');
-                            $activity3 = data_get($studentGrades, 'activity.3.score', '');
-                            $exam1 = data_get($studentGrades, 'exam.1.score', '');
-                            $exam2 = data_get($studentGrades, 'exam.2.score', '');
-                            $exam3 = data_get($studentGrades, 'exam.3.score', '');
-                            $robot1 = data_get($studentGrades, 'robot.1.score', '');
-                            $robot2 = data_get($studentGrades, 'robot.2.score', '');
-                            $robot3 = data_get($studentGrades, 'robot.3.score', '');
 
-                            $averageNumbers = [];
-                            foreach ([$activity1, $activity2, $activity3, $exam1, $exam2, $exam3, $robot1, $robot2, $robot3] as $score) {
-                                if (is_numeric($score)) {
-                                    $averageNumbers[] = $score;
-                                }
-                            }
-                            $averageFinal = count($averageNumbers) ? round(array_sum($averageNumbers) / count($averageNumbers), 2) : '-';
+                            $ser = [1 => data_get($studentGrades, 'activity.1.score', ''), 2 => data_get($studentGrades, 'activity.2.score', ''), 3 => data_get($studentGrades, 'activity.3.score', '')];
+                            $saber = [1 => data_get($studentGrades, 'exam.1.score', ''), 2 => data_get($studentGrades, 'exam.2.score', ''), 3 => data_get($studentGrades, 'exam.3.score', ''), 4 => data_get($studentGrades, 'exam.4.score', ''), 5 => data_get($studentGrades, 'exam.5.score', '')];
+                            $hacer = [1 => data_get($studentGrades, 'robot.1.score', ''), 2 => data_get($studentGrades, 'robot.2.score', ''), 3 => data_get($studentGrades, 'robot.3.score', ''), 4 => data_get($studentGrades, 'robot.4.score', ''), 5 => data_get($studentGrades, 'robot.5.score', '')];
+                            $autoeval = data_get($studentGrades, 'autoeval.1.score', '');
+
+                            $promSer = $scaleToDimension($ser, $dimensionPoints['ser']);
+                            $promSaber = $scaleToDimension($saber, $dimensionPoints['saber']);
+                            $promHacer = $scaleToDimension($hacer, $dimensionPoints['hacer']);
+
+                            $dimensionesLlenas = array_filter([$promSer, $promSaber, $promHacer], fn ($v) => $v !== null);
+                            $total = count($dimensionesLlenas) ? round(array_sum($dimensionesLlenas), 2) : null;
+                            $notaBimestral = ($total !== null || is_numeric($autoeval))
+                                ? round(($total ?? 0) + (is_numeric($autoeval) ? $autoeval : 0), 2)
+                                : null;
                         @endphp
                         <tr data-student-id="{{ $student->id }}">
                             <td class="text-center align-middle">{{ $student->id }}</td>
@@ -121,53 +186,38 @@
                                 </div>
                             </td>
                             <td class="align-middle">
-                                <span class="badge badge-quechua-gold px-3">{{ strtoupper($student->level ?? $student->nivel ?? '6TO') }}</span>
+                                <span class="badge badge-quechua-gold px-3">{{ mb_strtoupper($student->level ?? $student->nivel ?? '6TO', 'UTF-8') }}</span>
                             </td>
-                            <td class="align-middle">
-                                <select name="attendance[{{ $student->id }}]" class="form-control form-control-sm attendance-select" data-student-id="{{ $student->id }}" data-subject-id="{{ $selectedSubjectId }}">
-                                    <option value="">Seleccionar...</option>
-                                    @foreach($attendanceStatuses as $status)
-                                        <option value="{{ $status }}" {{ optional($todayAttendance[$student->id] ?? null)->status == $status ? 'selected' : '' }}>{{ $status }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
+                            {{-- SER (3) --}}
+                            @foreach($ser as $n => $value)
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="activity" data-number="1" value="{{ $activity1 }}">
+                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="activity" data-number="{{ $n }}" data-dimension="ser" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
+                            @endforeach
+                            <td class="text-center font-weight-bold align-middle dim-cell dim-ser">{{ $promSer ?? '-' }}</td>
+                            {{-- SABER (5) --}}
+                            @foreach($saber as $n => $value)
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="activity" data-number="2" value="{{ $activity2 }}">
+                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="exam" data-number="{{ $n }}" data-dimension="saber" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
+                            @endforeach
+                            <td class="text-center font-weight-bold align-middle dim-cell dim-saber">{{ $promSaber ?? '-' }}</td>
+                            {{-- HACER (5) - se completa normalmente con el resultado de la actividad del robot --}}
+                            @foreach($hacer as $n => $value)
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="activity" data-number="3" value="{{ $activity3 }}">
+                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="robot" data-number="{{ $n }}" data-dimension="hacer" value="{{ $value }}" placeholder="🤖" disabled title="Se completa automáticamente con el resultado de una actividad Yura.">
                             </td>
+                            @endforeach
+                            <td class="text-center font-weight-bold align-middle dim-cell dim-hacer">{{ $promHacer ?? '-' }}</td>
+                            <td class="text-center font-weight-bold align-middle total-cell">{{ $total ?? '-' }}</td>
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="exam" data-number="1" value="{{ $exam1 }}">
+                                <input type="number" step="0.1" min="0" max="5" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="autoeval" data-number="1" data-dimension="autoeval" value="{{ $autoeval }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
-                            <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="exam" data-number="2" value="{{ $exam2 }}">
-                            </td>
-                            <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="exam" data-number="3" value="{{ $exam3 }}">
-                            </td>
-                            <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="robot" data-number="1" value="{{ $robot1 }}">
-                            </td>
-                            <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="robot" data-number="2" value="{{ $robot2 }}">
-                            </td>
-                            <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:65px;" data-student="{{ $student->id }}" data-type="robot" data-number="3" value="{{ $robot3 }}">
-                            </td>
-                            <td class="text-center font-weight-bold grade-average">{{ $averageFinal }}</td>
-                            <td class="px-4 text-right align-middle">
-                                <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#robotModal" data-student-id="{{ $student->id }}">
-                                    <i class="fas fa-robot mr-1"></i> Lanzar Actividad
-                                </button>
-                            </td>
+                            <td class="text-center font-weight-bold align-middle nota-bimestral-cell">{{ $notaBimestral ?? '-' }}</td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="15" class="text-center py-5">
+                            <td colspan="22" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="fas fa-inbox fa-3x mb-2 opacity-25"></i>
                                     <p>{{ __('messages.no_students') }}</p>
@@ -183,57 +233,6 @@
     </div>
 </div>
 
-<!-- MODAL PARA LANZAR LA ACTIVIDAD AL ROBOT YURA -->
-<div class="modal fade" id="robotModal" tabindex="-1" role="dialog" aria-labelledby="robotModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
-            <form method="POST" action="{{ route('robot-activities.store') }}">
-                @csrf
-                <div class="modal-header bg-primary text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
-                    <h5 class="modal-title font-weight-bold" id="robotModalLabel"><i class="fas fa-robot mr-2"></i> {{ __('messages.launch_robot_activity') }}</h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="form-group mb-3">
-                        <label class="font-weight-bold text-secondary">{{ __('messages.select_parallel') ?? 'Seleccionar Paralelo' }}</label>
-                        <select name="parallel_id" class="form-control custom-select">
-                            @foreach($parallels as $parallel)
-                                <option value="{{ $parallel->id }}">{{ $parallel->name ?? $parallel->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group mb-3">
-                        <label class="font-weight-bold text-secondary">Asignatura:</label>
-                        <select name="subject_id" class="form-control custom-select" required>
-                            @foreach($subjects as $subject)
-                                <option value="{{ $subject->id }}" {{ $selectedSubjectId == $subject->id ? 'selected' : '' }}>{{ $subject->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group mb-0">
-                        <label class="font-weight-bold text-secondary">Categoría de Vocabulario Quechua:</label>
-                        <select name="activity_category" class="form-control custom-select" required>
-                            <option value="nivel1_alimentos">Alimentos (Mikhuna)</option>
-                            <option value="nivel1_colores">Colores (Llimp'ikuna)</option>
-                            <option value="nivel1_elementos_casa">Elementos de la Casa (Wasi)</option>
-                            <option value="nivel1_elementos_naturales">Elementos Naturales (Sallqa Pacha)</option>
-                            <option value="nivel1_familia">Familia (Ayllu)</option>
-                            <option value="nivel1_herramientas">Herramientas (Llamk'anakuna)</option>
-                            <option value="nivel1_lugares">Lugares (Marka)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const csrfToken = '{{ csrf_token() }}';
@@ -244,10 +243,7 @@
         styleTag.textContent = `
             .grade-input.grade-saving { border-color: #ffcc00 !important; box-shadow: 0 0 0 0.2rem rgba(255, 204, 0, 0.25) !important; }
             .grade-input.grade-saved { border-color: #28a745 !important; box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important; transition: border-color .2s ease, box-shadow .2s ease; }
-            .grade-input.grade-save-error { border-color: #dc3545 !important; box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important; }
-            .attendance-select.attendance-saving { border-color: #ffcc00 !important; box-shadow: 0 0 0 0.15rem rgba(255, 204, 0, 0.18) !important; }
-            .attendance-select.attendance-saved { border-color: #28a745 !important; box-shadow: 0 0 0 0.15rem rgba(40, 167, 69, 0.18) !important; transition: border-color .2s ease, box-shadow .2s ease; }
-            .attendance-select.attendance-error { border-color: #dc3545 !important; box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.18) !important; }
+            .grade-input.grade-save-error { border-color: #C8102E !important; box-shadow: 0 0 0 0.2rem rgba(200, 16, 46, 0.25) !important; }
         `;
         document.head.appendChild(styleTag);
 
@@ -256,20 +252,48 @@
             return Number.isFinite(parsed) ? parsed : null;
         }
 
-        function recalcRowAverage(row) {
-            const values = Array.from(row.querySelectorAll('.grade-input'))
+        // Puntos máximos por dimensión del cuaderno SER/SABER/HACER (mismo criterio que el cálculo inicial en el servidor).
+        const DIMENSION_POINTS = { ser: 10, saber: 45, hacer: 40 };
+
+        function scaleToDimension(row, dimension, maxPoints) {
+            const values = Array.from(row.querySelectorAll(`.grade-input[data-dimension="${dimension}"]`))
                 .map(input => parseGradeValue(input.value))
                 .filter(value => value !== null);
-            const averageCell = row.querySelector('.grade-average');
-            if (!averageCell) {
-                return;
-            }
             if (!values.length) {
-                averageCell.textContent = '-';
-                return;
+                return null;
             }
             const average = values.reduce((sum, value) => sum + value, 0) / values.length;
-            averageCell.textContent = average.toFixed(2);
+            return Math.round(((average / 100) * maxPoints) * 100) / 100;
+        }
+
+        function recalcRowAverage(row) {
+            const promSer = scaleToDimension(row, 'ser', DIMENSION_POINTS.ser);
+            const promSaber = scaleToDimension(row, 'saber', DIMENSION_POINTS.saber);
+            const promHacer = scaleToDimension(row, 'hacer', DIMENSION_POINTS.hacer);
+
+            const serCell = row.querySelector('.dim-ser');
+            const saberCell = row.querySelector('.dim-saber');
+            const hacerCell = row.querySelector('.dim-hacer');
+            if (serCell) serCell.textContent = promSer === null ? '-' : promSer.toFixed(2);
+            if (saberCell) saberCell.textContent = promSaber === null ? '-' : promSaber.toFixed(2);
+            if (hacerCell) hacerCell.textContent = promHacer === null ? '-' : promHacer.toFixed(2);
+
+            const dimensionValues = [promSer, promSaber, promHacer].filter(v => v !== null);
+            const total = dimensionValues.length ? Math.round(dimensionValues.reduce((s, v) => s + v, 0) * 100) / 100 : null;
+            const totalCell = row.querySelector('.total-cell');
+            if (totalCell) totalCell.textContent = total === null ? '-' : total.toFixed(2);
+
+            const autoevalInput = row.querySelector('.grade-input[data-dimension="autoeval"]');
+            const autoeval = autoevalInput ? parseGradeValue(autoevalInput.value) : null;
+            const notaBimestralCell = row.querySelector('.nota-bimestral-cell');
+            if (notaBimestralCell) {
+                if (total === null && autoeval === null) {
+                    notaBimestralCell.textContent = '-';
+                } else {
+                    const nota = Math.round(((total ?? 0) + (autoeval ?? 0)) * 100) / 100;
+                    notaBimestralCell.textContent = nota.toFixed(2);
+                }
+            }
         }
 
         function createToastContainer() {
@@ -424,87 +448,6 @@
                 }
             });
         }
-
-        // Attendance select auto-save
-        const attendanceSelects = document.querySelectorAll('.attendance-select');
-        const attendanceSaveUrl = '/attendance/save'; // Create this route or adjust accordingly
-
-        function clearAttendanceState(select) {
-            if (select._attendanceTimer) {
-                clearTimeout(select._attendanceTimer);
-                select._attendanceTimer = null;
-            }
-            select.classList.remove('attendance-saving', 'attendance-saved', 'attendance-error');
-        }
-
-        function markAttendanceProcessing(select) {
-            clearAttendanceState(select);
-            select.classList.add('attendance-saving');
-        }
-
-        function markAttendanceSaved(select) {
-            clearAttendanceState(select);
-            select.classList.add('attendance-saved');
-            select._attendanceTimer = setTimeout(() => clearAttendanceState(select), 1400);
-        }
-
-        function markAttendanceError(select) {
-            clearAttendanceState(select);
-            select.classList.add('attendance-error');
-        }
-
-        async function saveAttendance(select) {
-            const studentId = select.dataset.studentId || select.closest('tr')?.datasetStudentId || select.closest('tr')?.dataset?.studentId;
-            const subjectId = select.dataset.subjectId || '{{ $selectedSubjectId }}';
-            const status = select.value;
-
-            // don't save empty
-            if (!studentId || status === '') {
-                return;
-            }
-
-            const today = new Date().toISOString().slice(0,10);
-
-            const payload = {
-                student_id: studentId,
-                subject_id: subjectId,
-                status: status,
-                date: today,
-            };
-
-            markAttendanceProcessing(select);
-
-            try {
-                const response = await fetch(attendanceSaveUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
-                    body: JSON.stringify(payload),
-                });
-
-                const data = await response.json().catch(() => null);
-                if (!response.ok || (data && data.success === false)) {
-                    markAttendanceError(select);
-                    console.error('Error guardando asistencia:', response.statusText, data?.message || 'Respuesta inválida');
-                    return;
-                }
-
-                markAttendanceSaved(select);
-                showSaveToast('✓ Asistencia registrada');
-            } catch (error) {
-                markAttendanceError(select);
-                console.error('Error en la petición de asistencia:', error);
-            }
-        }
-
-        attendanceSelects.forEach(s => {
-            s.addEventListener('change', function () {
-                saveAttendance(this);
-            });
-        });
     });
 </script>
 

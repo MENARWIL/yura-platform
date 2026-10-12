@@ -17,10 +17,16 @@ class UserController extends Controller
     {
         $users = User::with(['mainCourse', 'students.parallel'])
             ->where('id', '!=', Auth::id())
+            ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
+            ->orderBy('last_name')
+            ->orderBy('name')
             ->get();
         $deletedUsers = User::onlyTrashed()
             ->with(['mainCourse', 'students.parallel'])
             ->where('id', '!=', Auth::id())
+            ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
+            ->orderBy('last_name')
+            ->orderBy('name')
             ->get();
 
         return view('users.index', compact('users', 'deletedUsers'));
@@ -45,6 +51,8 @@ class UserController extends Controller
         $teachers = User::whereIn('role', ['profesor', 'teacher'])
             ->whereIn('status', ['active', 'activo'])
             ->with('mainSubject')
+            ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
+            ->orderBy('last_name')
             ->orderBy('name')
             ->get();
 
@@ -56,7 +64,9 @@ class UserController extends Controller
         $request->merge($this->normalizeUserInput($request));
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'main_subject_id' => ['required', 'integer', 'exists:subjects,id'],
@@ -65,7 +75,10 @@ class UserController extends Controller
         ], $this->userValidationMessages());
 
         $data = [
-            'name' => $validated['name'],
+            'name' => trim(preg_replace('/\s+/', ' ', $validated['last_name'] . ' ' . $validated['second_last_name'] . ' ' . $validated['first_name'])),
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'second_last_name' => $validated['second_last_name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'rol' => 'profesor',
@@ -88,7 +101,9 @@ class UserController extends Controller
         $request->merge($this->normalizeUserInput($request));
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'rol' => ['required', 'in:padre,madre,tutor,profesor,admin,estudiante'],
@@ -98,7 +113,10 @@ class UserController extends Controller
         ], $this->userValidationMessages());
 
         $data = [
-            'name' => $validated['name'],
+            'name' => trim(preg_replace('/\s+/', ' ', $validated['last_name'] . ' ' . $validated['second_last_name'] . ' ' . $validated['first_name'])),
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'second_last_name' => $validated['second_last_name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'rol' => $validated['rol'],
@@ -138,7 +156,9 @@ class UserController extends Controller
 
         if ($request->routeIs('teachers.update')) {
             $validated = $request->validate([
-                'name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+                'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+                'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+                'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
                 'main_subject_id' => ['required', 'integer', 'exists:subjects,id'],
                 'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
@@ -147,7 +167,10 @@ class UserController extends Controller
             ], $this->userValidationMessages());
 
             $data = [
-                'name' => $validated['name'],
+                'name' => trim(preg_replace('/\s+/', ' ', $validated['last_name'] . ' ' . $validated['second_last_name'] . ' ' . $validated['first_name'])),
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'second_last_name' => $validated['second_last_name'],
                 'email' => $validated['email'],
                 'telefono' => $validated['telefono'] ?? null,
                 'main_subject_id' => $validated['main_subject_id'] ?? null,
@@ -171,7 +194,9 @@ class UserController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+            'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
             'rol' => ['required', 'in:padre,madre,tutor,profesor,admin,estudiante'],
             'main_course_id' => ['nullable', 'integer', 'exists:courses,id'],
@@ -181,7 +206,10 @@ class UserController extends Controller
         ], $this->userValidationMessages());
 
         $data = [
-            'name' => $validated['name'],
+            'name' => trim(preg_replace('/\s+/', ' ', $validated['last_name'] . ' ' . $validated['second_last_name'] . ' ' . $validated['first_name'])),
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
+            'second_last_name' => $validated['second_last_name'],
             'email' => $validated['email'],
             'rol' => $validated['rol'],
             'telefono' => $validated['telefono'] ?? null,
@@ -259,12 +287,16 @@ class UserController extends Controller
 
     private function normalizeUserInput(Request $request): array
     {
-        $name = preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('name')));
+        $firstName = preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('first_name')));
+        $lastName = preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('last_name')));
+        $secondLastName = preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('second_last_name')));
         $email = strtolower(trim((string) $request->input('email')));
         $telefono = trim((string) $request->input('telefono'));
 
         return [
-            'name' => $name,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'second_last_name' => $secondLastName,
             'email' => $email,
             'telefono' => $telefono === '' ? null : $telefono,
         ];
@@ -273,8 +305,12 @@ class UserController extends Controller
     private function userValidationMessages(): array
     {
         return [
-            'name.required' => __('messages.validation.required'),
-            'name.regex' => __('messages.validation.name'),
+            'first_name.required' => __('messages.validation.required'),
+            'first_name.regex' => __('messages.validation.name'),
+            'last_name.required' => __('messages.validation.required'),
+            'last_name.regex' => __('messages.validation.name'),
+            'second_last_name.required' => __('messages.validation.required'),
+            'second_last_name.regex' => __('messages.validation.name'),
             'email.required' => __('messages.validation.required'),
             'email.email' => __('messages.validation.email'),
             'email.unique' => __('messages.validation.unique'),

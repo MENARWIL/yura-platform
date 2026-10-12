@@ -28,10 +28,18 @@ class DashboardController extends Controller
             $data['metrics'] = [
                 'mis_estudiantes_count' => Student::where($teacherForeignKey, $user->id)->count(),
             ];
+            // Ranking is computed from real grades (Student::realOverallAverage()) instead of
+            // the legacy `score` column, which is not kept in sync with the `grades` table.
             $data['ranking'] = Student::where($teacherForeignKey, $user->id)
-                ->orderBy('score', 'desc')
+                ->get()
+                ->map(function (Student $student) {
+                    $student->real_average = $student->realOverallAverage() ?? 0;
+
+                    return $student;
+                })
+                ->sortByDesc('real_average')
                 ->take(10)
-                ->get();
+                ->values();
 
             $data['distribucion'] = [
                 'basico' => Student::where($teacherForeignKey, $user->id)->where($levelColumn, 'básico')->count(),
@@ -42,8 +50,8 @@ class DashboardController extends Controller
             $student = $user->studentProfile()->with(['profesor', 'padre'])->first();
             $data['metrics'] = [
                 'mi_estudiante' => $student?->nombre,
-                'mi_promedio' => $student?->promedio ?? 0,
-                'mi_asistencia' => $student?->asistencia ?? 0,
+                'mi_promedio' => $student?->realOverallAverage() ?? 0,
+                'mi_asistencia' => $student?->realAttendancePercent() ?? 0,
             ];
         } else {
             $parentForeignKey = (new Student())->getParentUserForeignKey();
@@ -61,8 +69,8 @@ class DashboardController extends Controller
 
         return response()->json(array_merge([
             'success' => true,
-            'role' => $user->rol,
-            'rol' => $user->rol,
+            'role' => $user->role,
+            'rol' => $user->role,
         ], $data));
     }
 }

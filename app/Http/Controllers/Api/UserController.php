@@ -11,8 +11,10 @@ use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        abort_unless($request->user() && $request->user()->isAdmin(), 403, 'No autorizado.');
+
         $users = User::all();
         return response()->json([
             'success' => true,
@@ -22,6 +24,8 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless($request->user() && $request->user()->isAdmin(), 403, 'No autorizado.');
+
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -53,8 +57,10 @@ class UserController extends Controller
         ], 201);
     }
 
-    public function toggleStatus(User $user)
+    public function toggleStatus(Request $request, User $user)
     {
+        abort_unless($request->user() && $request->user()->isAdmin(), 403, 'No autorizado.');
+
         $currentStatus = strtolower(trim((string) $user->status));
         $user->status = in_array($currentStatus, ['active', 'activo'], true)
             ? 'inactive'

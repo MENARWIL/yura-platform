@@ -12,11 +12,25 @@
             <form action="{{ route('teachers.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
-                    <div class="form-group">
-                        <label for="name">Nombre completo</label>
-                        <input id="name" name="name" value="{{ old('name') }}" class="form-control js-person-field @error('name') is-invalid @enderror" data-rule="name" required>
-                        <small class="invalid-feedback"></small>
-                        @error('name') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="last_name">Apellido paterno</label>
+                            <input id="last_name" name="last_name" value="{{ old('last_name') }}" class="form-control js-person-field @error('last_name') is-invalid @enderror" data-rule="name" required>
+                            <small class="invalid-feedback"></small>
+                            @error('last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="second_last_name">Apellido materno</label>
+                            <input id="second_last_name" name="second_last_name" value="{{ old('second_last_name') }}" class="form-control js-person-field @error('second_last_name') is-invalid @enderror" data-rule="name" required>
+                            <small class="invalid-feedback"></small>
+                            @error('second_last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="first_name">Nombre(s)</label>
+                            <input id="first_name" name="first_name" value="{{ old('first_name') }}" class="form-control js-person-field @error('first_name') is-invalid @enderror" data-rule="name" required>
+                            <small class="invalid-feedback"></small>
+                            @error('first_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="email">Correo electrónico de acceso</label>

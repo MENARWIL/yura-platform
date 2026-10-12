@@ -7,19 +7,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
     <style>
         :root {
-            --primary: #f9d423;
-            --primary-dark: #d8a900;
-            --secondary: #a90329;
-            --secondary-dark: #7f0221;
-            --ink: #1f1f2b;
-            --muted: #5e6372;
-            --bg: #f8f9fb;
-            --surface: rgba(255, 255, 255, 0.92);
-            --stroke: rgba(31, 31, 43, 0.08);
-            --shadow: 0 20px 60px rgba(31, 31, 43, 0.12);
+            --yura-action: #1E56D6;
+            --yura-action-top: #2F6FED;
+            --yura-action-hover: #1847B5;
+            --yura-action-soft: #EEF3FD;
+            --yura-action-border: #C9D6F2;
+            --yura-blue: #0B3D91;
+            --yura-blue-dark: #082C6C;
+            --yura-blue-light: #E7EEF9;
+            --yura-red: #C8102E;
+            --yura-red-dark: #9E0B24;
+            --yura-red-light: #FCE8EB;
+            --yura-white: #FFFFFF;
+            --yura-bg: #F4F6FA;
+            --yura-text: #1F2937;
+            --yura-muted: #5B6474;
+            --yura-border: #DDE3EC;
+            --yura-tricolor: linear-gradient(90deg, #C8102E 0 33.33%, #FFFFFF 33.33% 66.66%, #0B3D91 66.66% 100%);
+            --yura-shadow: 0 16px 40px rgba(11, 61, 145, 0.10);
             --radius: 28px;
         }
 
@@ -28,12 +36,18 @@
         body {
             margin: 0;
             font-family: 'Outfit', sans-serif;
-            color: var(--ink);
+            color: var(--yura-text);
             background:
-                linear-gradient(135deg, rgba(249, 212, 35, 0.14), rgba(169, 3, 41, 0.08)),
-                radial-gradient(circle at top left, rgba(249, 212, 35, 0.18), transparent 35%),
-                var(--bg);
+                linear-gradient(180deg, var(--yura-blue-light), var(--yura-bg) 460px),
+                var(--yura-bg);
             min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            display: block;
+            height: 6px;
+            background: var(--yura-tricolor);
         }
 
         .page-shell {
@@ -55,7 +69,7 @@
             align-items: center;
             gap: 14px;
             text-decoration: none;
-            color: var(--ink);
+            color: var(--yura-text);
         }
 
         .brand-mark {
@@ -65,20 +79,23 @@
             display: grid;
             place-items: center;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), #ffe98f);
-            box-shadow: var(--shadow);
+            background: linear-gradient(135deg, var(--yura-blue), var(--yura-blue-dark));
+            color: var(--yura-white);
+            border-bottom: 3px solid var(--yura-red);
+            box-shadow: var(--yura-shadow);
         }
 
         .brand-title {
             font-size: 1.1rem;
             font-weight: 800;
             letter-spacing: 0.04em;
+            color: var(--yura-blue-dark);
         }
 
         .brand-subtitle {
             display: block;
             font-size: 0.88rem;
-            color: var(--muted);
+            color: var(--yura-muted);
             margin-top: 2px;
         }
 
@@ -104,15 +121,25 @@
         .btn:hover { transform: translateY(-1px); }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), #ffe07a);
-            color: #1d1400;
-            box-shadow: 0 14px 34px rgba(249, 212, 35, 0.28);
+            background: linear-gradient(180deg, var(--yura-action-top) 0%, var(--yura-action) 100%);
+            color: #FFFFFF;
+            border-color: var(--yura-action);
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 10px 24px -6px rgba(30, 86, 214, 0.5);
+        }
+
+        .btn-primary:hover {
+            background: var(--yura-action-hover);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.9);
-            color: var(--ink);
-            border-color: var(--stroke);
+            background: var(--yura-white);
+            color: var(--yura-blue);
+            border-color: var(--yura-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--yura-action-soft);
+            border-color: var(--yura-action);
         }
 
         .hero {
@@ -127,11 +154,10 @@
         .feature-card,
         .stat-card,
         .detail-card {
-            background: var(--surface);
-            border: 1px solid var(--stroke);
+            background: var(--yura-white);
+            border: 1px solid var(--yura-border);
             border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            backdrop-filter: blur(8px);
+            box-shadow: var(--yura-shadow);
         }
 
         .hero-card {
@@ -144,8 +170,8 @@
             gap: 8px;
             padding: 8px 12px;
             border-radius: 999px;
-            background: rgba(249, 212, 35, 0.18);
-            color: #704d00;
+            background: var(--yura-red-light);
+            color: var(--yura-red-dark);
             font-weight: 700;
             margin-bottom: 18px;
         }
@@ -154,10 +180,11 @@
             font-size: clamp(2rem, 2.3vw, 2.5rem);
             line-height: 1.08;
             margin: 0 0 14px;
+            color: var(--yura-blue-dark);
         }
 
         .hero p {
-            color: var(--muted);
+            color: var(--yura-muted);
             font-size: 1.05rem;
             margin: 0 0 24px;
             line-height: 1.7;
@@ -173,9 +200,14 @@
         .badge {
             padding: 8px 12px;
             border-radius: 999px;
-            background: rgba(31, 31, 43, 0.05);
+            background: var(--yura-blue-light);
+            color: var(--yura-blue-dark);
             font-size: 0.93rem;
             font-weight: 600;
+        }
+
+        .badge i {
+            color: var(--yura-red);
         }
 
         .hero-cta {
@@ -188,15 +220,14 @@
             padding: 26px;
             display: grid;
             gap: 18px;
-            background:
-                linear-gradient(160deg, rgba(169, 3, 41, 0.08), rgba(249, 212, 35, 0.12)),
-                var(--surface);
+            background: linear-gradient(160deg, var(--yura-blue-light), var(--yura-white) 70%);
         }
 
         .visual-figure {
             border-radius: 22px;
-            background: linear-gradient(135deg, rgba(31, 31, 43, 0.96), rgba(169, 3, 41, 0.9));
-            color: white;
+            background: linear-gradient(135deg, var(--yura-blue), var(--yura-blue-dark));
+            border-bottom: 4px solid var(--yura-red);
+            color: var(--yura-white);
             padding: 24px;
             min-height: 220px;
             display: flex;
@@ -224,16 +255,18 @@
         }
 
         .mini-panel {
-            background: rgba(255, 255, 255, 0.96);
+            background: var(--yura-white);
             border-radius: 18px;
             padding: 14px;
-            border: 1px solid rgba(31, 31, 43, 0.08);
+            border: 1px solid var(--yura-border);
+            color: var(--yura-muted);
         }
 
         .mini-panel strong {
             display: block;
             margin-bottom: 4px;
             font-size: 1.1rem;
+            color: var(--yura-red);
         }
 
         .stats {
@@ -245,17 +278,19 @@
 
         .stat-card {
             padding: 22px;
+            border-top: 4px solid var(--yura-blue);
         }
 
         .stat-card span {
             display: block;
-            color: var(--muted);
+            color: var(--yura-muted);
             margin-bottom: 10px;
             font-size: 0.92rem;
         }
 
         .stat-card strong {
             font-size: 1.8rem;
+            color: var(--yura-blue);
         }
 
         .content-grid {
@@ -269,13 +304,21 @@
             padding: 24px;
         }
 
+        .detail-card {
+            border-left: 4px solid var(--yura-red);
+        }
+
         .section-title {
+            display: inline-block;
             margin: 0 0 10px;
+            padding-bottom: 6px;
             font-size: 1.3rem;
+            color: var(--yura-blue-dark);
+            border-bottom: 3px solid var(--yura-red);
         }
 
         .section-copy {
-            color: var(--muted);
+            color: var(--yura-muted);
             line-height: 1.7;
             margin-bottom: 20px;
         }
@@ -292,7 +335,11 @@
             display: flex;
             gap: 12px;
             align-items: flex-start;
-            color: var(--ink);
+            color: var(--yura-text);
+        }
+
+        .feature-list strong {
+            color: var(--yura-blue-dark);
         }
 
         .feature-list i {
@@ -301,26 +348,33 @@
             border-radius: 50%;
             display: grid;
             place-items: center;
-            background: rgba(249, 212, 35, 0.18);
-            color: #7d5900;
+            background: var(--yura-blue-light);
+            color: var(--yura-blue);
             flex-shrink: 0;
         }
 
         .detail-card h3 {
             margin: 0 0 12px;
             font-size: 1.1rem;
+            color: var(--yura-blue-dark);
         }
 
         .detail-card ul {
             padding-left: 18px;
-            color: var(--muted);
+            color: var(--yura-muted);
             line-height: 1.75;
+        }
+
+        .detail-card li::marker {
+            color: var(--yura-red);
         }
 
         .footer-note {
             margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid var(--yura-border);
             text-align: center;
-            color: var(--muted);
+            color: var(--yura-muted);
             font-size: 0.97rem;
         }
 

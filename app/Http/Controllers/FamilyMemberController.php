@@ -19,9 +19,14 @@ class FamilyMemberController extends Controller
             'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
         ]);
 
+        $authUser = Auth::user();
+
         $familyMembers = StudentFamilyMember::with(['student.course', 'student.parallel', 'user'])
             ->where('active', true)
             ->where('is_primary', true)
+            ->when($authUser->isResponsibleRole(), function ($query) use ($authUser) {
+                $query->where('user_id', $authUser->id);
+            })
             ->whereHas('student', function ($query) use ($filters) {
                 $query->when($filters['student_name'] ?? null, function ($studentQuery, $studentName) {
                     $studentQuery->where('name', 'like', '%' . $studentName . '%');
@@ -32,7 +37,15 @@ class FamilyMemberController extends Controller
                 });
             })
             ->latest()
-            ->get();
+            ->get()
+            ->sortBy(function ($member) {
+                $lastName = $member->user->last_name ?? '';
+
+                return $lastName !== ''
+                    ? '0_' . mb_strtolower($lastName)
+                    : '1_' . mb_strtolower($member->user->name ?? '');
+            })
+            ->values();
 
         $courses = \App\Models\Course::orderBy('name')->get();
         $parallels = \App\Models\Parallel::with('course')->orderBy('name')->get();

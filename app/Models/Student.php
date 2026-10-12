@@ -2,11 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Group;
-use App\Models\Interaction;
-use App\Models\Result;
-use App\Models\SchoolClass;
-use App\Models\Tutor;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +19,9 @@ class Student extends Model
 
     protected $fillable = [
         'name',
+        'first_name',
+        'last_name',
+        'second_last_name',
         'course',
         'course_id',
         'parallel_id',
@@ -55,25 +53,6 @@ class Student extends Model
         'parallel_id' => 'integer',
     ];
 
-    public function tutors(): BelongsToMany
-    {
-        return $this->belongsToMany(Tutor::class, 'student_tutor', 'student_id', 'tutor_id')
-            ->withPivot('relationship')
-            ->withTimestamps();
-    }
-
-    public function classes(): BelongsToMany
-    {
-        return $this->belongsToMany(SchoolClass::class, 'class_student', 'student_id', 'class_id')
-            ->withTimestamps();
-    }
-
-    public function groups(): BelongsToMany
-    {
-        return $this->belongsToMany(Group::class, 'group_student', 'student_id', 'group_id')
-            ->withTimestamps();
-    }
-
     public function parallel(): BelongsTo
     {
         return $this->belongsTo(Parallel::class, 'parallel_id');
@@ -82,6 +61,20 @@ class Student extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class, 'course_id');
+    }
+
+    public function getCourseModel(): ?Course
+    {
+        if ($this->relationLoaded('course')) {
+            return $this->getRelation('course');
+        }
+
+        return $this->course()->first();
+    }
+
+    public function getCourseNameAttribute(): string
+    {
+        return $this->getCourseModel()?->name ?? (string) ($this->attributes['course'] ?? 'Sin curso');
     }
 
     public function padre(): BelongsTo
@@ -126,16 +119,6 @@ class Student extends Model
     public function familyMembers(): BelongsToMany
     {
         return $this->familiares();
-    }
-
-    public function interactions(): HasMany
-    {
-        return $this->hasMany(Interaction::class, 'student_id');
-    }
-
-    public function results(): HasMany
-    {
-        return $this->hasMany(Result::class, 'student_id');
     }
 
     public function grades(): HasMany
@@ -473,5 +456,67 @@ class Student extends Model
         }
 
         return (int) round(array_sum($values) / count($values));
+    }
+
+    /**
+     * The following "real*" helpers compute academic figures live from the
+     * `grades` and `attendance` tables instead of the legacy static columns
+     * (`score`, `writing_score`, `exam_score`, `attendance`) on this model,
+     * which are not kept reliably in sync with the real record of grades
+     * and attendance taken by teachers. Prefer these methods whenever
+     * displaying or exporting academic performance to end users.
+     */
+    public function realWritingScore(): ?float
+    {
+        return $this->averageGradeScoreForTypes(['activity', 'actividad', 'trabajo_practico']);
+    }
+
+    public function realExamScore(): ?float
+    {
+        return $this->averageGradeScoreForTypes(['exam', 'examen']);
+    }
+
+    public function realRobotScore(): ?float
+    {
+        $average = $this->grades()
+            ->where('status', 'completed')
+            ->where(function ($query) {
+                $query->where('is_robot_activity', true)->orWhere('type', 'robot');
+            })
+            ->avg('score');
+
+        return $average !== null ? round((float) $average, 2) : null;
+    }
+
+    public function realOverallAverage(): ?float
+    {
+        $average = $this->grades()->where('status', 'completed')->avg('score');
+
+        return $average !== null ? round((float) $average, 2) : null;
+    }
+
+    public function realAttendancePercent(): ?float
+    {
+        $total = $this->attendances()->count();
+
+        if ($total === 0) {
+            return null;
+        }
+
+        $present = $this->attendances()
+            ->whereRaw('LOWER(TRIM(status)) = ?', ['presente'])
+            ->count();
+
+        return round(($present / $total) * 100, 2);
+    }
+
+    private function averageGradeScoreForTypes(array $types): ?float
+    {
+        $average = $this->grades()
+            ->where('status', 'completed')
+            ->whereIn('type', $types)
+            ->avg('score');
+
+        return $average !== null ? round((float) $average, 2) : null;
     }
 }

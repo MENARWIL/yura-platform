@@ -79,7 +79,7 @@ class RobotIntegrationTest extends TestCase
         $this->assertSame(1, Grade::where('robot_activity_id', 'robot-activity-001')->count());
     }
 
-    public function test_web_robot_activity_creates_one_pending_record_per_student(): void
+    public function test_web_robot_activity_creates_a_pending_activity_for_selected_students(): void
     {
         $teacher = User::factory()->create([
             'role' => 'profesor',
@@ -114,17 +114,30 @@ class RobotIntegrationTest extends TestCase
             ->post('/robot-activities', [
                 'parallel_id' => $parallel->id,
                 'subject_id' => $subject->id,
-                'category' => 'Colores',
-                'description' => 'Colores de prueba',
+                'quarter' => 1,
+                'activity_number' => 1,
+                'category' => 'nivel1_colores',
+                'participant_ids' => Student::where('parallel_id', $parallel->id)->pluck('id')->all(),
+                'group_size' => 3,
+                'respondents_per_group' => 2,
+                'questions_per_respondent' => 2,
             ])
-            ->assertRedirect(route('grades.index'));
+            ->assertRedirect(route('robot-activities.index'));
 
-        $grades = Grade::where('subject_id', $subject->id)
+        $this->assertDatabaseHas('robot_activities', [
+            'parallel_id' => $parallel->id,
+            'subject_id' => $subject->id,
+            'quarter' => 1,
+            'activity_number' => 1,
+            'status' => 'pending',
+        ]);
+        $payload = \App\Models\RobotActivity::firstOrFail()->payload;
+        $this->assertSame(
+            2,
+            collect($payload['activity']['groups'])->sum(fn ($group) => count($group['members']))
+        );
+        $this->assertSame(0, Grade::where('subject_id', $subject->id)
             ->where('is_robot_activity', true)
-            ->get();
-
-        $this->assertCount(2, $grades);
-        $this->assertCount(1, $grades->pluck('robot_activity_id')->unique());
-        $this->assertTrue($grades->every(fn (Grade $grade) => $grade->status === 'pending'));
+            ->count());
     }
 }

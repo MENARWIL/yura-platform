@@ -26,6 +26,9 @@
         <h1>Reporte General de Estudiantes</h1>
         <p>YURA Platform | Sistema de Seguimiento Pedagógico</p>
         <p>Fecha de Generación: {{ date('d/m/Y H:i') }} | Generado por: {{ Auth::user()->name }}</p>
+        @isset($scopeLabel)
+            <p><strong>Alcance del reporte:</strong> {{ $scopeLabel }}</p>
+        @endisset
     </div>
 
     <table>
@@ -44,24 +47,31 @@
         </thead>
         <tbody>
             @foreach($students as $student)
+            @php
+                // Computed live from grades/attendance (see Student::real*()) instead
+                // of the legacy static columns, which are not kept in sync.
+                $realAverage = $student->realOverallAverage();
+                $realAttendance = $student->realAttendancePercent();
+                $realAverageDisplay = $realAverage ?? 0;
+            @endphp
             <tr>
                 <td><b>{{ $student->nombre }}</b><br><small>Edad: {{ $student->edad }}</small></td>
-                <td>{{ strtoupper($student->nivel) }}</td>
+                <td>{{ mb_strtoupper($student->nivel, 'UTF-8') }}</td>
                 <td>{{ optional($student->course)->name ?? $student->getAttribute('course') ?? 'N/A' }}</td>
                 <td>{{ $student->parallel->name ?? 'N/A' }}</td>
                 <td>{{ $student->padre->name ?? 'N/A' }}</td>
                 <td>{{ $student->profesor->name ?? 'N/A' }}</td>
                 <td>
                     <span class="badge {{ $student->estado == 'activo' ? 'badge-success' : 'badge-danger' }}">
-                        {{ strtoupper($student->estado) }}
+                        {{ mb_strtoupper($student->estado, 'UTF-8') }}
                     </span>
                 </td>
                 <td>
-                    <span class="badge {{ $student->promedio >= 70 ? 'badge-success' : ($student->promedio >= 51 ? 'badge-warning' : 'badge-danger') }}">
-                        {{ $student->promedio }}%
+                    <span class="badge {{ $realAverageDisplay >= 70 ? 'badge-success' : ($realAverageDisplay >= 51 ? 'badge-warning' : 'badge-danger') }}">
+                        {{ $realAverage !== null ? $realAverage . '%' : 'N/A' }}
                     </span>
                 </td>
-                <td>{{ $student->asistencia }}%</td>
+                <td>{{ $realAttendance !== null ? $realAttendance . '%' : 'N/A' }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -74,7 +84,7 @@
         </div>
         <div class="summary-item">
             <small>Promedio General</small>
-            <b>{{ round($students->avg('promedio'), 2) }}%</b>
+            <b>{{ round($students->avg(fn ($student) => $student->realOverallAverage() ?? 0), 2) }}%</b>
         </div>
         <div class="summary-item">
             <small>Estado Sistema</small>

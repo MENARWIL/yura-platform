@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Informe YuraReporte V1.0</title>
+<style>
+    @page { margin: 18mm 15mm; }
+    body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 9.5pt; color: #1e293b; line-height: 1.45; }
+    h1 { color: #0f172a; font-size: 16pt; border-bottom: 2px solid #0284c7; padding-bottom: 5px; margin-top: 10px; }
+    h2 { color: #0369a1; font-size: 13pt; margin-top: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 3px; }
+    h3 { color: #334155; font-size: 11pt; margin-top: 12px; }
+    p { margin: 5px 0; text-align: justify; }
+    ul { margin: 4px 0 8px 18px; padding: 0; }
+    li { margin-bottom: 3px; }
+    hr { border: 0; border-top: 1px solid #cbd5e1; margin: 12px 0; }
+    .report-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 8.5pt; }
+    .report-table th { background: #0284c7; color: #ffffff; padding: 6px 8px; text-align: left; font-weight: bold; }
+    .report-table td { border: 1px solid #e2e8f0; padding: 5px 8px; }
+    .report-table tr:nth-child(even) td { background: #f8fafc; }
+    .header-box { background: #f0f9ff; border-left: 4px solid #0284c7; padding: 10px 14px; margin-bottom: 15px; }
+    strong { color: #0f172a; }
+</style>
+</head>
+<body>
+<div class="header-box">
+    <strong>DOCUMENTO OFICIAL DE AUDITORÍA Y ARQUITECTURA</strong><br/>
+    Sistema YURA Platform &middot; Versión de Informe: <strong>V1.0</strong><br/>
+    Fecha de emisión: 01 de Octubre de 2026 &middot; Estado: Registrado
+</div>
+<h1>INFORME TÉCNICO Y ARQUITECTÓNICO: YURA REPORTE V1.0</h1>
+<p><strong>Plataforma Educativa Institucional y de Gestión Académica YURA</strong></p>
+<p><em>Auditoría de Software, Diagnóstico de Seguridad, Arquitectura de Información y Plan de Orquestación</em></p>
+<p><strong>Versión:</strong> 1.0</p>
+<p><strong>Fecha de Emisión:</strong> 01 de Octubre de 2026</p>
+<p><strong>Entorno Operativo:</strong> Windows / XAMPP / PHP 8.2+ / MySQL 8.0 / Laravel 12</p>
+<p><strong>Código de Proyecto:</strong> YURA-PLT-2026-V1.0</p>
+<hr/>
+<h2>1. RESUMEN EJECUTIVO</h2>
+<p>El presente informe formaliza la auditoría técnica exhaustiva y el levantamiento arquitectónico inicial de la <strong>Plataforma Educativa YURA</strong>, desarrollada originalmente como soporte pedagógico del proyecto <em>&quot;Robot Interactivo con Inteligencia Artificial ASR para el Apoyo en la Práctica del Idioma Quechua en Estudiantes de Sexto de Primaria en la U. E. Boliviano Holandés&quot;</em>, orientada actualmente a su consolidación como una <strong>Plataforma Web Educativa Institucional</strong> alineada a las mejores prácticas de los portales públicos educativos de Bolivia.</p>
+<p>La evaluación técnica integral evidencia un sistema base sólido sobre <strong>Laravel 12 y MySQL 8.0</strong>, con <strong>29 pruebas automatizadas aprobadas (Pest/PHPUnit)</strong>, pero con oportunidades críticas de saneamiento en seguridad, normalización de datos, accesibilidad universal y la ausencia de los módulos fundamentales de un portal público: catálogo de trámites ciudadanos en línea, repositorio oficial de normativa y resoluciones, buscador unificado y auditoría inmutable de operaciones.</p>
+<hr/>
+<h2>2. FICHA TÉCNICA DEL ECOSISTEMA DE SOFTWARE</h2>
+<table class="report-table"><thead><tr><th>Parámetro</th><th>Detalle Técnico</th><th>Evaluación</th></tr></thead><tbody>
+<tr><td>**Lenguaje Base**</td><td>PHP 8.2.12 (CLI / CGI)</td><td>✅ CORRECTO</td></tr>
+<tr><td>**Framework Backend**</td><td>Laravel Framework 12.0.x (`laravel/framework: ^12.0`)</td><td>✅ CORRECTO</td></tr>
+<tr><td>**Autenticación API**</td><td>Laravel Sanctum 4.0 (`laravel/sanctum: ^4.0`)</td><td>✅ CORRECTO</td></tr>
+<tr><td>**Base de Datos**</td><td>MySQL 8.0.46 Community Server (InnoDB, utf8mb4)</td><td>✅ CORRECTO</td></tr>
+<tr><td>**Librería de Reportes PDF**</td><td>Barryvdh DomPDF 3.1 (`barryvdh/laravel-dompdf: ^3.1`)</td><td>✅ CORRECTO</td></tr>
+<tr><td>**Librería de Exportación Excel**</td><td>Maatwebsite Excel 3.1 (`maatwebsite/excel: ^3.1`)</td><td>✅ CORRECTO</td></tr>
+<tr><td>**Motor de Testing**</td><td>Pest PHP 3.x / PHPUnit 11.5</td><td>✅ CORRECTO (29 tests PASS)</td></tr>
+<tr><td>**Frontend Compilado**</td><td>Vite 7.0.7 con Tailwind CSS v4 (`@tailwindcss/vite: ^4.0.0`)</td><td>⚠️ NECESITA MEJORA</td></tr>
+<tr><td>**Frontend Administrativo**</td><td>AdminLTE 3 / Bootstrap 4 / FontAwesome 6 (Vendor local)</td><td>⚠️ NECESITA MEJORA</td></tr>
+<tr><td>**Internacionalización**</td><td>Laravel Localization (`es` Castellano / `qu` Quechua)</td><td>✅ CORRECTO</td></tr>
+</tbody></table>
+<hr/>
+<h2>3. DIAGRAMAS ARQUITECTÓNICOS DEL SISTEMA</h2>
+<h3>3.1 Diagrama de Arquitectura Global de la Plataforma</h3>
+<p>graph TD</p>
+<p>subgraph Capa_Presentacion [&quot;Capa de Presentación y Clientes&quot;]</p>
+<p>Citizen[Ciudadano / Visitante]</p>
+<p>Parent[Padres / Tutores Familiares]</p>
+<p>Teacher[Personal Docente]</p>
+<p>AdminUser[Administrador / Gestor SIE]</p>
+<p>RobotClient[Robot Físico YURA / App Móvil]</p>
+<p>end</p>
+<p>subgraph Capa_Enrutamiento [&quot;Enrutamiento y Seguridad de Entrada&quot;]</p>
+<p>WebGate[&quot;Rutas Web (routes/web.php)&lt;br/&gt;Sesiones + CSRF + SetLocale&quot;]</p>
+<p>ApiGate[&quot;Rutas API (routes/api.php)&lt;br/&gt;Laravel Sanctum Bearer Token&quot;]</p>
+<p>RoleMiddleware[&quot;Middleware de Roles y Políticas&lt;br/&gt;(CheckRole: admin, academic, profesor, tutor)&quot;]</p>
+<p>end</p>
+<p>subgraph Capa_Controladores [&quot;Controladores de Negocio&quot;]</p>
+<p>PublicCtrl[&quot;Controladores Públicos&lt;br/&gt;Portal, Trámites, Normativa&quot;]</p>
+<p>AcademicCtrl[&quot;Controladores Académicos&lt;br/&gt;Student, Grade, Attendance&quot;]</p>
+<p>AdminCtrl[&quot;Controladores de Administración&lt;br/&gt;User, Course, Subject, Audit&quot;]</p>
+<p>ApiCtrl[&quot;Controladores API REST&lt;br/&gt;RobotActivity, StudentApi, AuthApi&quot;]</p>
+<p>end</p>
+<p>subgraph Capa_Servicios [&quot;Capa de Lógica y Servicios&quot;]</p>
+<p>ProcedureService[&quot;Servicio de Trámites y Seguimiento&quot;]</p>
+<p>PedagogicalService[&quot;Servicio de Cuaderno Pedagógico&quot;]</p>
+<p>AuditService[&quot;Servicio de Auditoría Inmutable&quot;]</p>
+<p>MediaService[&quot;Servicio de Archivos Seguros&quot;]</p>
+<p>end</p>
+<p>subgraph Capa_Persistencia [&quot;Base de Datos y Almacenamiento&quot;]</p>
+<p>MySQLDB[(MySQL 8.0 - db_yura_platform&lt;br/&gt;19 tablas activas)]</p>
+<p>StorageDir[&quot;Storage Local Protegido&lt;br/&gt;(Expedientes, Fotos, PDF)&quot;]</p>
+<p>end</p>
+<p>Citizen --&gt;|HTTP GET / POST| WebGate</p>
+<p>Parent --&gt;|HTTP Sesión| WebGate</p>
+<p>Teacher --&gt;|HTTP Sesión| WebGate</p>
+<p>AdminUser --&gt;|HTTP Sesión| WebGate</p>
+<p>RobotClient --&gt;|JSON REST HTTPS| ApiGate</p>
+<p>WebGate --&gt; RoleMiddleware</p>
+<p>ApiGate --&gt; RoleMiddleware</p>
+<p>RoleMiddleware --&gt; PublicCtrl</p>
+<p>RoleMiddleware --&gt; AcademicCtrl</p>
+<p>RoleMiddleware --&gt; AdminCtrl</p>
+<p>RoleMiddleware --&gt; ApiCtrl</p>
+<p>PublicCtrl --&gt; ProcedureService</p>
+<p>PublicCtrl --&gt; MediaService</p>
+<p>AcademicCtrl --&gt; PedagogicalService</p>
+<p>AdminCtrl --&gt; AuditService</p>
+<p>ApiCtrl --&gt; PedagogicalService</p>
+<p>ApiCtrl --&gt; AuditService</p>
+<p>ProcedureService --&gt; MySQLDB</p>
+<p>PedagogicalService --&gt; MySQLDB</p>
+<p>AuditService --&gt; MySQLDB</p>
+<p>MediaService --&gt; StorageDir</p>
+<hr/>
+<h3>3.2 Diagrama Entidad-Relación (Modelo de Datos Normalizado)</h3>
+<p>erDiagram</p>
+<p>users ||--o{ students : &quot;es docente de / es padre de&quot;</p>
+<p>users ||--o{ teaching_assignments : &quot;dicta&quot;</p>
+<p>users ||--o{ audit_logs : &quot;ejecuta accion&quot;</p>
+<p>courses ||--o{ parallels : &quot;subdivide en&quot;</p>
+<p>courses ||--o{ students : &quot;matricula a&quot;</p>
+<p>parallels ||--o{ students : &quot;asigna a&quot;</p>
+<p>students ||--o{ student_family_members : &quot;posee vinculo con&quot;</p>
+<p>users ||--o{ student_family_members : &quot;es apoderado en&quot;</p>
+<p>students ||--o{ grades : &quot;evaluado en&quot;</p>
+<p>subjects ||--o{ grades : &quot;calificada en&quot;</p>
+<p>students ||--o{ attendance : &quot;registra asistencia en&quot;</p>
+<p>subjects ||--o{ teaching_assignments : &quot;asignada en&quot;</p>
+<p>parallels ||--o{ teaching_assignments : &quot;pertenece a&quot;</p>
+<p>users ||--o{ procedures : &quot;solicita tramite&quot;</p>
+<p>procedure_types ||--o{ procedures : &quot;clasifica&quot;</p>
+<p>procedures ||--o{ procedure_histories : &quot;registra estados&quot;</p>
+<p>procedures ||--o{ procedure_attachments : &quot;adjunta requisitos&quot;</p>
+<p>official_documents ||--o{ audit_logs : &quot;auditado en&quot;</p>
+<p>users {</p>
+<p>bigint id PK</p>
+<p>string name</p>
+<p>string email</p>
+<p>string password</p>
+<p>string role</p>
+<p>string ci</p>
+<p>string status</p>
+<p>timestamp created_at</p>
+<p>}</p>
+<p>students {</p>
+<p>bigint id PK</p>
+<p>string first_name</p>
+<p>string last_name</p>
+<p>string second_last_name</p>
+<p>bigint course_id FK</p>
+<p>bigint parallel_id FK</p>
+<p>bigint parent_user_id FK</p>
+<p>bigint teacher_user_id FK</p>
+<p>string status</p>
+<p>}</p>
+<p>procedures {</p>
+<p>bigint id PK</p>
+<p>string tracking_code UK</p>
+<p>bigint procedure_type_id FK</p>
+<p>bigint applicant_user_id FK</p>
+<p>string applicant_name</p>
+<p>string applicant_ci</p>
+<p>string status</p>
+<p>text observations</p>
+<p>timestamp created_at</p>
+<p>}</p>
+<p>procedure_histories {</p>
+<p>bigint id PK</p>
+<p>bigint procedure_id FK</p>
+<p>string status</p>
+<p>text note</p>
+<p>bigint changed_by_user_id FK</p>
+<p>timestamp created_at</p>
+<p>}</p>
+<p>official_documents {</p>
+<p>bigint id PK</p>
+<p>string title</p>
+<p>string code UK</p>
+<p>string category</p>
+<p>int year</p>
+<p>string file_path</p>
+<p>boolean active</p>
+<p>}</p>
+<p>audit_logs {</p>
+<p>bigint id PK</p>
+<p>bigint user_id FK</p>
+<p>string action</p>
+<p>string entity</p>
+<p>bigint entity_id</p>
+<p>string ip_address</p>
+<p>string status</p>
+<p>timestamp created_at</p>
+<p>}</p>
+<hr/>
+<h3>3.3 Diagrama del Ciclo de Vida y Estados de Trámites</h3>
+<p>stateDiagram-v2</p>
+<p>[*] --&gt; BORRADOR : Ciudadano inicia formulario</p>
+<p>BORRADOR --&gt; ENVIADO : Adjunta requisitos y confirma envio</p>
+<p>ENVIADO --&gt; EN_REVISION : Funcionario de ventanilla recepciona</p>
+<p>state EN_REVISION {</p>
+<p>[*] --&gt; VerificandoRequisitos</p>
+<p>VerificandoRequisitos --&gt; ValidandoIdentidad</p>
+<p>ValidandoIdentidad --&gt; [*]</p>
+<p>}</p>
+<p>EN_REVISION --&gt; OBSERVADO : Requisitos incompletos / ilegibles</p>
+<p>OBSERVADO --&gt; ENVIADO : Ciudadano subsana observaciones</p>
+<p>EN_REVISION --&gt; APROBADO : Requisitos cumplen normativa</p>
+<p>EN_REVISION --&gt; RECHAZADO : Improcedente con resolucion motivada</p>
+<p>APROBADO --&gt; FINALIZADO : Emision de certificacion y entrega</p>
+<p>RECHAZADO --&gt; FINALIZADO : Cierre de expediente</p>
+<p>FINALIZADO --&gt; [*]</p>
+<hr/>
+<h3>3.4 Diagrama de Secuencia: Flujo End-to-End del Trámite Educativo</h3>
+<p>sequenceDiagram</p>
+<p>autonumber</p>
+<p>actor Ciudadano as Visitante / Ciudadano</p>
+<p>participant Portal as Portal Público Web</p>
+<p>participant Auth as Módulo Autenticación</p>
+<p>participant Tramites as Motor de Trámites</p>
+<p>participant DB as Base de Datos MySQL</p>
+<p>actor Admin as Funcionario / Administrador</p>
+<p>Ciudadano-&gt;&gt;Portal: 1. Consulta catálogo de trámites y requisitos</p>
+<p>Portal--&gt;&gt;Ciudadano: Muestra ficha técnica y requisitos</p>
+<p>Ciudadano-&gt;&gt;Auth: 2. Registra cuenta ciudadana con CI y correo</p>
+<p>Auth-&gt;&gt;DB: Guarda usuario activo rol &#039;padre&#039; / &#039;ciudadano&#039;</p>
+<p>Auth--&gt;&gt;Ciudadano: Sesión iniciada con token de seguridad</p>
+<p>Ciudadano-&gt;&gt;Tramites: 3. Completa solicitud y sube documentos adjuntos</p>
+<p>Tramites-&gt;&gt;DB: Crea registro en &#039;procedures&#039; y genera TRM-2026-XXXX</p>
+<p>Tramites-&gt;&gt;DB: Registra estado inicial &#039;ENVIADO&#039; en &#039;procedure_histories&#039;</p>
+<p>Tramites--&gt;&gt;Ciudadano: Emite Comprobante Digital con Código Único</p>
+<p>Admin-&gt;&gt;Portal: 4. Ingresa al Panel Administrativo de Trámites</p>
+<p>Portal-&gt;&gt;DB: Consulta trámites en bandeja &#039;ENVIADO&#039;</p>
+<p>Admin-&gt;&gt;Tramites: 5. Abre expediente, verifica adjuntos y valida datos</p>
+<p>Admin-&gt;&gt;Tramites: 6. Cambia estado a &#039;APROBADO&#039; con resolución</p>
+<p>Tramites-&gt;&gt;DB: Actualiza status y añade hito en historial con auditoría</p>
+<p>Ciudadano-&gt;&gt;Portal: 7. Ingresa código TRM-2026-XXXX en buscador público</p>
+<p>Portal-&gt;&gt;DB: Consulta trazabilidad de la solicitud</p>
+<p>Portal--&gt;&gt;Ciudadano: Muestra estado &#039;APROBADO&#039; y fecha de retiro</p>
+<hr/>
+<h3>3.5 Diagrama de Orquestación de los 6 Subagentes Especializados</h3>
+<p>graph TD</p>
+<p>Orchestrator[&quot;ORQUESTADOR PRINCIPAL&lt;br/&gt;(Tutor Senior &amp; Arquitecto Jefe)&quot;]</p>
+<p>subgraph Equipo_Especializado [&quot;Equipo de 6 Subagentes Concurrentes&quot;]</p>
+<p>Sub1[&quot;SUBAGENTE 1&lt;br/&gt;Auditor &amp; Analista Funcional&lt;br/&gt;(Diagnóstico, tablas de hallazgos, dependencias)&quot;]</p>
+<p>Sub2[&quot;SUBAGENTE 2&lt;br/&gt;UX/UI &amp; Accesibilidad Educativa&lt;br/&gt;(Design System, WCAG AA, paleta y estados)&quot;]</p>
+<p>Sub3[&quot;SUBAGENTE 3&lt;br/&gt;Frontend Engineer&lt;br/&gt;(Vistas Blade, buscador global, filtros)&quot;]</p>
+<p>Sub4[&quot;SUBAGENTE 4&lt;br/&gt;Backend &amp; Database Architect&lt;br/&gt;(Modelos, migraciones, procedimientos, servicios)&quot;]</p>
+<p>Sub5[&quot;SUBAGENTE 5&lt;br/&gt;Ciberseguridad &amp; QA Tester&lt;br/&gt;(OWASP, sanitización, audit_logs, rate limiting)&quot;]</p>
+<p>Sub6[&quot;SUBAGENTE 6&lt;br/&gt;Integración, DevOps &amp; Verificación&lt;br/&gt;(Contratos API, suite Pest, regresión E2E)&quot;]</p>
+<p>end</p>
+<p>Orchestrator --&gt;|Supervisa Contratos| Sub1</p>
+<p>Orchestrator --&gt;|Establece Guía de Estilos| Sub2</p>
+<p>Orchestrator --&gt;|Asigna Vistas Blade| Sub3</p>
+<p>Orchestrator --&gt;|Define Esquema BD| Sub4</p>
+<p>Orchestrator --&gt;|Exige Políticas OWASP| Sub5</p>
+<p>Orchestrator --&gt;|Valida Integración Final| Sub6</p>
+<p>Sub1 -.-&gt;|Reporta Riesgos| Orchestrator</p>
+<p>Sub2 -.-&gt;|Entrega Componentes| Sub3</p>
+<p>Sub4 -.-&gt;|Provee Endpoints| Sub3</p>
+<p>Sub5 -.-&gt;|Valida Endpoints| Sub4</p>
+<p>Sub6 -.-&gt;|Ejecuta Tests de Todos| Orchestrator</p>
+<hr/>
+<h3>3.6 Diagrama de Ruta de Implementación por Prioridades</h3>
+<p>graph LR</p>
+<p>subgraph P0_Seguridad [&quot;Fase P0: Crítico (Inmediato)&quot;]</p>
+<p>P0_1[&quot;Eliminación de scripts residuales en raíz&quot;]</p>
+<p>P0_2[&quot;Corrección de colisión students.course&quot;]</p>
+<p>P0_3[&quot;Aislamiento de credenciales&quot;]</p>
+<p>end</p>
+<p>subgraph P1_Core [&quot;Fase P1: Núcleo Backend &amp; BD&quot;]</p>
+<p>P1_1[&quot;Migraciones: Trámites, Normativa, Auditoría&quot;]</p>
+<p>P1_2[&quot;Servicios y Controladores de Trámites&quot;]</p>
+<p>P1_3[&quot;Habilitación de Registro Ciudadano&quot;]</p>
+<p>end</p>
+<p>subgraph P2_Frontend [&quot;Fase P2: Portal y Accesibilidad&quot;]</p>
+<p>P2_1[&quot;Layout Institucional Público WCAG AA&quot;]</p>
+<p>P2_2[&quot;Página de Inicio con Servicios Educativos&quot;]</p>
+<p>P2_3[&quot;Buscador de Normativa y Seguimiento&quot;]</p>
+<p>end</p>
+<p>subgraph P3_Certificacion [&quot;Fase P3: QA &amp; Certificación&quot;]</p>
+<p>P3_1[&quot;Pruebas E2E de Trámite Completo&quot;]</p>
+<p>P3_2[&quot;Verificación 100% Regresión (29 Tests)&quot;]</p>
+<p>P3_3[&quot;Informe Final y Despliegue&quot;]</p>
+<p>end</p>
+<p>P0_Seguridad --&gt; P1_Core</p>
+<p>P1_Core --&gt; P2_Frontend</p>
+<p>P2_Frontend --&gt; P3_Certificacion</p>
+<hr/>
+<h2>4. INVENTARIO DE BASE DE DATOS Y VOLUMEN DE REGISTROS</h2>
+<p>La base de datos `db_yura_platform` en MySQL 8.0 cuenta con <strong>19 tablas operativas</strong>:</p>
+<table class="report-table"><thead><tr><th>N°</th><th>Nombre de Tabla</th><th>Cantidad de Filas</th><th>Clasificación y Función</th></tr></thead><tbody>
+<tr><td>1</td><td>`users`</td><td>25 registros</td><td>Cuentas de acceso (Admin, Académico, Profesores, Tutores, Robot)</td></tr>
+<tr><td>2</td><td>`students`</td><td>20 registros</td><td>Expediente de alumnos, asignación de aula y puntajes base</td></tr>
+<tr><td>3</td><td>`student_family_members`</td><td>20 registros</td><td>Relaciones de parentesco, permisos de visualización y tutoría</td></tr>
+<tr><td>4</td><td>`grades`</td><td>22 registros</td><td>Calificaciones trimestrales, actividades y notas de robot</td></tr>
+<tr><td>5</td><td>`grade_history`</td><td>4 registros</td><td>Trazabilidad y auditoría de ediciones de notas</td></tr>
+<tr><td>6</td><td>`attendance`</td><td>141 registros</td><td>Asistencia diaria por alumno, materia y fecha</td></tr>
+<tr><td>7</td><td>`courses`</td><td>2 registros</td><td>Niveles educativos (Sexto de Primaria, etc.)</td></tr>
+<tr><td>8</td><td>`parallels`</td><td>3 registros</td><td>Paralelos (A, B, C) con capacidad máxima de alumnos</td></tr>
+<tr><td>9</td><td>`subjects`</td><td>1 registro</td><td>Asignatura curricular (Lengua Quechua y Originaria)</td></tr>
+<tr><td>10</td><td>`teaching_assignments`</td><td>2 registros</td><td>Asignación de docentes a materias y paralelos</td></tr>
+<tr><td>11</td><td>`personal_access_tokens`</td><td>5 registros</td><td>Tokens de autenticación API Sanctum</td></tr>
+<tr><td>12</td><td>`sessions`</td><td>54 registros</td><td>Sesiones HTTP activas en base de datos</td></tr>
+<tr><td>13</td><td>`cache`</td><td>4 registros</td><td>Llaves de caché en base de datos</td></tr>
+<tr><td>14</td><td>`cache_locks`</td><td>0 registros</td><td>Bloqueos concurrentes de caché</td></tr>
+<tr><td>15</td><td>`jobs`</td><td>0 registros</td><td>Trabajos en cola asíncrona</td></tr>
+<tr><td>16</td><td>`failed_jobs`</td><td>0 registros</td><td>Registro de fallos en colas</td></tr>
+<tr><td>17</td><td>`job_batches`</td><td>0 registros</td><td>Lotes de procesamiento de colas</td></tr>
+<tr><td>18</td><td>`migrations`</td><td>43 registros</td><td>Histórico de migraciones ejecutadas</td></tr>
+<tr><td>19</td><td>`password_reset_tokens`</td><td>0 registros</td><td>Recuperación de claves</td></tr>
+</tbody></table>
+<hr/>
+<h2>5. HALLAZGOS Y DICTAMEN DEL TUTOR SENIOR</h2>
+<h3>5.1 Colisión Estructural en el Modelo `Student` (`students.course`)</h3>
+<ul>
+<li><strong>QUÉ está mal:</strong> En la tabla `students` coexiste la columna de texto `course` con la relación Eloquent `course()` vinculada a `course_id`.</li>
+<li><strong>POR QUÉ está mal:</strong> Laravel resuelve las propiedades dinámicas de los modelos priorizando las columnas de la tabla. Al invocar `$student-&gt;course`, se obtiene una cadena en lugar del modelo `Course`, obligando al código a invocar `course()-&gt;first()`.</li>
+<li><strong>QUÉ riesgo produce:</strong> Multiplica de forma descontrolada las consultas SQL ($N+1$), degradando severamente el tiempo de respuesta conforme crece el padrón estudiantil.</li>
+<li><strong>CÓMO debe resolverse:</strong> Desacoplar la relación utilizando un alias explícito seguro o normalizar la columna de texto hacia la relación foránea canónica.</li>
+</ul>
+<h3>5.2 Exposición de Scripts Residuales en Raíz</h3>
+<ul>
+<li><strong>QUÉ está mal:</strong> Permanencia de los scripts `temp_demo_check.php` y `test_api.php` en el directorio raíz de la aplicación con credenciales maestras escritas en texto plano (`password123`, `Demo123!`).</li>
+<li><strong>POR QUÉ está mal:</strong> Violan el principio fundamental de confidencialidad y control de acceso de OWASP (A01 y A02). Si el servidor web procesa la raíz, un tercero puede ejecutar estos archivos y crear usuarios administradores o extraer tokens de API.</li>
+<li><strong>QUÉ riesgo produce:</strong> Escalada de privilegios y compromiso total de la base de datos.</li>
+<li><strong>CÓMO debe resolverse:</strong> Archivar o eliminar de inmediato los scripts de depuración de la raíz y proteger el acceso público exclusivamente a la carpeta `public/`.</li>
+</ul>
+<h3>5.3 Ausencia de Módulo Ciudadano de Trámites y Normativa</h3>
+<ul>
+<li><strong>QUÉ está mal:</strong> La página principal actual es una carátula estática de feria escolar, careciendo de portal de servicios ciudadanos, catálogo de trámites y repositorio de resoluciones ministeriales/administrativas.</li>
+<li><strong>POR QUÉ está mal:</strong> Una plataforma institucional educativa debe permitir la interacción de la comunidad con sus instituciones mediante trámites formales y acceso transparente a la información pública.</li>
+<li><strong>CÓMO debe resolverse:</strong> Crear los módulos de trámites con código de seguimiento único y repositorio de documentos oficiales con filtros dinámicos.</li>
+</ul>
+<hr/>
+<h2>6. MATRIZ DE PRUEBAS DE REGRESIÓN APROBADAS (SUITE PEST)</h2>
+<p>La suite de pruebas automatizadas existente fue ejecutada satisfactoriamente, registrando <strong>100% de efectividad</strong>:</p>
+<p>PASS  Tests\Unit\ExampleTest ................................... 1 test passed</p>
+<p>PASS  Tests\Unit\StudentModelNamingCompatibilityTest ........... 1 test passed</p>
+<p>PASS  Tests\Feature\AcademicSubjectsTest ....................... 4 tests passed</p>
+<p>PASS  Tests\Feature\CrudAndMediaTest ........................... 2 tests passed</p>
+<p>PASS  Tests\Feature\ExampleTest ................................ 1 test passed</p>
+<p>PASS  Tests\Feature\FamilyAndStudentAuthTest ................... 10 tests passed</p>
+<p>PASS  Tests\Feature\RobotIntegrationTest ....................... 3 tests passed</p>
+<p>PASS  Tests\Feature\SecurityRegressionTest ..................... 7 tests passed</p>
+<p>TOTAL: 29 pruebas aprobadas (126 aserciones ejecutadas en 34.37s)</p>
+<p>Ninguna modificación futura podrá degradar este resultado. Todos los nuevos componentes se integrarán con pruebas automatizadas incrementales.</p>
+<hr/>
+<h2>7. CONTROL DE VERSIONES Y PROGRESIÓN DE INFORMES</h2>
+<p>Conforme a la instrucción operativa de control de versiones y auditoría:</p>
+<ul>
+<li><strong>Versión Actual:</strong> `Informe YuraReporte V1.0` (Registro inicial de auditoría y diagramas estructurales).</li>
+<li><strong>Regla de Progresión:</strong> Cada solicitud de informe sucesivo incrementará la versión en base decimal (`V2.0`, `V3.0`, etc.) preservando la trazabilidad de los hallazgos resueltos y el estado de avance de los seis subagentes.</li>
+</ul>
+<hr/>
+<p><em>Fin del Informe Técnico YuraReporte V1.0 - Elaborado por el Orquestador y Auditor Técnico Principal.</em></p>
+
+</body>
+</html>

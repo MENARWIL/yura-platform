@@ -35,9 +35,21 @@ class StudentController extends Controller
         if ($hasNameFilter && $studentName === '' && ! $hasOtherFilters) {
             $students = collect();
         } else {
+            $studentModel = new Student();
+            $teacherForeignKey = $studentModel->getTeacherUserForeignKey();
+            $parentForeignKey = $studentModel->getParentUserForeignKey();
+
             $students = Student::with(['course', 'parallel', 'parent', 'teacher'])
-                ->when($user->isProfesor(), function ($query) use ($user) {
-                    $query->where('teacher_user_id', $user->id);
+                ->when($user->isProfesor(), function ($query) use ($user, $teacherForeignKey) {
+                    $query->where($teacherForeignKey, $user->id);
+                })
+                ->when($user->isResponsibleRole(), function ($query) use ($user, $parentForeignKey) {
+                    $query->where(function ($q) use ($user, $parentForeignKey) {
+                        $q->where($parentForeignKey, $user->id)
+                            ->orWhereHas('familiares', function ($family) use ($user) {
+                                $family->where('user_id', $user->id);
+                            });
+                    });
                 })
                 ->when($studentName, function ($query, $studentName) {
                     $query->where('name', 'like', '%' . $studentName . '%');
@@ -48,6 +60,9 @@ class StudentController extends Controller
                 ->when($filters['parallel_id'] ?? null, function ($query, $parallelId) {
                     $query->where('parallel_id', $parallelId);
                 })
+                ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
+                ->orderBy('last_name')
+                ->orderBy('name')
                 ->get();
         }
 
@@ -68,7 +83,9 @@ class StudentController extends Controller
 
         $studentsByCourseAndParallel = $students->groupBy([
             function (Student $student) {
-                return $student->course?->name ?? 'Unassigned course';
+                // course_name usa la relación precargada (evita N+1 por la
+                // colisión con la columna de texto students.course).
+                return $student->course_name;
             },
             function (Student $student) {
                 return $student->parallel?->name ?? 'Unassigned parallel';
@@ -127,7 +144,9 @@ class StudentController extends Controller
         $request->merge(['registration_date' => now()->toDateString()]);
 
         $rules = [
-            'name' => 'required|string|max:255|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'second_last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'first_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
             'age' => 'required|integer|min:0|max:120',
             'gender' => 'required|in:Masculino,Femenino',
             'level' => 'required|in:básico,intermedio,avanzado',
@@ -135,20 +154,12 @@ class StudentController extends Controller
             'course_id' => ['nullable', 'integer', 'min:0', 'exists:courses,id'],
             'parallel_id' => ['required', 'integer', 'min:0', 'exists:parallels,id'],
             'parent_user_id' => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
-                $query->where(function ($query) {
-                    $query->whereIn('role', ['padre', 'madre', 'tutor'])
-                        ->orWhereIn('rol', ['padre', 'madre', 'tutor']);
-                });
-
-                $query->whereIn('status', ['active', 'activo']);
+                $query->whereIn('role', ['padre', 'madre', 'tutor'])
+                    ->whereIn('status', ['active', 'activo']);
             })],
             'secondary_parent_user_id' => ['nullable', 'integer', 'min:0', 'different:parent_user_id', Rule::exists('users', 'id')->where(function ($query) {
-                $query->where(function ($query) {
-                    $query->whereIn('role', ['padre', 'madre', 'tutor'])
-                        ->orWhereIn('rol', ['padre', 'madre', 'tutor']);
-                });
-
-                $query->whereIn('status', ['active', 'activo']);
+                $query->whereIn('role', ['padre', 'madre', 'tutor'])
+                    ->whereIn('status', ['active', 'activo']);
             })],
             'teacher_user_id' => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
                 $query->whereIn('role', ['profesor', 'teacher'])
@@ -162,6 +173,7 @@ class StudentController extends Controller
         ];
 
         $data = $request->validate($rules, $this->studentValidationMessages());
+        $data['name'] = trim(preg_replace('/\s+/', ' ', $data['last_name'] . ' ' . $data['second_last_name'] . ' ' . $data['first_name']));
         $parallel = Parallel::with('course')->findOrFail($data['parallel_id']);
 
         if (! empty($data['course_id']) && (int) $data['course_id'] !== (int) $parallel->course_id) {
@@ -257,7 +269,9 @@ class StudentController extends Controller
         $teacherForeignKey = $studentModel->getTeacherUserForeignKey();
 
         $rules = [
-            'name' => 'required|string|max:255|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'second_last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'first_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
             'age' => 'required|integer|min:0|max:120',
             'gender' => 'required|in:Masculino,Femenino',
             'level' => 'required|in:básico,intermedio,avanzado',
@@ -265,25 +279,18 @@ class StudentController extends Controller
             'status' => 'required|in:activo,inactivo',
             'parallel_id' => ['required', 'integer', 'min:0', 'exists:parallels,id'],
             $parentForeignKey => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
-                $query->where(function ($query) {
-                    $query->whereIn('role', ['padre', 'madre', 'tutor'])
-                        ->orWhereIn('rol', ['padre', 'madre', 'tutor']);
-                });
-
-                $query->whereIn('status', ['active', 'activo']);
+                $query->whereIn('role', ['padre', 'madre', 'tutor'])
+                    ->whereIn('status', ['active', 'activo']);
             })],
             $teacherForeignKey => ['nullable', 'integer', 'min:0', Rule::exists('users', 'id')->where(function ($query) {
-                $query->where(function ($query) {
-                    $query->whereIn('role', ['profesor', 'teacher'])
-                        ->orWhereIn('rol', ['profesor', 'teacher']);
-                });
-
-                $query->whereIn('status', ['active', 'activo']);
+                $query->whereIn('role', ['profesor', 'teacher'])
+                    ->whereIn('status', ['active', 'activo']);
             })],
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
 
         $data = $request->validate($rules, $this->studentValidationMessages());
+        $data['name'] = trim(preg_replace('/\s+/', ' ', $data['last_name'] . ' ' . $data['second_last_name'] . ' ' . $data['first_name']));
         $parallel = Parallel::with('course')->findOrFail($data['parallel_id']);
 
         if ($parallel->id !== $student->parallel_id && $parallel->students()->count() >= $parallel->max_students) {
@@ -382,6 +389,12 @@ class StudentController extends Controller
 
     private function normalizeStudentFields(Request $request): Request
     {
+        foreach (['first_name', 'last_name', 'second_last_name'] as $namePart) {
+            if ($request->exists($namePart)) {
+                $request->merge([$namePart => preg_replace('/\s+/', ' ', trim((string) $request->input($namePart)))]);
+            }
+        }
+
         $aliases = [
             'name' => ['nombre'],
             'age' => ['edad'],
@@ -422,6 +435,15 @@ class StudentController extends Controller
             'name.string' => 'El nombre completo debe ser texto.',
             'name.max' => 'El nombre completo no puede superar los 255 caracteres.',
             'name.regex' => 'El nombre solo puede contener letras y espacios.',
+            'last_name.required' => 'El apellido paterno es obligatorio.',
+            'last_name.regex' => 'El apellido paterno solo puede contener letras y espacios.',
+            'last_name.max' => 'El apellido paterno no puede superar los 100 caracteres.',
+            'second_last_name.required' => 'El apellido materno es obligatorio.',
+            'second_last_name.regex' => 'El apellido materno solo puede contener letras y espacios.',
+            'second_last_name.max' => 'El apellido materno no puede superar los 100 caracteres.',
+            'first_name.required' => 'El nombre es obligatorio.',
+            'first_name.regex' => 'El nombre solo puede contener letras y espacios.',
+            'first_name.max' => 'El nombre no puede superar los 100 caracteres.',
             'age.required' => 'La edad es obligatoria.',
             'age.integer' => 'La edad debe ser un número entero.',
             'age.min' => 'La edad debe ser como mínimo 1 año.',
@@ -468,7 +490,7 @@ class StudentController extends Controller
 
     private function resolveFamilyRelationType(User $user): string
     {
-        return match ($user->rol) {
+        return match ($user->role) {
             'padre' => 'padre',
             'madre' => 'madre',
             default => 'tutor',
@@ -516,6 +538,8 @@ class StudentController extends Controller
     public function exportExcel(Student $student = null)
     {
         if ($student) {
+            $this->authorizeAccess($student);
+
             // Build a simple HTML table so Excel can open it
             $grades = $student->grades()->get();
             $html = view('students.exports.excel_table', compact('student', 'grades'))->render();
@@ -532,6 +556,8 @@ class StudentController extends Controller
     public function exportPdf(Student $student = null)
     {
         if ($student) {
+            $this->authorizeAccess($student);
+
             $grades = $student->grades()->get();
             $pdf = Pdf::loadView('students.print_pdf', compact('student', 'grades'));
             $pdf->setPaper('A4', 'portrait');
@@ -547,17 +573,67 @@ class StudentController extends Controller
     }
 
     // Wrapper for explicit all-students Excel download route
-    public function exportExcelAll()
+    public function exportExcelAll(Request $request)
     {
-        return Excel::download(new StudentsExport, 'reporte_estudiantes_' . date('Ymd_His') . '.xlsx');
+        $filters = $request->validate([
+            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
+            'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
+        ]);
+
+        $scopeSlug = $this->exportScopeSlug($filters['course_id'] ?? null, $filters['parallel_id'] ?? null);
+
+        return Excel::download(
+            new StudentsExport($filters['course_id'] ?? null, $filters['parallel_id'] ?? null),
+            'reporte_estudiantes_' . $scopeSlug . '_' . date('Ymd_His') . '.xlsx'
+        );
     }
 
     // Wrapper for explicit all-students PDF download route
-    public function exportPdfAll()
+    public function exportPdfAll(Request $request)
     {
-        $students = Student::with(['padre', 'profesor', 'course', 'parallel'])->get();
-        $pdf = Pdf::loadView('reports.students_pdf', compact('students'));
+        $filters = $request->validate([
+            'course_id' => ['nullable', 'integer', 'exists:courses,id'],
+            'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
+        ]);
+
+        $students = Student::with(['padre', 'profesor', 'course', 'parallel'])
+            ->when($filters['course_id'] ?? null, fn ($query, $courseId) => $query->where('course_id', $courseId))
+            ->when($filters['parallel_id'] ?? null, fn ($query, $parallelId) => $query->where('parallel_id', $parallelId))
+            ->get();
+
+        $scopeLabel = $this->exportScopeLabel($filters['course_id'] ?? null, $filters['parallel_id'] ?? null);
+
+        $pdf = Pdf::loadView('reports.students_pdf', compact('students', 'scopeLabel'));
         $pdf->setPaper('A4', 'portrait');
-        return $pdf->download('reporte_estudiantes_' . date('Ymd_His') . '.pdf');
+
+        $scopeSlug = $this->exportScopeSlug($filters['course_id'] ?? null, $filters['parallel_id'] ?? null);
+
+        return $pdf->download('reporte_estudiantes_' . $scopeSlug . '_' . date('Ymd_His') . '.pdf');
+    }
+
+    private function exportScopeLabel(?int $courseId, ?int $parallelId): string
+    {
+        if (! $courseId) {
+            return 'Toda la unidad educativa';
+        }
+
+        $course = \App\Models\Course::find($courseId);
+
+        if (! $parallelId) {
+            return 'Curso: ' . ($course->name ?? 'N/A');
+        }
+
+        $parallel = Parallel::find($parallelId);
+
+        return 'Curso: ' . ($course->name ?? 'N/A') . ' - Paralelo: ' . ($parallel->name ?? 'N/A');
+    }
+
+    private function exportScopeSlug(?int $courseId, ?int $parallelId): string
+    {
+        $label = $this->exportScopeLabel($courseId, $parallelId);
+
+        $slug = \Illuminate\Support\Str::slug($label);
+
+        return $slug !== '' ? $slug : 'general';
     }
 }

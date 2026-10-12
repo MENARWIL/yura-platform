@@ -11,17 +11,27 @@ use App\Http\Controllers\FamilyMemberController;
 use App\Http\Controllers\ParallelController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\GradeController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\RobotActivityController;
 use App\Http\Controllers\TutorDashboardController;
 use App\Http\Controllers\TutorController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeachingAssignmentController;
+use App\Http\Controllers\PublicPortalController;
+use App\Http\Controllers\AuditController;
 
+// Public Portal Routes
+Route::get('/', [PublicPortalController::class, 'home'])->name('public.home');
+Route::get('/home', [PublicPortalController::class, 'home'])->name('home');
+Route::get('/services', [PublicPortalController::class, 'services'])->name('public.services');
+Route::get('/documents', [PublicPortalController::class, 'documents'])->name('public.documents');
+Route::get('/search', [PublicPortalController::class, 'search'])->middleware('throttle:30,1')->name('public.search');
 
-Route::get('/', function () {
+// Portada original de la feria YURA
+Route::get('/feria', function () {
     return view('home');
-})->name('home');
+})->name('feria');
 
 // Auth Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -39,8 +49,8 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Students CRUD & Exports (global)
-    Route::get('/students/export-pdf-all', [StudentController::class, 'exportPdfAll'])->name('students.export.pdf.all');
-    Route::get('/students/export-excel-all', [StudentController::class, 'exportExcelAll'])->name('students.export.excel.all');
+    Route::get('/students/export-pdf-all', [StudentController::class, 'exportPdfAll'])->middleware('rol:admin,profesor')->name('students.export.pdf.all');
+    Route::get('/students/export-excel-all', [StudentController::class, 'exportExcelAll'])->middleware('rol:admin,profesor')->name('students.export.excel.all');
     // Individual student exports
     Route::get('/students/{student}/export-pdf', [StudentController::class, 'exportPdf'])->name('students.export.pdf');
     Route::get('/students/{student}/export-excel', [StudentController::class, 'exportExcel'])->name('students.export.excel');
@@ -63,24 +73,37 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
 
     Route::middleware(['rol:admin,academic,profesor'])->group(function () {
         Route::get('/grades', [GradeController::class, 'index'])->name('grades.index');
+        Route::get('/grades/export-pdf', [GradeController::class, 'exportPdf'])->name('grades.export.pdf');
+        Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/attendance/export-pdf', [AttendanceController::class, 'exportPdf'])->name('attendance.export.pdf');
     });
 
     Route::middleware(['rol:profesor'])->group(function () {
+        Route::get('/robot-activities', [RobotActivityController::class, 'index'])->name('robot-activities.index');
+        Route::get('/robot-activities/create', [RobotActivityController::class, 'create'])->name('robot-activities.create');
+        Route::get('/robot-activities/{activityId}', [RobotActivityController::class, 'show'])
+            ->whereUuid('activityId')
+            ->name('robot-activities.show');
+        Route::post('/robot-activities/{activityId}/cancel', [RobotActivityController::class, 'cancel'])
+            ->whereUuid('activityId')
+            ->name('robot-activities.cancel');
+        Route::post('/robot-activities/{activityId}/retry', [RobotActivityController::class, 'retry'])
+            ->whereUuid('activityId')
+            ->name('robot-activities.retry');
+        Route::post('/robot-activities', [RobotActivityController::class, 'store'])->name('robot-activities.store');
         Route::post('/grades/save', [GradeController::class, 'save'])->name('grades.save');
         Route::post('/grades/update-score', [GradeController::class, 'updateScore'])->name('grades.updateScore');
-        Route::post('/attendance/save', [App\Http\Controllers\GradeController::class, 'saveAttendance'])->name('attendance.save');
+        Route::post('/attendance/save', [AttendanceController::class, 'save'])->name('attendance.save');
         Route::put('/grades/{grade}', [GradeController::class, 'update'])->name('grades.update');
         Route::post('/grades/batch', [GradeController::class, 'batchUpdate'])->name('grades.batchUpdate');
-        Route::get('/robot-activities/create', [GradeController::class, 'createRobotActivity'])->name('robot-activities.create');
-        Route::post('/robot-activities', [GradeController::class, 'storeRobotActivity'])->name('robot-activities.store');
     });
 
     Route::get('/grades/{student}', [GradeController::class, 'show'])
-        ->middleware(['web', 'auth', 'rol:admin,academic,profesor'])
+        ->middleware(['web', 'auth', 'rol:admin,academic,profesor,padre,madre,tutor'])
         ->name('grades.show');
 
     Route::get('/grades/{student}/history', [GradeController::class, 'historyForStudent'])
-        ->middleware(['web', 'auth', 'rol:admin,academic,profesor'])
+        ->middleware(['web', 'auth', 'rol:admin,academic,profesor,padre,madre,tutor'])
         ->name('grades.history');
 
     Route::middleware(['rol:admin,academic'])->group(function () {
@@ -112,7 +135,7 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
 
     Route::get('/tutor/dashboard', function () {
         return redirect()->route('dashboard');
-    })->middleware(['rol:tutor'])->name('tutor.dashboard');
+    })->middleware(['rol:padre,madre,tutor'])->name('tutor.dashboard');
 
     // Admin Specific Routes
     Route::middleware(['rol:admin'])->group(function () {
@@ -120,9 +143,7 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
         Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
         Route::patch('/users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
         Route::delete('/users/{user}/force', [UserController::class, 'forceDestroy'])->name('users.forceDestroy');
+
+        Route::get('/admin/audit', [AuditController::class, 'index'])->name('admin.audit.index');
     });
 });
-
-Route::get('/grades/{grade}/history', [GradeController::class, 'history'])
-    ->middleware(['web', 'auth'])
-    ->name('grades.grade-history');

@@ -26,17 +26,30 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6 form-group">
-                                <label for="name">Nombre completo</label>
-                                <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
-                                @error('name') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            <div class="col-md-4 form-group">
+                                <label for="last_name">Apellido paterno</label>
+                                <input type="text" name="last_name" id="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name') }}" required>
+                                @error('last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
-                            <div class="col-md-3 form-group">
+                            <div class="col-md-4 form-group">
+                                <label for="second_last_name">Apellido materno</label>
+                                <input type="text" name="second_last_name" id="second_last_name" class="form-control @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name') }}" required>
+                                @error('second_last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            </div>
+                            <div class="col-md-4 form-group">
+                                <label for="first_name">Nombre(s)</label>
+                                <input type="text" name="first_name" id="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name') }}" required>
+                                @error('first_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 form-group">
                                 <label for="age">Edad</label>
                                 <input type="number" name="age" id="age" class="form-control @error('age') is-invalid @enderror" value="{{ old('age') }}" min="0" max="120" required>
                                 @error('age') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
-                            <div class="col-md-3 form-group">
+                            <div class="col-md-6 form-group">
                                 <label for="gender">Género</label>
                                 <select name="gender" id="gender" class="form-control @error('gender') is-invalid @enderror" required>
                                     <option value="">Seleccionar</option>

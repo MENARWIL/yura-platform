@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>YURA Platform | Dashboard</title>
 
-    <!-- Google Font: Outfit -->
+    <!-- Google Font: Outfit (requiere internet; si no hay conexión, el navegador usa la fuente de respaldo del sistema) -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Theme style -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <!-- Font Awesome (local, sin depender de internet) -->
+    <link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
+    <!-- Theme style (local, sin depender de internet) -->
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/css/adminlte.min.css') }}">
     <!-- Custom style -->
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     @yield('css')
@@ -19,14 +19,14 @@
 <div class="wrapper">
 
     <!-- Navbar -->
-    <nav class="main-header navbar navbar-expand navbar-light bg-white border-bottom-0 shadow-sm" style="backdrop-filter: blur(10px); background: rgba(255,255,255,0.8) !important;">
+    <nav class="main-header navbar navbar-expand navbar-dark border-bottom-0 shadow-sm">
         <!-- Left navbar links -->
         <ul class="navbar-nav">
             <li class="nav-item">
                 <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
             </li>
             <li class="nav-item d-none d-sm-inline-block">
-                <span class="nav-link text-dark">
+                <span class="nav-link text-white">
                     <i class="fas fa-user-circle mr-1 opacity-50"></i>
                     <b>{{ __('messages.member') ?? 'Miembro' }}:</b> {{ Auth::user()->name }}
                 </span>
@@ -47,7 +47,7 @@
             <li class="nav-item">
                 <form action="{{ route('logout') }}" method="POST" style="display: inline-block;">
                     @csrf
-                    <button type="submit" class="btn btn-quechua btn-sm ml-2" style="background: #dc3545; color: #fff; border: none; border-radius: 4px; padding: 4px 10px;">
+                    <button type="submit" class="btn btn-quechua btn-yura-logout btn-sm ml-2" style="border-radius: 4px; padding: 4px 10px;">
                         <i class="fas fa-sign-out-alt mr-1"></i> {{ __('messages.logout') ?? 'Salir' }}
                     </button>
                 </form>
@@ -68,14 +68,14 @@
             <!-- Sidebar user panel -->
             <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center border-bottom border-secondary">
                 <div class="image">
-                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center text-dark font-weight-bold" style="width: 35px; height: 35px; background: linear-gradient(45deg, #3c8dbc, #00c0ef) !important;">
+                    <div class="yura-avatar rounded-circle d-flex align-items-center justify-content-center text-white font-weight-bold" style="width: 35px; height: 35px;">
                         {{ substr(Auth::user()->name, 0, 1) }}
                     </div>
                 </div>
                 <div class="info">
                     <a href="{{ route('profile.edit') }}" class="d-block text-white small">
                         {{ Auth::user()->name }}<br>
-                        <span class="badge badge-warning" style="font-size: 10px; background-color: #9bd7ad; color: #18352a;">{{ strtoupper(Auth::user()->role ?? Auth::user()->rol ?? 'PROFESOR') }}</span>
+                        <span class="badge yura-role-badge" style="font-size: 10px;">{{ mb_strtoupper(Auth::user()->role ?? Auth::user()->rol ?? 'PROFESOR', 'UTF-8') }}</span>
                     </a>
                 </div>
             </div>
@@ -107,7 +107,7 @@
                     <li class="nav-item">
                         <a href="{{ route('family-members.index') }}" class="nav-link {{ request()->is('family-members*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users"></i>
-                            <p>Gestión Académica</p>
+                            <p>{{ __('messages.academic_management') ?? 'Gestión Académica' }}</p>
                         </a>
                     </li>
                     @endif
@@ -116,7 +116,21 @@
                         <li class="nav-item">
                             <a href="{{ route('grades.index') }}" class="nav-link {{ request()->is('grades*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-book"></i>
-                                <p>Cuaderno Pedagógico</p>
+                                <p>{{ __('messages.pedagogical_notebook') ?? 'Cuaderno Pedagógico' }}</p>
+                            </a>
+                        </li>
+                        @if($userRole === 'profesor')
+                            <li class="nav-item">
+                                <a href="{{ route('robot-activities.index') }}" class="nav-link {{ request()->is('robot-activities*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-robot"></i>
+                                    <p>Actividades Yura</p>
+                                </a>
+                            </li>
+                        @endif
+                        <li class="nav-item">
+                            <a href="{{ route('attendance.index') }}" class="nav-link {{ request()->is('attendance*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-calendar-check"></i>
+                                <p>Asistencia</p>
                             </a>
                         </li>
                     @endif
@@ -124,33 +138,27 @@
                     @if(in_array($userRole, ['admin', 'academic']))
                     <li class="nav-header text-uppercase small opacity-50 text-white mt-3 mb-2">{{ __('messages.administration') ?? 'ADMINISTRACIÓN' }}</li>
                     <li class="nav-item">
-                        <a href="{{ route('parallels.index') }}" class="nav-link {{ request()->is('parallels*') ? 'active' : '' }}">
-                            <i class="nav-icon fas fa-layer-group"></i>
-                            <p>Paralelos</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{{ route('courses.index') }}" class="nav-link {{ request()->is('courses*') ? 'active' : '' }}">
+                        <a href="{{ route('courses.index') }}" class="nav-link {{ request()->is('courses*') || request()->is('parallels*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-book-open"></i>
-                            <p>Cursos</p>
+                            <p>{{ __('messages.courses_parallels') ?? 'Cursos y Paralelos' }}</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('subjects.index') }}" class="nav-link {{ request()->is('subjects*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-book"></i>
-                            <p>Asignaturas</p>
+                            <p>{{ __('messages.subjects') ?? 'Asignaturas' }}</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('teachers.index') }}" class="nav-link {{ request()->is('teachers*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-chalkboard-teacher"></i>
-                            <p>Profesores</p>
+                            <p>{{ __('messages.teachers') ?? 'Profesores' }}</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{{ route('teaching-assignments.index') }}" class="nav-link {{ request()->is('teaching-assignments*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-user-tie"></i>
-                            <p>Asignaciones docentes</p>
+                            <p>{{ __('messages.teaching_assignments') ?? 'Asignaciones docentes' }}</p>
                         </a>
                     </li>
                     @endif
@@ -160,6 +168,12 @@
                         <a href="{{ route('users.index') }}" class="nav-link {{ request()->is('users*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-users-cog"></i>
                             <p>{{ __('messages.manage_users') ?? 'Usuarios' }}</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.audit.index') }}" class="nav-link {{ request()->is('admin/audit*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-shield-alt"></i>
+                            <p>{{ __('messages.system_audit') }}</p>
                         </a>
                     </li>
                     @endif
@@ -217,6 +231,11 @@
 
 </div>
 <!-- ./wrapper -->
+
+<!-- jQuery, Bootstrap y AdminLTE (servidos localmente desde public/vendor, sin depender de internet): requeridos para el toggle animado del sidebar (data-widget="pushmenu") -->
+<script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+<script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('vendor/adminlte/js/adminlte.min.js') }}"></script>
 
 <!-- Scripts Requeridos -->
 @stack('scripts')

@@ -9,7 +9,12 @@ class CourseController extends Controller
 {
     public function index()
     {
-        $courses = Course::withCount('parallels')->get();
+        $courses = Course::withCount('parallels')
+            ->with(['parallels' => function ($query) {
+                $query->withCount('students')->orderBy('name');
+            }])
+            ->orderBy('name')
+            ->get();
 
         return view('courses.index', compact('courses'));
     }
@@ -21,11 +26,12 @@ class CourseController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255|unique:courses,name',
+            'nivel_educativo' => 'required|string|in:' . implode(',', array_keys(Course::NIVELES)),
         ]);
 
-        Course::create(['name' => $request->name]);
+        Course::create($data);
 
         return redirect()->route('courses.index')->with('success', 'Curso creado correctamente.');
     }
@@ -37,17 +43,22 @@ class CourseController extends Controller
 
     public function update(Request $request, Course $course)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|max:255|unique:courses,name,' . $course->id,
+            'nivel_educativo' => 'required|string|in:' . implode(',', array_keys(Course::NIVELES)),
         ]);
 
-        $course->update(['name' => $request->name]);
+        $course->update($data);
 
         return redirect()->route('courses.index')->with('success', 'Curso actualizado correctamente.');
     }
 
     public function destroy(Course $course)
     {
+        if ($course->parallels()->exists()) {
+            return redirect()->route('courses.index')->with('error', 'No se puede eliminar el curso: tiene paralelos asociados. Elimine primero los paralelos.');
+        }
+
         $course->delete();
 
         return redirect()->route('courses.index')->with('success', 'Curso eliminado correctamente.');

@@ -58,43 +58,64 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
-                                <label for="name">Nombre</label>
+                                <label for="last_name">Apellido paterno</label>
                                 <input
                                     type="text"
-                                    id="name"
-                                    name="name"
-                                    class="form-control js-person-field @error('name') is-invalid @enderror"
+                                    id="last_name"
+                                    name="last_name"
+                                    class="form-control js-person-field @error('last_name') is-invalid @enderror"
                                     data-rule="name"
-                                    value="{{ old('name') }}"
+                                    value="{{ old('last_name') }}"
                                     autocomplete="off"
                                     required
                                     maxlength="100"
                                 >
                                 <small class="invalid-feedback"></small>
-                                @error('name')
+                                @error('last_name')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
-                                <label for="lastname">Apellido</label>
+                                <label for="second_last_name">Apellido materno</label>
                                 <input
                                     type="text"
-                                    id="lastname"
-                                    name="lastname"
-                                    class="form-control js-person-field @error('lastname') is-invalid @enderror"
+                                    id="second_last_name"
+                                    name="second_last_name"
+                                    class="form-control js-person-field @error('second_last_name') is-invalid @enderror"
                                     data-rule="name"
-                                    value="{{ old('lastname') }}"
+                                    value="{{ old('second_last_name') }}"
                                     autocomplete="off"
                                     required
                                     maxlength="100"
                                 >
                                 <small class="invalid-feedback"></small>
-                                @error('lastname')
+                                @error('second_last_name')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label for="first_name">Nombre(s)</label>
+                                <input
+                                    type="text"
+                                    id="first_name"
+                                    name="first_name"
+                                    class="form-control js-person-field @error('first_name') is-invalid @enderror"
+                                    data-rule="name"
+                                    value="{{ old('first_name') }}"
+                                    autocomplete="off"
+                                    required
+                                    maxlength="100"
+                                >
+                                <small class="invalid-feedback"></small>
+                                @error('first_name')
                                     <span class="invalid-feedback">{{ $message }}</span>
                                 @enderror
                             </div>

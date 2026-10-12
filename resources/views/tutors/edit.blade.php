@@ -17,12 +17,29 @@
                         <i class="fas fa-info-circle mr-1"></i>
                         Desactivar un tutor conserva su historial y evita que pueda ser asignado nuevamente.
                     </div>
-                    <div class="form-group">
-                        <label for="name">Nombre completo</label>
-                        <input id="name" name="name" value="{{ old('name', $tutor->name) }}" class="form-control js-person-field @error('name') is-invalid @enderror" data-rule="name" required>
-                        <small class="invalid-feedback"></small>
-                        @error('name') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="last_name">Apellido paterno</label>
+                            <input id="last_name" name="last_name" value="{{ old('last_name', $tutor->last_name) }}" class="form-control js-person-field @error('last_name') is-invalid @enderror" data-rule="name" required>
+                            <small class="invalid-feedback"></small>
+                            @error('last_name') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="second_last_name">Apellido materno</label>
+                            <input id="second_last_name" name="second_last_name" value="{{ old('second_last_name', $tutor->second_last_name) }}" class="form-control js-person-field @error('second_last_name') is-invalid @enderror" data-rule="name" required>
+                            <small class="invalid-feedback"></small>
+                            @error('second_last_name') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="first_name">Nombre(s)</label>
+                            <input id="first_name" name="first_name" value="{{ old('first_name', $tutor->first_name) }}" class="form-control js-person-field @error('first_name') is-invalid @enderror" data-rule="name" required>
+                            <small class="invalid-feedback"></small>
+                            @error('first_name') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                        </div>
                     </div>
+                    @if(! $tutor->last_name && ! $tutor->first_name)
+                        <p class="text-muted small mb-3"><i class="fas fa-info-circle mr-1"></i> Nombre actual registrado: <strong>{{ $tutor->name }}</strong>. Complete los 3 campos de arriba para dividirlo.</p>
+                    @endif
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label for="phone">Teléfono</label>

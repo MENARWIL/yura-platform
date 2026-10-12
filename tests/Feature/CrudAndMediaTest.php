@@ -39,7 +39,9 @@ class CrudAndMediaTest extends TestCase
         $teacherPhoto = new UploadedFile($teacherPhotoPath, 'teacher.png', 'image/png', null, true);
 
         $userResponse = $this->actingAs($admin)->post('/users', [
-            'name' => 'Maestro de Prueba',
+            'last_name' => 'Prueba',
+            'second_last_name' => 'Ejemplo',
+            'first_name' => 'Maestro',
             'email' => 'maestro@example.com',
             'password' => 'Clave#12345',
             'rol' => 'profesor',
@@ -60,7 +62,9 @@ class CrudAndMediaTest extends TestCase
         $studentPhoto = new UploadedFile($studentPhotoPath, 'student.png', 'image/png', null, true);
 
         $studentResponse = $this->actingAs($admin)->post('/students', [
-            'nombre' => 'Estudiante Prueba',
+            'last_name' => 'Estudiante',
+            'second_last_name' => 'Rojas',
+            'first_name' => 'Prueba',
             'edad' => 9,
             'genero' => 'Masculino',
             'nivel' => 'básico',
@@ -76,7 +80,7 @@ class CrudAndMediaTest extends TestCase
         ]);
 
         $studentResponse->assertRedirect('/students');
-        $student = Student::where('name', 'Estudiante Prueba')->firstOrFail();
+        $student = Student::where('name', 'Estudiante Rojas Prueba')->firstOrFail();
         $this->assertNotNull($student->foto_path);
         Storage::disk('public')->assertExists($student->foto_path);
 
