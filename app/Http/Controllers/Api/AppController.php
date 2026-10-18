@@ -38,13 +38,7 @@ class AppController extends Controller
             ->orderBy('name')
             ->get()
             ->map(function (Student $student) {
-                $report = StudentReport::for($student);
-
-                return $this->identity($student) + [
-                    'average' => $report['average'],
-                    'attendance_percent' => $report['attendance_percent'],
-                    'robot_completed' => $report['robot_completed'],
-                ];
+                return StudentReport::listItem($student);
             });
 
         return response()->json(['data' => $children->values()]);
@@ -61,23 +55,7 @@ class AppController extends Controller
         }
 
         $student->load(['course', 'parallel', 'profesor', 'grades.subject', 'attendances']);
-        $report = StudentReport::for($student);
-        $report['quarter_averages'] = collect($report['quarter_averages'])
-            ->map(fn ($average, $quarter) => ['quarter' => (int) $quarter, 'average' => $average])
-            ->values();
-
-        return response()->json(['data' => $this->identity($student) + ['report' => $report]]);
-    }
-
-    private function identity(Student $student): array
-    {
-        return [
-            'id' => $student->id,
-            'name' => $student->name,
-            'course' => $student->course_name,
-            'parallel' => $student->parallel?->name,
-            'teacher' => $student->profesor?->name,
-        ];
+        return response()->json(['data' => StudentReport::identity($student) + ['report' => StudentReport::forApp($student)]]);
     }
 
     private function onlyFamilies(): JsonResponse

@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'rol' => \App\Http\Middleware\CheckRole::class,
             'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'api.role' => \App\Http\Middleware\EnsureApiRole::class,
             'set.locale' => \App\Http\Middleware\SetLocale::class,
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);
