@@ -66,3 +66,8 @@ Tokens: familia 30 días, **administrador 7 días**, robot sin vencimiento.
 
 Toda acción de escritura del administrador queda en la auditoría (`audit_logs`).
 El borrado definitivo, la foto de perfil, cursos y paralelos se hacen solo en la web.
+
+## Filtros por curso y paralelo (v1.2)
+- `GET /courses` (administrador y profesor) → `{"data":[{"id","name","parallels":[{"id","name"}]}]}`. El administrador recibe todos los cursos; el profesor solo los paralelos donde tiene estudiantes o una asignación docente.
+- `GET /students?course_id=&parallel_id=` — filtros opcionales, combinables con `q`. El profesor sigue viendo solo lo suyo.
+- `GET /robot-activities?parallel_id=` (profesor) — filtra sus actividades por paralelo.
