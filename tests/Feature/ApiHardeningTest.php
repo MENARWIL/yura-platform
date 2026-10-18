@@ -94,6 +94,21 @@ class ApiHardeningTest extends TestCase
         $this->assertCount(1, $this->actingAs($tutor, 'sanctum')->getJson('/api/dashboard')->json('mis_hijos'));
     }
 
+    public function test_main_parent_with_revoked_link_loses_access_but_without_link_keeps_it(): void
+    {
+        $revoked = $this->family('padre');
+        $untouched = $this->family('madre');
+        $studentA = $this->makeStudent('Revocado', $revoked);
+        $studentB = $this->makeStudent('Sin vinculo', $untouched);
+        $this->linkFamily($revoked, $studentA, ['active' => false, 'relation_type' => 'padre', 'is_primary' => true]);
+
+        $this->actingAs($revoked, 'sanctum')->getJson("/api/v1/app/children/{$studentA->id}/summary")->assertForbidden();
+        $this->assertSame([], $this->actingAs($revoked, 'sanctum')->getJson('/api/v1/app/children')->json('data'));
+
+        // Sin fila de vínculo, el responsable principal conserva su acceso.
+        $this->actingAs($untouched, 'sanctum')->getJson("/api/v1/app/children/{$studentB->id}/summary")->assertOk();
+    }
+
     // ---------------------------------------------------------------- F3
 
     public function test_login_token_expires_in_30_days_and_expired_token_is_rejected(): void

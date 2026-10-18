@@ -83,8 +83,12 @@ class Student extends Model
      */
     public function scopeVisibleToFamily($query, User $user)
     {
+        // Un vínculo registrado manda: si existe para este usuario, debe estar activo y con permiso de ver.
         return $query->where(function ($q) use ($user) {
-            $q->where($this->getParentUserForeignKey(), $user->id)
+            $q->where(function ($main) use ($user) {
+                $main->where($this->getParentUserForeignKey(), $user->id)
+                    ->whereDoesntHave('familiares', fn ($link) => $link->where('users.id', $user->id));
+            })
                 ->orWhereHas('familiares', function ($family) use ($user) {
                     $family->where('users.id', $user->id)
                         ->where('student_family_members.active', true)
