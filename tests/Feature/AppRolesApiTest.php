@@ -75,6 +75,56 @@ class AppRolesApiTest extends TestCase
         $this->assertSame(['Luis Rojas'], collect($found->json('data'))->pluck('name')->all());
     }
 
+    public function test_students_can_be_filtered_by_course_and_parallel(): void
+    {
+        $admin = $this->user('admin');
+        $teacher = $this->user('profesor');
+        $course = Course::firstOrCreate(['name' => '6° Primaria']);
+        $other = Course::create(['name' => '5° Primaria']);
+        $a = Parallel::firstOrCreate(['name' => 'A', 'course_id' => $course->id], ['max_students' => 40]);
+        $b = Parallel::create(['name' => 'B', 'course_id' => $course->id, 'max_students' => 40]);
+        $c5 = Parallel::create(['name' => 'A', 'course_id' => $other->id, 'max_students' => 40]);
+        foreach ([['Ana Uno', $a, $course, $teacher], ['Beto Dos', $b, $course, $teacher], ['Caro Tres', $c5, $other, null]] as [$name, $p, $c, $t]) {
+            Student::create([
+                'name' => $name, 'course' => $c->name, 'course_id' => $c->id, 'parallel_id' => $p->id,
+                'teacher_user_id' => $t?->id, 'status' => 'activo',
+            ]);
+        }
+
+        $names = fn ($user, $qs) => collect($this->actingAs($user, 'sanctum')->getJson("/api/v1/app/students?$qs")->assertOk()->json('data'))->pluck('name')->sort()->values()->all();
+
+        $this->assertSame(['Ana Uno', 'Beto Dos'], $names($admin, "course_id={$course->id}"));
+        $this->assertSame(['Beto Dos'], $names($admin, "parallel_id={$b->id}"));
+        $this->assertSame(['Caro Tres'], $names($admin, "course_id={$other->id}&parallel_id={$c5->id}"));
+        $this->assertSame([], $names($admin, "course_id={$other->id}&parallel_id={$a->id}"));
+        // El profesor filtra solo dentro de lo suyo, aunque pida el paralelo de otro curso.
+        $this->assertSame(['Ana Uno'], $names($teacher, "parallel_id={$a->id}"));
+        $this->assertSame([], $names($teacher, "parallel_id={$c5->id}"));
+    }
+
+    public function test_course_list_is_complete_for_admin_and_scoped_for_teacher(): void
+    {
+        $admin = $this->user('admin');
+        $teacher = $this->user('profesor');
+        $course = Course::create(['name' => '6° Primaria']);
+        $other = Course::create(['name' => '5° Primaria']);
+        $a = Parallel::create(['name' => 'A', 'course_id' => $course->id, 'max_students' => 40]);
+        Parallel::create(['name' => 'B', 'course_id' => $course->id, 'max_students' => 40]);
+        Parallel::create(['name' => 'A', 'course_id' => $other->id, 'max_students' => 40]);
+        Student::create(['name' => 'Ana Uno', 'course' => $course->name, 'course_id' => $course->id, 'parallel_id' => $a->id, 'teacher_user_id' => $teacher->id, 'status' => 'activo']);
+
+        $all = $this->actingAs($admin, 'sanctum')->getJson('/api/v1/app/courses')->assertOk()->json('data');
+        $this->assertCount(2, $all);
+        $this->assertSame(['5° Primaria', '6° Primaria'], collect($all)->pluck('name')->all());
+        $this->assertSame(['A', 'B'], collect($all[1]['parallels'])->pluck('name')->all());
+
+        $mine = $this->actingAs($teacher, 'sanctum')->getJson('/api/v1/app/courses')->assertOk()->json('data');
+        $this->assertCount(1, $mine);
+        $this->assertSame(['A'], collect($mine[0]['parallels'])->pluck('name')->all());
+
+        $this->actingAs($this->user('padre'), 'sanctum')->getJson('/api/v1/app/courses')->assertForbidden();
+    }
+
     public function test_families_and_other_roles_cannot_use_staff_student_routes(): void
     {
         $student = $this->student('Ana Paz');

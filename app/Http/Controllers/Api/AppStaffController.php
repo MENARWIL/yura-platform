@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Parallel;
 use App\Models\RobotActivity;
 use App\Models\Student;
+use App\Models\TeachingAssignment;
 use App\Services\StudentReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,6 +29,12 @@ class AppStaffController extends Controller
         if ($term = trim((string) $request->query('q'))) {
             $query->where('name', 'like', '%' . $term . '%');
         }
+        if ($courseId = (int) $request->query('course_id')) {
+            $query->where('course_id', $courseId);
+        }
+        if ($parallelId = (int) $request->query('parallel_id')) {
+            $query->where('parallel_id', $parallelId);
+        }
 
         $page = $query->paginate($perPage);
 
@@ -34,6 +42,32 @@ class AppStaffController extends Controller
             'data' => $page->getCollection()->map(fn (Student $s) => StudentReport::listItem($s))->values(),
             'meta' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
         ]);
+    }
+
+    /**
+     * Cursos con sus paralelos para armar los filtros. El administrador ve todos;
+     * el profesor, solo los paralelos donde tiene estudiantes o una asignación docente.
+     */
+    public function courses(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $parallels = Parallel::with('course')->orderBy('name');
+
+        if ($user->isProfesor()) {
+            $teacherKey = (new Student())->getTeacherUserForeignKey();
+            $ids = Student::where($teacherKey, $user->id)->pluck('parallel_id')
+                ->merge(TeachingAssignment::where('teacher_user_id', $user->id)->where('active', true)->pluck('parallel_id'))
+                ->filter()->unique()->values();
+            $parallels->whereIn('id', $ids);
+        }
+
+        $courses = $parallels->get()->groupBy('course_id')->map(fn ($group) => [
+            'id' => $group->first()->course_id,
+            'name' => $group->first()->course?->name,
+            'parallels' => $group->map(fn (Parallel $p) => ['id' => $p->id, 'name' => $p->name])->values(),
+        ])->sortBy('name')->values();
+
+        return response()->json(['data' => $courses]);
     }
 
     public function summary(Request $request, Student $student): JsonResponse
@@ -60,6 +94,7 @@ class AppStaffController extends Controller
             ->withCount('attempts')
             ->where('teacher_user_id', $request->user()->id)
             ->when($status, fn ($q) => $q->where('status', $status))
+            ->when((int) $request->query('parallel_id'), fn ($q, $id) => $q->where('parallel_id', $id))
             ->latest()
             ->paginate($this->perPage($request));
 

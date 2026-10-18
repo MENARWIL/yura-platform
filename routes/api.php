@@ -31,6 +31,7 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
 
         // Profesor (solo lectura) y administrador
         Route::middleware('api.role:admin,profesor')->group(function () {
+            Route::get('/courses', [AppStaffController::class, 'courses']);
             Route::get('/students', [AppStaffController::class, 'students']);
             Route::get('/students/{student}/summary', [AppStaffController::class, 'summary'])->whereNumber('student');
         });
