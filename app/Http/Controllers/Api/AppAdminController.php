@@ -163,6 +163,7 @@ class AppAdminController extends Controller
 
     private function validated(Request $request, ?User $editing = null): array
     {
+        app()->setLocale('es');
         $name = ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'];
         $request->merge([
             'first_name' => preg_replace('/[ \t]+/u', ' ', trim((string) $request->input('first_name'))),
@@ -181,7 +182,28 @@ class AppAdminController extends Controller
             'rol' => ['required', Rule::in(UserAdminService::ROLES)],
             'main_course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
-        ]);
+        ], $this->messages());
+    }
+
+    /** Los mismos textos que la web (resources/lang/es/messages.php). */
+    private function messages(): array
+    {
+        $required = __('messages.validation.required');
+        $password = __('messages.validation.password');
+
+        return [
+            'first_name.required' => $required, 'first_name.regex' => __('messages.validation.name'),
+            'last_name.required' => $required, 'last_name.regex' => __('messages.validation.name'),
+            'second_last_name.required' => $required, 'second_last_name.regex' => __('messages.validation.name'),
+            'email.required' => $required, 'email.email' => __('messages.validation.email'),
+            'email.unique' => __('messages.validation.unique'),
+            'rol.required' => $required, 'rol.in' => __('messages.validation.invalid'),
+            'main_course_id.integer' => __('messages.validation.integer'),
+            'main_course_id.exists' => __('messages.validation.invalid'),
+            'telefono.regex' => __('messages.validation.phone'),
+            'password.required' => $required, 'password.min' => $password, 'password.letters' => $password,
+            'password.mixed' => $password, 'password.numbers' => $password, 'password.symbols' => $password,
+        ];
     }
 
     private function statusColumn(): string
@@ -204,7 +226,7 @@ class AppAdminController extends Controller
             'second_last_name' => $user->second_last_name,
             'email' => $user->email,
             'role' => $user->role,
-            'status' => $user->status,
+            'status' => in_array(strtolower(trim((string) $user->status)), ['active', 'activo'], true) ? 'active' : 'inactive',
             'telefono' => $user->phone ?? $user->telefono,
             'main_course_id' => $user->main_course_id,
             'deleted_at' => $user->deleted_at?->toISOString(),

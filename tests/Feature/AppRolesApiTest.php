@@ -265,6 +265,29 @@ class AppRolesApiTest extends TestCase
         $this->assertTrue(AuditLog::where('action', 'user.restore')->where('entity_id', $target->id)->exists());
     }
 
+    public function test_validation_errors_are_in_spanish(): void
+    {
+        $admin = $this->user('admin');
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/v1/app/admin/users', $this->newUserPayload(['first_name' => '', 'password' => 'abc']))
+            ->assertStatus(422);
+
+        $this->assertSame('Este campo es obligatorio.', $response->json('errors.first_name.0'));
+        $this->assertStringNotContainsString('field is', json_encode($response->json('errors')));
+    }
+
+    public function test_status_is_always_reported_as_active_or_inactive(): void
+    {
+        $admin = $this->user('admin');
+        $spanish = $this->user('profesor', ['status' => 'activo']);
+
+        $item = collect($this->actingAs($admin, 'sanctum')->getJson('/api/v1/app/admin/users?role=profesor')->json('data'))
+            ->firstWhere('id', $spanish->id);
+
+        $this->assertSame('active', $item['status']);
+    }
+
     public function test_deleted_user_cannot_be_edited_or_suspended_until_restored(): void
     {
         $admin = $this->user('admin');
