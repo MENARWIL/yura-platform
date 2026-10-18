@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Sanctum\PersonalAccessToken;
 use Tests\TestCase;
 
 /**
@@ -123,6 +124,19 @@ class ApiHardeningTest extends TestCase
 
         $this->assertNull(\Laravel\Sanctum\PersonalAccessToken::findToken($token)->expires_at);
         $this->withToken($token)->getJson('/api/user')->assertOk();
+    }
+
+    public function test_robot_token_issued_by_login_does_not_expire(): void
+    {
+        User::factory()->create([
+            'email' => 'robot@yura.bo', 'role' => 'robot', 'status' => 'active',
+            'password' => bcrypt('Correcta#2026'),
+        ]);
+
+        $token = $this->postJson('/api/login', ['email' => 'robot@yura.bo', 'password' => 'Correcta#2026'])
+            ->assertOk()->json('access_token');
+
+        $this->assertNull(PersonalAccessToken::findToken($token)->expires_at);
     }
 
     // ---------------------------------------------------------------- F4
