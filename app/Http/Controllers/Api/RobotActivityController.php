@@ -10,6 +10,10 @@ class RobotActivityController extends Controller
 {
     public function store(Request $request)
     {
+        if ($request->user()?->role !== 'robot') {
+            return response()->json(['message' => 'Solo Yura puede registrar actividades.'], 403);
+        }
+
         $data = $request->validate([
             'activity_id' => 'required|string|max:100',
             'student_id' => 'required|integer|exists:students,id',

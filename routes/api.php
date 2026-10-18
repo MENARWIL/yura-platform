@@ -10,13 +10,13 @@ use App\Http\Controllers\Api\RobotActivityController;
 use App\Http\Controllers\Api\RobotActivityQueueController;
 use App\Http\Controllers\TutorController;
 
-Route::post('/login', [AuthController::class, 'loginApi']);
+Route::post('/login', [AuthController::class, 'loginApi'])->middleware('throttle:api-login');
 
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'active.user']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/tutor/my-children', [TutorController::class, 'myChildren']);
     Route::get('/dashboard', [DashboardController::class, 'index']);

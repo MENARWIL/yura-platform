@@ -54,12 +54,7 @@ class DashboardController extends Controller
                 'mi_asistencia' => $student?->realAttendancePercent() ?? 0,
             ];
         } else {
-            $parentForeignKey = (new Student())->getParentUserForeignKey();
-
-            $data['mis_hijos'] = Student::where($parentForeignKey, $user->id)
-                ->orWhereHas('familiares', function ($family) use ($user) {
-                    $family->where('user_id', $user->id);
-                })
+            $data['mis_hijos'] = Student::visibleToFamily($user)
                 ->with('profesor')
                 ->get();
             $data['metrics'] = [

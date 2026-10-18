@@ -33,15 +33,7 @@ class DashboardController extends Controller
             $data['total_padres'] = User::ofRole(['padre', 'madre', 'tutor'])->count();
             $data['recientes'] = Student::when($selectedCourseId, function ($q) use ($selectedCourseId) { return $q->where('course_id', $selectedCourseId); })->with('padre')->latest()->take(5)->get();
         } elseif ($user->isResponsibleRole()) {
-            $parentForeignKey = (new Student())->getParentUserForeignKey();
-
-            $children = Student::where(function ($query) use ($parentForeignKey, $user) {
-                $query->where($parentForeignKey, $user->id)
-                    ->orWhereHas('familiares', function ($family) use ($user) {
-                        $family->where('user_id', $user->id)
-                            ->where('student_family_members.active', true);
-                    });
-            })
+            $children = Student::visibleToFamily($user)
                 ->with(['course', 'parallel', 'grades.subject', 'attendances'])
                 ->get();
 
