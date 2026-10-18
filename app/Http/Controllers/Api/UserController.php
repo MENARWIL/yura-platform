@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\UserAdminException;
+use App\Services\UserAdminService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +17,16 @@ class UserController extends Controller
     {
         abort_unless($request->user() && $request->user()->isAdmin(), 403, 'No autorizado.');
 
-        $users = User::all();
+        // Solo los campos necesarios: nunca documento de identidad, foto ni tokens.
+        $users = User::orderBy('name')->get()->map(fn (User $u) => [
+            'id' => $u->id,
+            'name' => $u->name,
+            'email' => $u->email,
+            'role' => $u->role,
+            'status' => $u->status,
+            'telefono' => $u->phone ?? $u->telefono,
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => $users
@@ -29,8 +40,8 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', Password::min(8)],
-            'rol' => ['required', 'in:padre,madre,tutor,profesor,admin,estudiante'],
+            'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'rol' => ['required', 'in:' . implode(',', UserAdminService::ROLES)],
             'telefono' => ['nullable', 'string', 'max:20'],
         ]);
 
@@ -41,7 +52,7 @@ class UserController extends Controller
             ], 400);
         }
 
-        $user = User::create([
+        $user = app(UserAdminService::class)->create($request->user(), [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -61,11 +72,11 @@ class UserController extends Controller
     {
         abort_unless($request->user() && $request->user()->isAdmin(), 403, 'No autorizado.');
 
-        $currentStatus = strtolower(trim((string) $user->status));
-        $user->status = in_array($currentStatus, ['active', 'activo'], true)
-            ? 'inactive'
-            : 'active';
-        $user->save();
+        try {
+            app(UserAdminService::class)->toggleStatus($request->user(), $user);
+        } catch (UserAdminException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
 
         return response()->json([
             'success' => true,
