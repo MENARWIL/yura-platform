@@ -67,6 +67,51 @@ class UserAdminRulesTest extends TestCase
         $this->assertSame('inactive', $other->fresh()->status);
     }
 
+    public function test_the_last_active_admin_cannot_be_suspended_demoted_or_deleted(): void
+    {
+        $service = app(\App\Services\UserAdminService::class);
+        $lastAdmin = $this->admin();
+        // Un administrador que ya fue suspendido pero cuya solicitud sigue en curso (caso de dos solicitudes simultáneas).
+        $staleAdmin = User::factory()->create(['role' => 'admin', 'status' => 'inactive']);
+
+        foreach ([
+            fn () => $service->toggleStatus($staleAdmin, $lastAdmin),
+            fn () => $service->update($staleAdmin, $lastAdmin, ['rol' => 'profesor']),
+            fn () => $service->delete($staleAdmin, $lastAdmin),
+            fn () => $service->forceDelete($staleAdmin, $lastAdmin),
+        ] as $action) {
+            try {
+                $action();
+                $this->fail('el sistema quedó sin administrador activo');
+            } catch (\App\Services\UserAdminException) {
+                // esperado
+            }
+        }
+
+        $fresh = $lastAdmin->fresh();
+        $this->assertSame('admin', $fresh->role);
+        $this->assertSame('active', $fresh->status);
+        $this->assertNull($fresh->deleted_at);
+    }
+
+    public function test_a_failing_audit_rolls_back_the_change(): void
+    {
+        $admin = $this->admin();
+        $target = $this->user('padre');
+        $target->createToken('app');
+        \Illuminate\Support\Facades\Schema::drop('audit_logs'); // fuerza el fallo de la auditoría
+
+        try {
+            app(\App\Services\UserAdminService::class)->toggleStatus($admin, $target);
+            $this->fail('debía fallar');
+        } catch (\Throwable) {
+            // esperado
+        }
+
+        $this->assertSame('active', $target->fresh()->status, 'el cambio persistió aunque la auditoría falló');
+        $this->assertSame(1, $target->tokens()->count(), 'las sesiones se cerraron aunque la operación falló');
+    }
+
     // ---------------------------------------------------------------- U2
 
     public function test_api_user_creation_requires_a_strong_password(): void
