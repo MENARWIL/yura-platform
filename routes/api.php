@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AppController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RobotActivityController;
@@ -19,6 +20,13 @@ Route::get('/user', function (Request $request) {
 Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/tutor/my-children', [TutorController::class, 'myChildren']);
+
+    // API de la app móvil (contrato: docs/api-app-v1.md)
+    Route::prefix('v1/app')->group(function () {
+        Route::get('/me', [AppController::class, 'me']);
+        Route::get('/children', [AppController::class, 'children']);
+        Route::get('/children/{student}/summary', [AppController::class, 'summary'])->whereNumber('student');
+    });
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/students', [StudentController::class, 'index']);
     Route::post('/students', [StudentController::class, 'store']);
