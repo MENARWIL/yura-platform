@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicYear;
 use App\Models\Parallel;
 use App\Models\RobotActivity;
 use App\Models\Student;
@@ -29,11 +30,18 @@ class AppStaffController extends Controller
         if ($term = trim((string) $request->query('q'))) {
             $query->where('name', 'like', '%' . $term . '%');
         }
-        if ($courseId = (int) $request->query('course_id')) {
-            $query->where('course_id', $courseId);
-        }
-        if ($parallelId = (int) $request->query('parallel_id')) {
-            $query->where('parallel_id', $parallelId);
+        $courseId = (int) $request->query('course_id');
+        $parallelId = (int) $request->query('parallel_id');
+        if ($yearId = (int) $request->query('year_id')) {
+            // Una gestión concreta: cuenta la matrícula de ese año, no el curso actual del estudiante.
+            $query->whereHas('enrollments', function ($q) use ($yearId, $courseId, $parallelId) {
+                $q->where('academic_year_id', $yearId)
+                    ->when($courseId, fn ($e) => $e->where('course_id', $courseId))
+                    ->when($parallelId, fn ($e) => $e->where('parallel_id', $parallelId));
+            });
+        } else {
+            $courseId && $query->where('course_id', $courseId);
+            $parallelId && $query->where('parallel_id', $parallelId);
         }
 
         $page = $query->paginate($perPage);
@@ -42,6 +50,17 @@ class AppStaffController extends Controller
             'data' => $page->getCollection()->map(fn (Student $s) => StudentReport::listItem($s))->values(),
             'meta' => ['page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
         ]);
+    }
+
+    /** Gestiones escolares, de la más reciente a la más antigua. La actual va marcada. */
+    public function years(): JsonResponse
+    {
+        return response()->json(['data' => AcademicYear::orderByDesc('year')->get()->map(fn (AcademicYear $y) => [
+            'id' => $y->id,
+            'year' => $y->year,
+            'name' => $y->name,
+            'is_current' => $y->is_current,
+        ])->values()]);
     }
 
     /**

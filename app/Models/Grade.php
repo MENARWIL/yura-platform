@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToAcademicYear;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,11 +10,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Grade extends Model
 {
+    use BelongsToAcademicYear;
+
     use HasFactory;
 
     protected $table = 'grades';
 
     protected $fillable = [
+        'academic_year_id',
         'student_id',
         'subject_id',
         'score',

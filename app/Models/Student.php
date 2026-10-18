@@ -97,6 +97,11 @@ class Student extends Model
         });
     }
 
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
     public function padre(): BelongsTo
     {
         return $this->belongsTo(User::class, $this->getParentUserForeignKey());
