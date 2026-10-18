@@ -30,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        // Login de la API: por cuenta + IP, para no bloquear a toda una red escolar.
+        RateLimiter::for('api-login', function (Request $request) {
+            return Limit::perMinute(5)->by(strtolower((string) $request->input('email')) . '|' . $request->ip());
+        });
+
         RateLimiter::for('global', function (Request $request) {
             return Limit::perMinute(60)->by($request->ip());
         });

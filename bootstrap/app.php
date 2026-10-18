@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'rol' => \App\Http\Middleware\CheckRole::class,
+            'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
             'set.locale' => \App\Http\Middleware\SetLocale::class,
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);

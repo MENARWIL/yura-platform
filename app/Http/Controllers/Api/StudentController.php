@@ -29,12 +29,7 @@ class StudentController extends Controller
         } elseif ($user->isEstudiante()) {
             $query->where($studentUserForeignKey, $user->id);
         } elseif (! $user->isAdmin()) {
-            $query->where(function ($q) use ($user, $parentForeignKey) {
-                $q->where($parentForeignKey, $user->id)
-                    ->orWhereHas('familiares', function ($family) use ($user) {
-                        $family->where('user_id', $user->id);
-                    });
-            });
+            $query->visibleToFamily($user);
         }
 
         return response()->json([

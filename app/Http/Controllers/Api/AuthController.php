@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public const TOKEN_DAYS = 30;
+
     public function loginApi(Request $request)
     {
         $request->validate([
@@ -33,7 +35,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth_token', ['*'], now()->addDays(self::TOKEN_DAYS))->plainTextToken;
 
         return response()->json([
             'access_token' => $token,

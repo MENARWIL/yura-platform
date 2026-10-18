@@ -308,7 +308,11 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->familyStudents()->where('students.id', $student->id)->exists();
+        return $this->familyStudents()
+            ->where('students.id', $student->id)
+            ->wherePivot('active', true)
+            ->wherePivot('can_view', true)
+            ->exists();
     }
 
     public function canViewStudent(Student $student): bool
