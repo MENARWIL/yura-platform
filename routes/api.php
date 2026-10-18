@@ -26,6 +26,7 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     // API de la app móvil (contrato: docs/api-app-v1.md)
     Route::prefix('v1/app')->group(function () {
         Route::get('/me', [AppController::class, 'me']);
+        Route::get('/years', [AppStaffController::class, 'years']);
         Route::get('/children', [AppController::class, 'children']);
         Route::get('/children/{student}/summary', [AppController::class, 'summary'])->whereNumber('student');
 
