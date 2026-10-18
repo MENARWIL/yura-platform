@@ -71,3 +71,9 @@ El borrado definitivo, la foto de perfil, cursos y paralelos se hacen solo en la
 - `GET /courses` (administrador y profesor) → `{"data":[{"id","name","parallels":[{"id","name"}]}]}`. El administrador recibe todos los cursos; el profesor solo los paralelos donde tiene estudiantes o una asignación docente.
 - `GET /students?course_id=&parallel_id=` — filtros opcionales, combinables con `q`. El profesor sigue viendo solo lo suyo.
 - `GET /robot-activities?parallel_id=` (profesor) — filtra sus actividades por paralelo.
+
+## Gestión escolar (v1.3)
+- `GET /years` (cualquier rol con sesión) → `{"data":[{"id","year","name","is_current"}]}`, de la más reciente a la más antigua. Hoy solo existe la **Gestión 2026**, marcada como actual.
+- Cualquier consulta acepta `?year_id=N`: notas, asistencia, actividades del robot y los números del resumen salen de esa gestión. Sin el parámetro se usa la gestión actual.
+- `GET /students?year_id=N` lista los estudiantes matriculados en esa gestión (con su curso y paralelo de ese año); `course_id` y `parallel_id` filtran por la matrícula de ese año.
+- Las gestiones anteriores son de solo consulta. La promoción de curso aún no existe.
