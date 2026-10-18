@@ -27,19 +27,28 @@ return new class extends Migration
             DB::table('teaching_assignments')->update(['academic_year_id' => $yearId]);
 
             // La misma materia y paralelo se repite cada gestión: la unicidad pasa a incluir el año.
+            // Primero se crea el índice nuevo y después se borra el viejo: en MySQL el viejo puede estar
+            // sosteniendo la clave foránea de subject_id y no se puede quitar antes de tener otro que la cubra.
+            Schema::table('teaching_assignments', function (Blueprint $table) {
+                $table->unique(['subject_id', 'parallel_id', 'academic_year_id'], 'teaching_assignments_subject_parallel_year_unique');
+            });
             Schema::table('teaching_assignments', function (Blueprint $table) {
                 $table->dropUnique(['subject_id', 'parallel_id']);
-                $table->unique(['subject_id', 'parallel_id', 'academic_year_id'], 'teaching_assignments_subject_parallel_year_unique');
             });
         }
     }
 
     public function down(): void
     {
+        // Primero vuelve el índice antiguo y luego se quita el nuevo (mismo motivo que en up()).
+        Schema::table('teaching_assignments', function (Blueprint $table) {
+            $table->unique(['subject_id', 'parallel_id']);
+        });
         Schema::table('teaching_assignments', function (Blueprint $table) {
             $table->dropUnique('teaching_assignments_subject_parallel_year_unique');
+        });
+        Schema::table('teaching_assignments', function (Blueprint $table) {
             $table->dropConstrainedForeignId('academic_year_id');
-            $table->unique(['subject_id', 'parallel_id']);
         });
 
         Schema::table('academic_years', function (Blueprint $table) {
