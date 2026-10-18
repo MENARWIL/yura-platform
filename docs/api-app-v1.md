@@ -77,3 +77,13 @@ El borrado definitivo, la foto de perfil, cursos y paralelos se hacen solo en la
 - Cualquier consulta acepta `?year_id=N`: notas, asistencia, actividades del robot y los números del resumen salen de esa gestión. Sin el parámetro se usa la gestión actual.
 - `GET /students?year_id=N` lista los estudiantes matriculados en esa gestión (con su curso y paralelo de ese año); `course_id` y `parallel_id` filtran por la matrícula de ese año.
 - Las gestiones anteriores son de solo consulta. La promoción de curso aún no existe.
+
+## Cerrar y reabrir gestiones (v1.4, solo rol `admin`)
+- `GET /years` ahora incluye `closed` (bool) y `closed_at`.
+- `POST /admin/years` `{"year":2027}` → 201 crea una gestión (abierta y no actual).
+- `POST /admin/years/{id}/current` → la pone como actual (una gestión cerrada no puede serlo).
+- `POST /admin/years/{id}/close` `{"next_year_id":N}` → la cierra. Si es la actual, `next_year_id` es obligatorio y pasa a ser la actual.
+- `POST /admin/years/{id}/reopen` → la reabre.
+- Errores de regla: **422** `{"message": "..."}`. Cualquier otro rol: **403**.
+- Escribir en una gestión cerrada (notas, asistencia, actividades del robot, asignaciones) responde **409** `{"message": "La gestión «…» está cerrada…"}`. Para el robot, un 409 manda el resumen a su carpeta `revisar/`; no se pierde.
+- Web: pantalla «Gestiones» del administrador (`/admin/years`). Servidor: `php artisan years:list|create|set-current|close|reopen`.
