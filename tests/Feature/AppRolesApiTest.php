@@ -265,6 +265,18 @@ class AppRolesApiTest extends TestCase
         $this->assertTrue(AuditLog::where('action', 'user.restore')->where('entity_id', $target->id)->exists());
     }
 
+    public function test_deleted_user_cannot_be_edited_or_suspended_until_restored(): void
+    {
+        $admin = $this->user('admin');
+        $target = $this->user('profesor', ['email' => 'prof@school.bo']);
+        $target->delete();
+
+        $this->actingAs($admin, 'sanctum')->putJson("/api/v1/app/admin/users/{$target->id}", $this->newUserPayload(['email' => 'prof@school.bo']))->assertNotFound();
+        $this->actingAs($admin, 'sanctum')->patchJson("/api/v1/app/admin/users/{$target->id}/status")->assertNotFound();
+        $this->actingAs($admin, 'sanctum')->getJson("/api/v1/app/admin/users/{$target->id}")->assertOk()
+            ->assertJsonPath('data.is_self', false);
+    }
+
     public function test_unknown_user_returns_404(): void
     {
         $this->actingAs($this->user('admin'), 'sanctum')->getJson('/api/v1/app/admin/users/99999')->assertNotFound();

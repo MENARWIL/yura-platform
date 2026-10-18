@@ -101,7 +101,7 @@ class AppAdminController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $user = User::withTrashed()->findOrFail($id);
+        $user = User::findOrFail($id);
         $data = $this->validated($request, $user);
 
         $attributes = [
