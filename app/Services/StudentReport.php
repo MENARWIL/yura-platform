@@ -12,6 +12,41 @@ use App\Models\Student;
  */
 class StudentReport
 {
+    /** Datos de identidad que ve la app: nunca contacto de familiares ni del profesor. */
+    public static function identity(Student $student): array
+    {
+        return [
+            'id' => $student->id,
+            'name' => $student->name,
+            'course' => $student->course_name,
+            'parallel' => $student->parallel?->name,
+            'teacher' => $student->profesor?->name,
+        ];
+    }
+
+    /** Fila de lista: identidad y tres números. Requiere `grades.subject` y `attendances` cargados. */
+    public static function listItem(Student $student): array
+    {
+        $report = self::for($student);
+
+        return self::identity($student) + [
+            'average' => $report['average'],
+            'attendance_percent' => $report['attendance_percent'],
+            'robot_completed' => $report['robot_completed'],
+        ];
+    }
+
+    /** El informe como lo recibe la app: los trimestres van como lista ordenada. */
+    public static function forApp(Student $student): array
+    {
+        $report = self::for($student);
+        $report['quarter_averages'] = collect($report['quarter_averages'])
+            ->map(fn ($average, $quarter) => ['quarter' => (int) $quarter, 'average' => $average])
+            ->values();
+
+        return $report;
+    }
+
     public static function for(Student $student): array
     {
         $academicGrades = $student->grades
