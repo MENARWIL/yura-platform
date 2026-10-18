@@ -26,5 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToGroup('api', \App\Http\Middleware\ForceJsonResponse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\App\Services\ClosedAcademicYearException $e, \Illuminate\Http\Request $request) {
+            return $request->expectsJson()
+                ? response()->json(['message' => $e->getMessage()], 409)
+                : back()->with('error', $e->getMessage());
+        });
     })->create();
