@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AppAdminController;
+use App\Http\Controllers\Api\AppAdminYearController;
 use App\Http\Controllers\Api\AppController;
 use App\Http\Controllers\Api\AppStaffController;
 use App\Http\Controllers\Api\DashboardController;
@@ -41,6 +42,10 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
         // Solo administrador: las reglas son las de la web (UserAdminService)
         Route::middleware('api.role:admin')->prefix('admin')->group(function () {
             Route::get('/overview', [AppAdminController::class, 'overview']);
+            Route::post('/years', [AppAdminYearController::class, 'store']);
+            Route::post('/years/{id}/current', [AppAdminYearController::class, 'current'])->whereNumber('id');
+            Route::post('/years/{id}/close', [AppAdminYearController::class, 'close'])->whereNumber('id');
+            Route::post('/years/{id}/reopen', [AppAdminYearController::class, 'reopen'])->whereNumber('id');
             Route::get('/users', [AppAdminController::class, 'index']);
             Route::post('/users', [AppAdminController::class, 'store']);
             Route::get('/users/{id}', [AppAdminController::class, 'show'])->whereNumber('id');

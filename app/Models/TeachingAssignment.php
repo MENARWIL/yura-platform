@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToAcademicYear;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeachingAssignment extends Model
 {
+    use BelongsToAcademicYear;
+
     use HasFactory;
 
     protected $fillable = [
+        'academic_year_id',
         'teacher_user_id',
         'subject_id',
         'parallel_id',

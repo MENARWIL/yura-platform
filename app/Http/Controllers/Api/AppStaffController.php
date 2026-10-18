@@ -55,12 +55,19 @@ class AppStaffController extends Controller
     /** Gestiones escolares, de la más reciente a la más antigua. La actual va marcada. */
     public function years(): JsonResponse
     {
-        return response()->json(['data' => AcademicYear::orderByDesc('year')->get()->map(fn (AcademicYear $y) => [
+        return response()->json(['data' => AcademicYear::orderByDesc('year')->get()->map(fn (AcademicYear $y) => self::yearItem($y))->values()]);
+    }
+
+    public static function yearItem(AcademicYear $y): array
+    {
+        return [
             'id' => $y->id,
             'year' => $y->year,
             'name' => $y->name,
             'is_current' => $y->is_current,
-        ])->values()]);
+            'closed' => $y->isClosed(),
+            'closed_at' => $y->closed_at?->toISOString(),
+        ];
     }
 
     /**

@@ -171,6 +171,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('admin.years.index') }}" class="nav-link {{ request()->is('admin/years*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-calendar-alt"></i>
+                            <p>Gestiones</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('admin.audit.index') }}" class="nav-link {{ request()->is('admin/audit*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shield-alt"></i>
                             <p>{{ __('messages.system_audit') }}</p>

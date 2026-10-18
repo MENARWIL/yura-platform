@@ -19,6 +19,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeachingAssignmentController;
 use App\Http\Controllers\PublicPortalController;
+use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AuditController;
 
 // Public Portal Routes
@@ -145,5 +146,11 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
         Route::delete('/users/{user}/force', [UserController::class, 'forceDestroy'])->name('users.forceDestroy');
 
         Route::get('/admin/audit', [AuditController::class, 'index'])->name('admin.audit.index');
+
+        Route::get('/admin/years', [AcademicYearController::class, 'index'])->name('admin.years.index');
+        Route::post('/admin/years', [AcademicYearController::class, 'store'])->name('admin.years.store');
+        Route::post('/admin/years/{year}/current', [AcademicYearController::class, 'current'])->name('admin.years.current');
+        Route::post('/admin/years/{year}/close', [AcademicYearController::class, 'close'])->name('admin.years.close');
+        Route::post('/admin/years/{year}/reopen', [AcademicYearController::class, 'reopen'])->name('admin.years.reopen');
     });
 });
