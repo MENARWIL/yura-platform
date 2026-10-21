@@ -33,62 +33,12 @@ class DashboardController extends Controller
             $data['total_padres'] = User::ofRole(['padre', 'madre', 'tutor'])->count();
             $data['recientes'] = Student::when($selectedCourseId, function ($q) use ($selectedCourseId) { return $q->where('course_id', $selectedCourseId); })->with('padre')->latest()->take(5)->get();
         } elseif ($user->isResponsibleRole()) {
-            $parentForeignKey = (new Student())->getParentUserForeignKey();
-
-            $children = Student::where(function ($query) use ($parentForeignKey, $user) {
-                $query->where($parentForeignKey, $user->id)
-                    ->orWhereHas('familiares', function ($family) use ($user) {
-                        $family->where('user_id', $user->id)
-                            ->where('student_family_members.active', true);
-                    });
-            })
+            $children = Student::visibleToFamily($user)
                 ->with(['course', 'parallel', 'grades.subject', 'attendances'])
                 ->get();
 
             $data['mis_hijos'] = $children->map(function ($student) {
-                $academicGrades = $student->grades
-                    ->where('status', 'completed')
-                    ->where('is_robot_activity', false)
-                    ->filter(fn ($grade) => $grade->score !== null);
-                $activityGrades = $academicGrades->where('type', 'activity');
-                $examGrades = $academicGrades->where('type', 'exam');
-                $robotGrades = $student->grades
-                    ->where('status', 'completed')
-                    ->where('is_robot_activity', true)
-                    ->filter(fn ($grade) => $grade->score !== null);
-                $attendanceTotal = $student->attendances->count();
-                $attendancePresent = $student->attendances->filter(
-                    fn ($attendance) => strtolower(trim((string) $attendance->status)) === 'presente'
-                )->count();
-
-                $student->dashboard_report = [
-                    'average' => $academicGrades->count() ? round($academicGrades->avg('score'), 2) : null,
-                    'activity_average' => $activityGrades->count() ? round($activityGrades->avg('score'), 2) : null,
-                    'exam_average' => $examGrades->count() ? round($examGrades->avg('score'), 2) : null,
-                    'robot_average' => $robotGrades->count() ? round($robotGrades->avg('score'), 2) : null,
-                    'activity_count' => $activityGrades->count(),
-                    'exam_count' => $examGrades->count(),
-                    'robot_count' => $robotGrades->count(),
-                    'quarter_averages' => collect([1, 2, 3])->mapWithKeys(function ($quarter) use ($academicGrades) {
-                        $grades = $academicGrades->where('quarter', $quarter);
-
-                        return [$quarter => $grades->count() ? round($grades->avg('score'), 2) : null];
-                    }),
-                    'subjects' => $academicGrades->groupBy(fn ($grade) => $grade->subject?->name ?? $grade->subject_display_name)
-                        ->map(fn ($grades) => [
-                            'name' => $grades->first()->subject?->name ?? $grades->first()->subject_display_name,
-                            'average' => round($grades->avg('score'), 2),
-                            'count' => $grades->count(),
-                        ])->values(),
-                    'attendance_percent' => $attendanceTotal ? round(($attendancePresent / $attendanceTotal) * 100, 2) : null,
-                    'attendance_present' => $attendancePresent,
-                    'attendance_total' => $attendanceTotal,
-                    'robot_total' => $student->grades->where('is_robot_activity', true)->count(),
-                    'robot_completed' => $student->grades
-                        ->where('is_robot_activity', true)
-                        ->where('status', 'completed')
-                        ->count(),
-                ];
+                $student->dashboard_report = \App\Services\StudentReport::for($student);
 
                 return $student;
             });

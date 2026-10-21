@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'rol' => \App\Http\Middleware\CheckRole::class,
+            'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'api.role' => \App\Http\Middleware\EnsureApiRole::class,
             'set.locale' => \App\Http\Middleware\SetLocale::class,
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);
@@ -24,5 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToGroup('api', \App\Http\Middleware\ForceJsonResponse::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\App\Services\ClosedAcademicYearException $e, \Illuminate\Http\Request $request) {
+            return $request->expectsJson()
+                ? response()->json(['message' => $e->getMessage()], 409)
+                : back()->with('error', $e->getMessage());
+        });
     })->create();

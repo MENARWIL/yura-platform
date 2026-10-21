@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\UserAdminException;
+use App\Services\UserAdminService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -91,7 +93,7 @@ class UserController extends Controller
             $data['foto_path'] = $request->file('foto')->store('users', 'public');
         }
 
-        User::create($data);
+        app(UserAdminService::class)->create(Auth::user(), $data);
 
         return redirect()->route('teachers.index')->with('success', __('messages.teacher_created'));
     }
@@ -106,7 +108,7 @@ class UserController extends Controller
             'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
-            'rol' => ['required', 'in:padre,madre,tutor,profesor,admin,estudiante'],
+            'rol' => ['required', 'in:' . implode(',', UserAdminService::ROLES)],
             'main_course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
@@ -188,7 +190,11 @@ class UserController extends Controller
                 $data['foto_path'] = $request->file('foto')->store('users', 'public');
             }
 
-            $user->update($data);
+            try {
+                app(UserAdminService::class)->update(Auth::user(), $user, $data);
+            } catch (UserAdminException $e) {
+                return back()->withInput()->with('error', $e->getMessage());
+            }
 
             return redirect()->route('teachers.index')->with('success', __('messages.teacher_updated'));
         }
@@ -198,7 +204,7 @@ class UserController extends Controller
             'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'rol' => ['required', 'in:padre,madre,tutor,profesor,admin,estudiante'],
+            'rol' => ['required', 'in:' . implode(',', UserAdminService::ROLES)],
             'main_course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
             'password' => ['nullable', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
@@ -231,7 +237,11 @@ class UserController extends Controller
             $data['foto_path'] = $request->file('foto')->store('users', 'public');
         }
 
-        $user->update($data);
+        try {
+            app(UserAdminService::class)->update(Auth::user(), $user, $data);
+        } catch (UserAdminException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('users.index')->with('success', __('messages.user_updated'));
     }
@@ -242,7 +252,7 @@ class UserController extends Controller
             return back()->with('error', __('messages.cannot_delete_self'));
         }
 
-        $user->delete();
+        app(UserAdminService::class)->delete(Auth::user(), $user);
 
         return redirect()->route('users.index')->with('success', __('messages.user_deleted'));
     }
@@ -255,7 +265,7 @@ class UserController extends Controller
             return back()->with('error', __('messages.user_already_active'));
         }
 
-        $user->restore();
+        app(UserAdminService::class)->restore(Auth::user(), $user);
 
         return redirect()->route('users.index')->with('success', __('messages.user_restored'));
     }
@@ -272,15 +282,18 @@ class UserController extends Controller
             Storage::disk('public')->delete($user->foto_path);
         }
 
-        $user->forceDelete();
+        app(UserAdminService::class)->forceDelete(Auth::user(), $user);
 
         return redirect()->route('users.index')->with('success', __('messages.user_deleted_permanently'));
     }
 
     public function toggleStatus(User $user)
     {
-        $user->estado = ($user->estado == 'activo') ? 'inactivo' : 'activo';
-        $user->save();
+        try {
+            app(UserAdminService::class)->toggleStatus(Auth::user(), $user);
+        } catch (UserAdminException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', __('messages.user_status_updated'));
     }

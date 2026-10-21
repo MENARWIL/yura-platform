@@ -10,6 +10,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public const TOKEN_DAYS = 30;
+
+    /** Una cuenta de administrador en un celular perdido es más riesgosa: sesión más corta. */
+    public const ADMIN_TOKEN_DAYS = 7;
+
     public function loginApi(Request $request)
     {
         $request->validate([
@@ -33,7 +38,9 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        // El robot (cerebro) no debe perder acceso solo por el paso del tiempo.
+        $expiresAt = ($user->role ?? $user->rol) === 'robot' ? null : now()->addDays(($user->role ?? $user->rol) === 'admin' ? self::ADMIN_TOKEN_DAYS : self::TOKEN_DAYS);
+        $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
             'access_token' => $token,
