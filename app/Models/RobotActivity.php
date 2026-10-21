@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToAcademicYear;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RobotActivity extends Model
 {
+    use BelongsToAcademicYear;
+
     public $incrementing = false;
 
     protected $keyType = 'string';
 
     protected $fillable = [
+        'academic_year_id',
         'id',
         'teacher_user_id',
         'parallel_id',

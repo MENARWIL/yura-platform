@@ -108,13 +108,7 @@ class TutorController extends Controller
         }
 
         $students = Student::with(['course', 'parallel', 'grades.subject'])
-            ->where(function ($query) use ($tutor) {
-                $query->where('parent_user_id', $tutor->id)
-                    ->orWhereHas('familyMembers', function ($familyQuery) use ($tutor) {
-                        $familyQuery->where('users.id', $tutor->id)
-                            ->where('student_family_members.active', true);
-                    });
-            })
+            ->visibleToFamily($tutor)
             ->get();
 
         $data = $students->map(function (Student $student) {

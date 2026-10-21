@@ -304,11 +304,14 @@ class User extends Authenticatable
     {
         $parentForeignKey = $student->getParentUserForeignKey();
 
-        if ($this->id === $student->getAttribute($parentForeignKey)) {
-            return true;
+        // Si existe un vínculo familiar registrado, ese vínculo manda (activo y con permiso de ver),
+        // incluso para el responsable principal. Sin vínculo, rige el responsable principal del estudiante.
+        $link = $this->familyStudents()->where('students.id', $student->id)->first()?->pivot;
+        if ($link) {
+            return (bool) $link->active && (bool) $link->can_view;
         }
 
-        return $this->familyStudents()->where('students.id', $student->id)->exists();
+        return $this->id === $student->getAttribute($parentForeignKey);
     }
 
     public function canViewStudent(Student $student): bool

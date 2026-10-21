@@ -1,0 +1,24 @@
+# Seguridad del servidor Apache (auditoría A1).
+# Mientras el DocumentRoot no apunte a /public, este archivo evita que se descarguen
+# claves, bases de datos y registros, y que se liste el contenido de las carpetas.
+# Lo correcto en producción es un VirtualHost con DocumentRoot en /public; esto es un respaldo.
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Carpeta del proyecto dentro de Apache. En un hosting donde el proyecto está en la raíz del dominio, usar «/».
+    RewriteBase /yura-platform/
+
+    # 1) Nada interno se sirve: claves, código, base de datos, registros, dependencias, documentos de trabajo.
+    RewriteRule ^(\.env.*|\.git.*|\.claude.*|composer\.(json|lock)|artisan|phpunit\.xml|package.*\.json|vite\.config.*)$ - [F,NC,L]
+    RewriteRule ^(app|bootstrap|config|database|docs|resources|routes|storage|tests|vendor|tinker_scripts|consigna)(/|$) - [F,NC,L]
+    RewriteRule \.(db|sqlite|sqlite3|sql|log|bak|md)$ - [F,NC,L]
+
+    # 2) Lo que ya está en /public se sirve tal cual.
+    RewriteRule ^public/ - [L]
+
+    # 3) Todo lo demás va a /public (la dirección oficial es /yura-platform/public/, la de APP_URL).
+    RewriteRule ^(.*)$ public/$1 [R=302,L]
+</IfModule>

@@ -77,6 +77,31 @@ class Student extends Model
         return $this->getCourseModel()?->name ?? (string) ($this->attributes['course'] ?? 'Sin curso');
     }
 
+    /**
+     * Estudiantes que un usuario de familia puede ver: los que tiene como responsable
+     * principal y los vinculados con el permiso de ver y el vínculo activo.
+     */
+    public function scopeVisibleToFamily($query, User $user)
+    {
+        // Un vínculo registrado manda: si existe para este usuario, debe estar activo y con permiso de ver.
+        return $query->where(function ($q) use ($user) {
+            $q->where(function ($main) use ($user) {
+                $main->where($this->getParentUserForeignKey(), $user->id)
+                    ->whereDoesntHave('familiares', fn ($link) => $link->where('users.id', $user->id));
+            })
+                ->orWhereHas('familiares', function ($family) use ($user) {
+                    $family->where('users.id', $user->id)
+                        ->where('student_family_members.active', true)
+                        ->where('student_family_members.can_view', true);
+                });
+        });
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
     public function padre(): BelongsTo
     {
         return $this->belongsTo(User::class, $this->getParentUserForeignKey());
