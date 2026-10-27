@@ -34,6 +34,7 @@
     .cuaderno-ser-saber-hacer .total-cell { background-color: var(--yura-blue-light); }
     .cuaderno-ser-saber-hacer .nota-bimestral-cell { background-color: var(--yura-blue-light); font-size: 0.95rem; }
     .cuaderno-ser-saber-hacer .robot-hint { color: #1f9d55; margin-left: 2px; font-size: 0.7rem; }
+
 </style>
 <div class="animate-fade-in">
     <div class="card card-quechua border-0 shadow-sm">
@@ -51,10 +52,10 @@
                 </div>
             @endunless
             <!-- FILTROS DEL CUADERNO -->
-            <div class="form-group mb-4">
-                <label class="text-muted small text-uppercase font-weight-bold">Seleccionar asignatura y paralelo</label>
-                <form method="GET" action="{{ route('grades.index') }}" class="d-flex flex-wrap align-items-center">
-                    <select name="subject_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
+            <form method="GET" action="{{ route('grades.index') }}" class="filter-bar" aria-label="Filtros del cuaderno pedagógico">
+                <div class="fb-field {{ $selectedSubjectId ? 'is-set' : '' }}">
+                    <label for="gf-subject"><i class="fas fa-book-open" aria-hidden="true"></i> Asignatura</label>
+                    <select id="gf-subject" name="subject_id" onchange="this.form.submit()">
                         <option value="">Todas las asignaturas</option>
                         @foreach($subjects as $subject)
                             <option value="{{ $subject->id }}" {{ $selectedSubjectId == $subject->id ? 'selected' : '' }}>
@@ -62,7 +63,10 @@
                             </option>
                         @endforeach
                     </select>
-                    <select name="parallel_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
+                </div>
+                <div class="fb-field {{ $selectedParallelId ? 'is-set' : '' }}">
+                    <label for="gf-parallel"><i class="fas fa-users" aria-hidden="true"></i> Curso y paralelo</label>
+                    <select id="gf-parallel" name="parallel_id" onchange="this.form.submit()">
                         <option value="">Todos los paralelos</option>
                         @foreach($parallels as $parallel)
                             <option value="{{ $parallel->id }}" {{ $selectedParallelId == $parallel->id ? 'selected' : '' }}>
@@ -70,23 +74,33 @@
                             </option>
                         @endforeach
                     </select>
-                    <select name="quarter" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mb-2" onchange="this.form.submit()">
+                </div>
+                <div class="fb-field">
+                    <label for="gf-quarter"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Trimestre</label>
+                    <select id="gf-quarter" name="quarter" onchange="this.form.submit()">
                         <option value="1" {{ $selectedQuarter == 1 ? 'selected' : '' }}>Primer Trimestre</option>
                         <option value="2" {{ $selectedQuarter == 2 ? 'selected' : '' }}>Segundo Trimestre</option>
                         <option value="3" {{ $selectedQuarter == 3 ? 'selected' : '' }}>Tercer Trimestre</option>
                     </select>
-                    @if($selectedSubjectId && $selectedParallelId)
-                        @if(auth()->user()->isProfesor())
-                            <button type="button" id="save-all-grades" class="btn btn-success btn-lg rounded-pill px-4 ml-2 mb-2">
-                                <i class="fas fa-save mr-1"></i> Guardar notas
-                            </button>
-                        @endif
-                        <a href="{{ route('grades.export.pdf', ['subject_id' => $selectedSubjectId, 'parallel_id' => $selectedParallelId, 'quarter' => $selectedQuarter]) }}" class="btn btn-outline-danger btn-lg rounded-pill px-4 ml-2 mb-2">
-                            <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
+                </div>
+                @if($selectedSubjectId || $selectedParallelId)
+                    <div class="fb-actions">
+                        <a href="{{ route('grades.index', ['quarter' => $selectedQuarter]) }}" class="fb-btn fb-btn-ghost" title="Quitar asignatura y paralelo">
+                            <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
                         </a>
-                    @endif
-                </form>
-            </div>
+                        @if($selectedSubjectId && $selectedParallelId)
+                            @if(auth()->user()->isProfesor())
+                                <button type="button" id="save-all-grades" class="fb-btn fb-btn-primary">
+                                    <i class="fas fa-save" aria-hidden="true"></i> Guardar notas
+                                </button>
+                            @endif
+                            <a href="{{ route('grades.export.pdf', ['subject_id' => $selectedSubjectId, 'parallel_id' => $selectedParallelId, 'quarter' => $selectedQuarter]) }}" class="fb-btn fb-btn-outline">
+                                <i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar PDF
+                            </a>
+                        @endif
+                    </div>
+                @endif
+            </form>
 
             <!-- FORMULARIO DE CALIFICACIONES INTERACTIVAS -->
             @if(empty($selectedSubjectId) || empty($selectedParallelId))
@@ -105,7 +119,7 @@
                     <table class="table table-hover align-middle table-bordered cuaderno-ser-saber-hacer" id="gradesTable">
                     <thead>
                         <tr>
-                            <th rowspan="3" class="px-3 text-center align-middle">ID</th>
+                            <th rowspan="3" class="px-3 text-center align-middle" title="Número en la lista del curso y paralelo">Nro</th>
                             <th rowspan="3" class="px-4 align-middle">{{ __('messages.student_name') }}</th>
                             <th rowspan="3" class="align-middle">{{ __('messages.level') }}</th>
                             <th colspan="16" class="text-center banner-evaluacion">EVALUACIÓN MAESTRO(A)</th>
@@ -172,7 +186,7 @@
                                 : null;
                         @endphp
                         <tr data-student-id="{{ $student->id }}">
-                            <td class="text-center align-middle">{{ $student->id }}</td>
+                            <td class="text-center align-middle">{{ $loop->iteration }}</td>
                             <td class="px-4 align-middle">
                                 <div class="d-flex align-items-center">
                                     @if($student->foto_path)

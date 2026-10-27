@@ -48,7 +48,7 @@
     <table>
         <thead>
             <tr>
-                <th rowspan="2">ID</th>
+                <th rowspan="2">Nro</th>
                 <th rowspan="2">Estudiante</th>
                 <th colspan="3" class="grupo-ser">SER</th>
                 <th rowspan="2" class="banner">Prom. SER<br>(10)</th>
@@ -86,7 +86,7 @@
                         : null;
                 @endphp
                 <tr>
-                    <td>{{ $student->id }}</td>
+                    <td>{{ $loop->iteration }}</td>
                     <td class="name">{{ $student->name }}</td>
                     @foreach($ser as $v)<td>{{ $v !== '' ? $v : '-' }}</td>@endforeach
                     <td class="banner">{{ $promSer ?? '-' }}</td>

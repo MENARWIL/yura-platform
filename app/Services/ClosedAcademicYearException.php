@@ -9,6 +9,6 @@ class ClosedAcademicYearException extends DomainException
 {
     public function __construct(string $yearName = 'la gestión')
     {
-        parent::__construct("La gestión «{$yearName}» está cerrada y no admite cambios. Un administrador debe reabrirla primero.");
+        parent::__construct("La gestión «{$yearName}» está cerrada y no admite cambios. Solo el administrador puede reabrirla; su información se puede consultar y descargar desde Gestiones.");
     }
 }

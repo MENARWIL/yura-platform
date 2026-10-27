@@ -14,28 +14,35 @@
             </div>
 
             <!-- Filters -->
-            <div class="card-body border-bottom bg-light px-4 py-3">
-                <form action="{{ route('admin.audit.index') }}" method="GET" class="form-row align-items-end">
-                    <div class="col-md-5 mb-2">
-                        <label class="small font-weight-bold text-muted">Módulo / Entidad</label>
-                        <select name="entity" class="form-control form-control-sm">
-                            <option value="">-- Todas las entidades --</option>
-                            @foreach($entities as $e)
-                                <option value="{{ $e }}" {{ $entity == $e ? 'selected' : '' }}>{{ $e }}</option>
+            <div class="card-body border-bottom bg-white px-4 pt-4 pb-0">
+                <form action="{{ route('admin.audit.index') }}" method="GET" class="filter-bar" aria-label="Filtros de auditoría">
+                    <div class="fb-field {{ $entity ? 'is-set' : '' }}">
+                        <label for="audit-entity"><i class="fas fa-cube" aria-hidden="true"></i> Módulo</label>
+                        <select id="audit-entity" name="entity">
+                            <option value="">Todos los módulos</option>
+                            @foreach($entities as $value => $label)
+                                <option value="{{ $value }}" {{ mb_strtolower((string) $entity) === (string) $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-5 mb-2">
-                        <label class="small font-weight-bold text-muted">Acción realizada</label>
-                        <select name="action" class="form-control form-control-sm">
-                            <option value="">-- Todas las acciones --</option>
-                            @foreach($actions as $a)
-                                <option value="{{ $a }}" {{ $action == $a ? 'selected' : '' }}>{{ $a }}</option>
+                    <div class="fb-field {{ $action ? 'is-set' : '' }}">
+                        <label for="audit-action"><i class="fas fa-bolt" aria-hidden="true"></i> Acción realizada</label>
+                        <select id="audit-action" name="action">
+                            <option value="">Todas las acciones</option>
+                            @foreach($actions as $value => $label)
+                                <option value="{{ $value }}" {{ $action === (string) $value ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-filter mr-1"></i> Filtrar</button>
+                    <div class="fb-actions">
+                        @if($entity || $action)
+                            <a href="{{ route('admin.audit.index') }}" class="fb-btn fb-btn-ghost" title="Quitar los filtros">
+                                <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
+                            </a>
+                        @endif
+                        <button type="submit" class="fb-btn fb-btn-primary">
+                            <i class="fas fa-filter" aria-hidden="true"></i> Filtrar
+                        </button>
                     </div>
                 </form>
             </div>
@@ -45,44 +52,53 @@
                     <table class="table table-hover mb-0 align-middle">
                         <thead class="thead-light">
                             <tr>
-                                <th>Fecha y Hora</th>
+                                <th style="width: 60px;" title="Posición en la lista, de lo más reciente a lo más antiguo">Nro</th>
                                 <th>Usuario</th>
                                 <th>Acción</th>
-                                <th>Entidad</th>
-                                <th>ID Registro</th>
+                                <th>Módulo</th>
+                                <th>Detalle</th>
                                 <th>Dirección IP</th>
-                                <th>Detalles</th>
+                                <th class="text-right text-nowrap">Fecha y hora</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($logs as $log)
+                                @php
+                                    $actionLabel = \App\Support\AuditPresenter::action($log->action);
+                                    $danger = \App\Support\AuditPresenter::tone($log->action) === 'danger';
+                                @endphp
                                 <tr>
-                                    <td><small class="text-muted">{{ $log->created_at->format('d/m/Y H:i:s') }}</small></td>
+                                    <td class="font-weight-bold text-muted">{{ $logs->firstItem() + $loop->index }}</td>
                                     <td>
                                         @if($log->user)
                                             <strong>{{ $log->user->name }}</strong><br>
-                                            <small class="text-muted">{{ $log->user->role }}</small>
+                                            <small class="text-muted">{{ \App\Support\AuditPresenter::role($log->user->role) }}</small>
                                         @else
-                                            <span class="text-muted">Sistema / Anónimo</span>
+                                            <span class="text-muted">Sistema</span>
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge badge-light border px-2 py-1 font-weight-bold">{{ $log->action }}</span>
+                                        <span class="badge border px-2 py-1 font-weight-bold {{ $danger ? 'badge-danger-soft' : 'badge-light' }}" title="Código: {{ $log->action }}">{{ $actionLabel }}</span>
                                     </td>
-                                    <td><code>{{ $log->entity }}</code></td>
-                                    <td>{{ $log->entity_id ?? '-' }}</td>
+                                    <td>{{ \App\Support\AuditPresenter::entity($log->entity) }}</td>
+                                    <td style="min-width: 260px; max-width: 420px;">
+                                        <span>{{ \App\Support\AuditPresenter::detail($log, $names) }}</span>
+                                    </td>
                                     <td><small class="font-monospace text-muted">{{ $log->ip_address ?? '127.0.0.1' }}</small></td>
-                                    <td>
-                                        @if($log->details)
-                                            <pre class="bg-light p-1 rounded small mb-0" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ json_encode($log->details) }}</pre>
-                                        @else
-                                            <span class="text-muted small">-</span>
-                                        @endif
+                                    <td class="text-right text-nowrap">
+                                        <span class="d-block font-weight-bold">{{ $log->created_at->format('d/m/Y') }}</span>
+                                        <small class="text-muted">{{ $log->created_at->format('H:i:s') }}</small>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">Aún no hay registros de auditoría almacenados.</td>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        @if($entity || $action)
+                                            Ningún registro coincide con los filtros elegidos.
+                                        @else
+                                            Aún no hay registros de auditoría almacenados.
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>

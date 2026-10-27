@@ -28,39 +28,45 @@
             </div>
         </div>
         <div class="card-body p-4 bg-white">
-            <form action="{{ route('students.index') }}" method="GET" class="mb-4">
-                <div class="form-row align-items-end">
-                    <div class="col-md-4 form-group mb-md-0">
-                        <label for="student_name">Nombre del estudiante</label>
-                        <input type="text" name="student_name" id="student_name" class="form-control" value="{{ request('student_name') }}" placeholder="Buscar estudiante">
+            <form action="{{ route('students.index') }}" method="GET" class="filter-bar" aria-label="Filtros de estudiantes">
+                <div class="fb-field fb-wide {{ request('student_name') ? 'is-set' : '' }}">
+                    <label for="student_name"><i class="fas fa-user-graduate" aria-hidden="true"></i> Estudiante</label>
+                    <div class="fb-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" name="student_name" id="student_name" value="{{ request('student_name') }}" placeholder="Buscar por nombre" autocomplete="off">
                     </div>
-                    <div class="col-md-3 form-group mb-md-0">
-                        <label for="course_id">Curso</label>
-                        <select name="course_id" id="course_id" class="form-control">
-                            <option value="">Todos los cursos</option>
-                            @foreach($courses as $course)
-                                <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
-                                    {{ $course->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-3 form-group mb-md-0">
-                        <label for="parallel_id">Paralelo</label>
-                        <select name="parallel_id" id="parallel_id" class="form-control">
-                            <option value="">Todos los paralelos</option>
-                            @foreach($parallels as $parallel)
-                                <option value="{{ $parallel->id }}" {{ request('parallel_id') == $parallel->id ? 'selected' : '' }}>
-                                    {{ $parallel->course?->name }} - {{ $parallel->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2 form-group mb-md-0">
-                        <button type="submit" class="btn btn-primary btn-block">
-                            <i class="fas fa-search mr-1"></i> Buscar
-                        </button>
-                    </div>
+                </div>
+                <div class="fb-field {{ request('course_id') ? 'is-set' : '' }}">
+                    <label for="course_id"><i class="fas fa-layer-group" aria-hidden="true"></i> Curso</label>
+                    <select name="course_id" id="course_id">
+                        <option value="">Todos los cursos</option>
+                        @foreach($courses as $course)
+                            <option value="{{ $course->id }}" {{ request('course_id') == $course->id ? 'selected' : '' }}>
+                                {{ $course->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fb-field {{ request('parallel_id') ? 'is-set' : '' }}">
+                    <label for="parallel_id"><i class="fas fa-users" aria-hidden="true"></i> Paralelo</label>
+                    <select name="parallel_id" id="parallel_id">
+                        <option value="">Todos los paralelos</option>
+                        @foreach($parallels as $parallel)
+                            <option value="{{ $parallel->id }}" {{ request('parallel_id') == $parallel->id ? 'selected' : '' }}>
+                                {{ $parallel->course?->name }} - {{ $parallel->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fb-actions">
+                    @if(request('student_name') || request('course_id') || request('parallel_id'))
+                        <a href="{{ route('students.index') }}" class="fb-btn fb-btn-ghost" title="Quitar todos los filtros">
+                            <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
+                        </a>
+                    @endif
+                    <button type="submit" class="fb-btn fb-btn-primary">
+                        <i class="fas fa-search" aria-hidden="true"></i> Buscar
+                    </button>
                 </div>
             </form>
 

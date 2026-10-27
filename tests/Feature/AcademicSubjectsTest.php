@@ -53,6 +53,7 @@ class AcademicSubjectsTest extends TestCase
                 'first_name' => 'Profesora',
                 'email' => 'profesora.quechua@example.test',
                 'password' => 'Password!123',
+                'password_confirmation' => 'Password!123',
                 'telefono' => '70000000',
                 'main_subject_id' => $subject->id,
             ])

@@ -1,0 +1,108 @@
+<?php
+
+// Textos del portal público: servicios, documentos y búsqueda.
+return [
+
+    // Nombres humanos de los subsistemas (la clave técnica nunca se muestra al usuario).
+    'subsystems' => [
+        'regular' => 'Educación Regular',
+        'alternativa_especial' => 'Alternativa y Especial',
+        'superior' => 'Educación Superior',
+        'docentes' => 'Docentes',
+        'estudiantes' => 'Estudiantes',
+    ],
+
+    // Tipos de documento.
+    'categories' => [
+        'resolucion' => 'Resolución',
+        'circular' => 'Circular',
+        'convocatoria' => 'Convocatoria',
+        'comunicado' => 'Comunicado',
+        'instructivo' => 'Instructivo',
+        'reglamento' => 'Reglamento',
+    ],
+
+    'common' => [
+        'all_services' => 'Ver todos los servicios',
+        'about_project' => 'Conocer el proyecto YURA',
+        'go_home' => 'Ir al inicio',
+        'login' => 'Ingresar',
+        'back_home' => 'Volver al inicio',
+    ],
+
+    'services' => [
+        'meta_title' => 'Servicios y herramientas digitales',
+        'meta_description' => 'Conoce las herramientas de YURA: cuaderno pedagógico digital para docentes, seguimiento para familias y el robot que practica quechua con los niños.',
+        'eyebrow' => 'Catálogo de servicios',
+        'title' => 'Servicios Educativos y Herramientas Digitales',
+        'intro' => 'Las herramientas de YURA para docentes, familias y estudiantes: registro de evaluaciones y asistencia, seguimiento del progreso y práctica de quechua con el robot.',
+        'filter_label' => 'Filtrar servicios por subsistema',
+        'filter_all' => 'Todos',
+        'count' => '{1} :count servicio disponible|[0,*] :count servicios disponibles',
+        'audience' => 'Destinado a: :audience',
+        'access' => 'Acceder al servicio',
+        'needs_account' => 'Necesitas una cuenta de tu colegio para usarlo.',
+        'cta_title' => '¿Quieres ver YURA funcionando en tu colegio?',
+        'cta_text' => 'Escríbenos y te mostramos cómo el cuaderno digital y el robot ayudan a docentes y familias.',
+        'empty_title' => 'Estamos preparando los servicios',
+        'empty_text' => 'Todavía no hay servicios publicados en este portal. Mientras tanto, puedes conocer el proyecto o ingresar con tu cuenta.',
+        'empty_subsystem_title' => 'No hay servicios en esta categoría',
+        'empty_subsystem_text' => 'Por ahora esta categoría no tiene servicios disponibles. Mira todo lo que ya puedes usar.',
+    ],
+
+    'documents' => [
+        'meta_title' => 'Documentos y comunicados del proyecto',
+        'meta_description' => 'Documentos y comunicados del proyecto YURA: resúmenes, circulares y convocatorias para docentes, familias y la comunidad educativa.',
+        'eyebrow' => 'Repositorio Documental Institucional',
+        'title' => 'Documentos y comunicados del proyecto',
+        'intro' => 'Comunicados, circulares y convocatorias relacionados con el proyecto YURA. Busca por palabra clave, tipo de documento o gestión.',
+        'notice' => 'Son documentos informativos del proyecto YURA y no reemplazan la normativa oficial del Ministerio de Educación ni los avisos de tu unidad educativa.',
+        'keyword' => 'Palabra clave o código',
+        'keyword_placeholder' => 'Ej. calendario, robot, circular...',
+        'type' => 'Tipo de documento',
+        'type_all' => 'Todos los tipos',
+        'year' => 'Gestión',
+        'year_all' => 'Todas',
+        'filter' => 'Filtrar',
+        'clear' => 'Quitar filtros',
+        'count' => '{0} Ningún documento|{1} :count documento|[2,*] :count documentos',
+        'published' => 'Publicado el :date',
+        'download' => 'Descargar documento',
+        'no_file' => 'Solo resumen: el archivo aún no está publicado.',
+        'page_of' => 'Página :current de :last',
+        'previous' => 'Anterior',
+        'next' => 'Siguiente',
+        'pagination_label' => 'Paginación de documentos',
+        'cta_title' => '¿Tienes dudas sobre un comunicado?',
+        'cta_text' => 'Consulta con tu docente o escríbenos y te ayudamos a encontrar lo que necesitas.',
+        'empty_title' => 'Aún no hay documentos publicados',
+        'empty_text' => 'Cuando el proyecto publique comunicados, circulares o convocatorias, los verás aquí.',
+        'empty_filtered_title' => 'No encontramos documentos con esos filtros',
+        'empty_filtered_text' => 'Prueba con otra palabra, otro tipo de documento o quita los filtros para ver todo.',
+    ],
+
+    'search' => [
+        'meta_title' => 'Resultados de búsqueda',
+        'eyebrow' => 'Buscador del portal',
+        'results_for' => 'Resultados para:',
+        'count' => '{1} :count resultado|[0,*] :count resultados',
+        'label' => 'Buscar en el portal',
+        'placeholder' => 'Busca servicios, comunicados, circulares...',
+        'submit' => 'Buscar',
+        'documents' => 'Documentos y comunicados',
+        'services' => 'Servicios',
+        'view_document' => 'Ver documento',
+        'access' => 'Acceder',
+        'type_year' => ':type · Gestión :year',
+        'empty_title' => 'No encontramos resultados para ":term"',
+        'empty_text' => 'Revisa que esté bien escrito o prueba con una palabra más general.',
+        'try_label' => 'Prueba con:',
+        'suggestions' => [
+            'cuaderno' => 'cuaderno',
+            'robot' => 'robot',
+            'familia' => 'familia',
+            'circular' => 'circular',
+        ],
+        'see_documents' => 'Ver todos los documentos',
+    ],
+];

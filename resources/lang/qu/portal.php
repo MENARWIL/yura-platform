@@ -1,0 +1,108 @@
+<?php
+
+// REVISAR: traducción pendiente de revisión por hablante nativo
+// Quechua del sur de Bolivia (runasimi), con frases simples. Las claves son iguales a las de resources/lang/es/portal.php.
+return [
+
+    'subsystems' => [
+        'regular' => 'Regular yachay',
+        'alternativa_especial' => 'Alternativa y Especial yachay',
+        'superior' => 'Hatun yachay',
+        'docentes' => 'Yachachiqkuna',
+        'estudiantes' => 'Yachaqkuna',
+    ],
+
+    'categories' => [
+        'resolucion' => 'Kamachiy (resolución)',
+        'circular' => 'Circular',
+        'convocatoria' => 'Waqyay (convocatoria)',
+        'comunicado' => 'Willakuy (comunicado)',
+        'instructivo' => 'Yachachiy (instructivo)',
+        'reglamento' => 'Kamachikuy (reglamento)',
+    ],
+
+    'common' => [
+        'all_services' => 'Llapan yanapaykunata qhaway',
+        'about_project' => 'YURA proyectota riqsiy',
+        'go_home' => 'Qallariyman rispa',
+        'login' => 'Yaykuy',
+        'back_home' => 'Qallariyman kutiy',
+    ],
+
+    'services' => [
+        'meta_title' => 'Yanapaykuna y digital llamk\'anakuna',
+        'meta_description' => 'YURA llamk\'anakunata riqsiy: yachachiqkunapaq digital cuaderno, ayllukunapaq qhaykuna, y wawakunawan runasimita ruwaykachaq robot.',
+        'eyebrow' => 'Yanapaykunaq sutinkuna',
+        'title' => 'Yachay yanapaykuna y digital llamk\'anakuna',
+        'intro' => 'YURA llamk\'anakuna yachachiqkunapaq, ayllukunapaq y yachaqkunapaq: yachaykunata y asistenciata qillqay, yachayninkuta qhaway, y robotwan runasimita yachakuy.',
+        'filter_label' => 'Subsistema akllay',
+        'filter_all' => 'Llapan',
+        'count' => '{1} :count yanapay kan|[0,*] :count yanapaykuna kan',
+        'audience' => 'Kaykunapaq: :audience',
+        'access' => 'Yanapayman yaykuy',
+        'needs_account' => 'Colegiomanta cuenta necesitanki.',
+        'cta_title' => '¿Colegioykipi YURAta qhawayta munankichu?',
+        'cta_text' => 'Qillqamuwayku, cuaderno digitalta y robotta willaykiku, imaynatachus yachachiqkunata y ayllukunata yanapan.',
+        'empty_title' => 'Yanapaykunata wakichishayku',
+        'empty_text' => 'Kay portalpi manaraq yanapaykuna kanchu. Kunankamaqa proyectota riqsiy utaq cuentaykiwan yaykuy.',
+        'empty_subsystem_title' => 'Kay layapi yanapaykuna mana kanchu',
+        'empty_subsystem_text' => 'Kunanqa kay layapi mana yanapaykuna kanchu. Llapan yanapaykunata qhaway.',
+    ],
+
+    'documents' => [
+        'meta_title' => 'Proyectoq qillqankuna y willakuyninkuna',
+        'meta_description' => 'YURA proyectoq qillqankuna y willakuyninkuna: resumenkuna, circularkuna y convocatoriakuna yachachiqkunapaq, ayllukunapaq y llapa yachay ayllupaq.',
+        'eyebrow' => 'Qillqakuna waqaychana',
+        'title' => 'Proyectoq qillqankuna y willakuyninkuna',
+        'intro' => 'YURA proyectoq willakuyninkuna, circularkuna y convocatoriakuna. Simiwan, qillqa layawan utaq watawan maskay.',
+        'notice' => 'Kaykunaqa YURA proyectoq willakuyninkunallam; Educación Ministerioq kamachiyninta mana rantinkuchu, nitaq unidad educativaykiq willakuyninkunatapas.',
+        'keyword' => 'Maskana simi utaq código',
+        'keyword_placeholder' => 'Ej. calendario, robot, circular...',
+        'type' => 'Qillqa laya',
+        'type_all' => 'Llapan layakuna',
+        'year' => 'Wata',
+        'year_all' => 'Llapan',
+        'filter' => 'Akllay',
+        'clear' => 'Filtrokunata pichay',
+        'count' => '{0} Mana qillqa kanchu|{1} :count qillqa|[2,*] :count qillqakuna',
+        'published' => 'Willasqa: :date',
+        'download' => 'Qillqata uraykachiy',
+        'no_file' => 'Resumenllam: archivon manaraq lluqsichisqachu.',
+        'page_of' => 'P\'anqa :current / :last',
+        'previous' => 'Ñawpaqman',
+        'next' => 'Qhipaman',
+        'pagination_label' => 'Qillqakunaq p\'anqankuna',
+        'cta_title' => '¿Willakuymanta tapuyniyki kanchu?',
+        'cta_text' => 'Yachachiqniykita tapuy utaq qillqamuwayku, maskasqaykita tarinaykipaq yanapaykusqayki.',
+        'empty_title' => 'Manaraq qillqakuna willasqa kanchu',
+        'empty_text' => 'Proyecto willakuykunata, circularkunata utaq convocatoriakunata willaqtinqa, kaypi qhawanki.',
+        'empty_filtered_title' => 'Chay filtrokunawan mana qillqata tarinchu',
+        'empty_filtered_text' => 'Huk simiwan, huk layawan tanteay utaq filtrokunata pichay llapanta qhawanaykipaq.',
+    ],
+
+    'search' => [
+        'meta_title' => 'Maskasqakuna',
+        'eyebrow' => 'Portalpi maskana',
+        'results_for' => 'Kaypaq tarisqakuna:',
+        'count' => '{1} :count tarisqa|[0,*] :count tarisqakuna',
+        'label' => 'Portalpi maskay',
+        'placeholder' => 'Yanapaykunata, willakuykunata maskay...',
+        'submit' => 'Maskay',
+        'documents' => 'Qillqakuna y willakuykuna',
+        'services' => 'Yanapaykuna',
+        'view_document' => 'Qillqata qhaway',
+        'access' => 'Yaykuy',
+        'type_year' => ':type · Wata :year',
+        'empty_title' => 'Mana imatapas tarinchu ":term" nisqamanta',
+        'empty_text' => 'Allinta qillqasqaykita qhaway utaq astawan hatun simiwan tanteay.',
+        'try_label' => 'Kaykunawan tanteay:',
+        // Palabras para buscar: se mantienen en castellano porque los datos del portal están en castellano.
+        'suggestions' => [
+            'cuaderno' => 'cuaderno',
+            'robot' => 'robot',
+            'familia' => 'familia',
+            'circular' => 'circular',
+        ],
+        'see_documents' => 'Llapan qillqakunata qhaway',
+    ],
+];

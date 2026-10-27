@@ -62,12 +62,20 @@
                         <small class="invalid-feedback"></small>
                         @error('email') <span class="text-danger small d-block">{{ $message }}</span> @enderror
                     </div>
-                    <div class="form-group mb-0">
-                        <label for="password">Nueva contraseña (opcional)</label>
-                        <input id="password" type="password" name="password" class="form-control js-person-field @error('password') is-invalid @enderror" data-rule="password">
-                        <small class="form-text text-muted">Déjalo vacío para conservar la contraseña actual.</small>
-                        <small class="invalid-feedback"></small>
-                        @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-0">
+                            <label for="password">Nueva contraseña (opcional)</label>
+                            <input id="password" type="password" name="password" class="form-control js-person-field @error('password') is-invalid @enderror" data-rule="password" autocomplete="new-password">
+                            <small class="form-text text-muted">Déjalo vacío para conservar la contraseña actual.</small>
+                            <small class="invalid-feedback"></small>
+                            @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-6 mb-0">
+                            <label for="password_confirmation">Confirmar nueva contraseña</label>
+                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control js-person-field" data-rule="confirm" data-match="password" autocomplete="new-password">
+                            <small class="form-text text-muted">Solo si escribiste una nueva contraseña.</small>
+                            <small class="invalid-feedback"></small>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer bg-white text-right">

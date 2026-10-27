@@ -42,7 +42,7 @@
     <table>
         <thead>
             <tr>
-                <th>ID</th>
+                <th>Nro</th>
                 <th>Estudiante</th>
                 <th>Nivel</th>
                 <th>Estado de asistencia</th>
@@ -65,7 +65,7 @@
                     };
                 @endphp
                 <tr>
-                    <td>{{ $student->id }}</td>
+                    <td>{{ $loop->iteration }}</td>
                     <td><b>{{ $student->name }}</b></td>
                     <td>{{ mb_strtoupper($student->level ?? '-', 'UTF-8') }}</td>
                     <td><span class="badge {{ $badgeClass }}">{{ $status ?? 'Sin registro' }}</span></td>

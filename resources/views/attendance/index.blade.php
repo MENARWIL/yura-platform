@@ -19,10 +19,10 @@
                 </div>
             @endunless
             <!-- FILTROS -->
-            <div class="form-group mb-4">
-                <label class="text-muted small text-uppercase font-weight-bold">Seleccionar asignatura, paralelo y fecha</label>
-                <form method="GET" action="{{ route('attendance.index') }}" class="d-flex flex-wrap align-items-center">
-                    <select name="subject_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
+            <form method="GET" action="{{ route('attendance.index') }}" class="filter-bar" aria-label="Filtros de asistencia">
+                <div class="fb-field {{ $selectedSubjectId ? 'is-set' : '' }}">
+                    <label for="at-subject"><i class="fas fa-book-open" aria-hidden="true"></i> Asignatura</label>
+                    <select id="at-subject" name="subject_id" onchange="this.form.submit()">
                         <option value="">Todas las asignaturas</option>
                         @foreach($subjects as $subject)
                             <option value="{{ $subject->id }}" {{ $selectedSubjectId == $subject->id ? 'selected' : '' }}>
@@ -30,7 +30,10 @@
                             </option>
                         @endforeach
                     </select>
-                    <select name="parallel_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
+                </div>
+                <div class="fb-field {{ $selectedParallelId ? 'is-set' : '' }}">
+                    <label for="at-parallel"><i class="fas fa-users" aria-hidden="true"></i> Curso y paralelo</label>
+                    <select id="at-parallel" name="parallel_id" onchange="this.form.submit()">
                         <option value="">Todos los paralelos</option>
                         @foreach($parallels as $parallel)
                             <option value="{{ $parallel->id }}" {{ $selectedParallelId == $parallel->id ? 'selected' : '' }}>
@@ -38,14 +41,24 @@
                             </option>
                         @endforeach
                     </select>
-                    <input type="date" name="date" value="{{ $selectedDate }}" max="{{ now()->toDateString() }}" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 mr-2 mb-2" onchange="this.form.submit()">
-                    @if($selectedSubjectId && $selectedParallelId)
-                        <a href="{{ route('attendance.export.pdf', ['subject_id' => $selectedSubjectId, 'parallel_id' => $selectedParallelId, 'date' => $selectedDate]) }}" class="btn btn-outline-danger btn-lg rounded-pill px-4 mb-2">
-                            <i class="fas fa-file-pdf mr-1"></i> Exportar PDF
+                </div>
+                <div class="fb-field fb-narrow">
+                    <label for="at-date"><i class="fas fa-calendar-day" aria-hidden="true"></i> Fecha</label>
+                    <input id="at-date" type="date" name="date" value="{{ $selectedDate }}" max="{{ now()->toDateString() }}" onchange="this.form.submit()">
+                </div>
+                @if($selectedSubjectId || $selectedParallelId)
+                    <div class="fb-actions">
+                        <a href="{{ route('attendance.index', ['date' => $selectedDate]) }}" class="fb-btn fb-btn-ghost" title="Quitar asignatura y paralelo">
+                            <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
                         </a>
-                    @endif
-                </form>
-            </div>
+                        @if($selectedSubjectId && $selectedParallelId)
+                            <a href="{{ route('attendance.export.pdf', ['subject_id' => $selectedSubjectId, 'parallel_id' => $selectedParallelId, 'date' => $selectedDate]) }}" class="fb-btn fb-btn-outline">
+                                <i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar PDF
+                            </a>
+                        @endif
+                    </div>
+                @endif
+            </form>
 
             @if(empty($selectedSubjectId) || empty($selectedParallelId))
                 <div class="card border-warning shadow-sm my-4">
@@ -63,7 +76,7 @@
                     <table class="table table-hover align-middle table-bordered">
                         <thead>
                             <tr>
-                                <th class="px-3 text-center align-middle">ID</th>
+                                <th class="px-3 text-center align-middle" title="Número en la lista del curso y paralelo">Nro</th>
                                 <th class="px-4 align-middle">Estudiante</th>
                                 <th class="align-middle">Nivel</th>
                                 <th class="align-middle text-center" style="width: 220px;">Asistencia ({{ \Illuminate\Support\Carbon::parse($selectedDate)->format('d/m/Y') }})</th>
@@ -72,7 +85,7 @@
                         <tbody>
                             @forelse($students as $student)
                             <tr data-student-id="{{ $student->id }}">
-                                <td class="text-center align-middle">{{ $student->id }}</td>
+                                <td class="text-center align-middle">{{ $loop->iteration }}</td>
                                 <td class="px-4 align-middle">
                                     <div class="d-flex align-items-center">
                                         @if($student->foto_path)

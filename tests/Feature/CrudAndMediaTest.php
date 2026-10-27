@@ -44,6 +44,7 @@ class CrudAndMediaTest extends TestCase
             'first_name' => 'Maestro',
             'email' => 'maestro@example.com',
             'password' => 'Clave#12345',
+            'password_confirmation' => 'Clave#12345',
             'rol' => 'profesor',
             'telefono' => '70010011',
             'foto' => $teacherPhoto,

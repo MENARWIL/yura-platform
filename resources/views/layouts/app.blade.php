@@ -12,7 +12,7 @@
     <!-- Theme style (local, sin depender de internet) -->
     <link rel="stylesheet" href="{{ asset('vendor/adminlte/css/adminlte.min.css') }}">
     <!-- Custom style -->
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ @filemtime(public_path('css/custom.css')) }}">
     @yield('css')
 </head>
 <body class="hold-transition sidebar-mini">

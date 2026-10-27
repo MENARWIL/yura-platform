@@ -4,40 +4,57 @@ namespace App\Http\Controllers;
 
 use App\Models\EducationalService;
 use App\Models\OfficialDocument;
+use App\Services\PublicStats;
 use Illuminate\Http\Request;
 
 class PublicPortalController extends Controller
 {
+    /** Cantidad de servicios destacados en la portada. */
+    private const HOME_SERVICES = 6;
+
+    /** Cantidad de documentos recientes en la portada. */
+    private const HOME_DOCUMENTS = 4;
+
     public function home()
     {
-        $services = EducationalService::active()->get()->groupBy('subsystem');
-        $recentDocuments = OfficialDocument::active()->orderBy('published_at', 'desc')->take(4)->get();
-        return view('public.home', compact('services', 'recentDocuments'));
+        // Colección plana (no agrupada): solo servicios con enlace real.
+        $services = EducationalService::publicList(limit: self::HOME_SERVICES);
+        $recentDocuments = OfficialDocument::publicVisible()
+            ->orderBy('published_at', 'desc')
+            ->take(self::HOME_DOCUMENTS)
+            ->get();
+        $stats = PublicStats::summary();
+
+        return view('public.home', compact('services', 'recentDocuments', 'stats'));
     }
 
     public function services(Request $request)
     {
-        $subsystem = $request->validate(['subsystem' => 'nullable|string|max:50'])['subsystem'] ?? null;
-        $services = EducationalService::active()
-            ->when($subsystem, fn($q) => $q->where('subsystem', $subsystem))
-            ->get()
+        $subsystem = $this->cleanKey($request->query('subsystem'));
+
+        // Todos los servicios publicables; los filtros se calculan sobre esta lista
+        // para que las pestañas solo ofrezcan subsistemas que sí tienen servicios.
+        $all = EducationalService::publicList();
+        $subsystems = $all->pluck('subsystem')->unique()->values();
+
+        $services = $all
+            ->when($subsystem, fn ($c) => $c->where('subsystem', $subsystem))
             ->groupBy('subsystem');
 
-        return view('public.services', compact('services', 'subsystem'));
+        return view('public.services', compact('services', 'subsystem', 'subsystems'));
     }
 
     public function documents(Request $request)
     {
-        $filters = $request->validate([
-            'category' => 'nullable|string|max:30',
-            'year' => 'nullable|integer|min:1900|max:2100',
-            'q' => 'nullable|string|max:100',
-        ]);
-        $category = $filters['category'] ?? null;
-        $year = $filters['year'] ?? null;
-        $search = $filters['q'] ?? null;
+        $category = $request->query('category');
+        $category = is_string($category) && in_array($category, OfficialDocument::CATEGORIES, true) ? $category : null;
 
-        $query = OfficialDocument::active();
+        $year = filter_var($request->query('year'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1900, 'max_range' => 2100]]);
+        $year = $year === false ? null : $year;
+
+        $search = $this->cleanTerm($request->query('q'));
+
+        $query = OfficialDocument::publicVisible();
 
         if ($category) {
             $query->where('category', $category);
@@ -47,7 +64,7 @@ class PublicPortalController extends Controller
             $query->where('year', $year);
         }
 
-        if ($search) {
+        if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('code', 'like', "%{$search}%")
@@ -56,36 +73,49 @@ class PublicPortalController extends Controller
         }
 
         $documents = $query->orderBy('published_at', 'desc')->paginate(12)->withQueryString();
-        $years = OfficialDocument::active()->select('year')->distinct()->orderBy('year', 'desc')->pluck('year');
+        $years = OfficialDocument::publicVisible()->select('year')->distinct()->orderBy('year', 'desc')->pluck('year');
+        $hasFilters = $category || $year || $search !== '';
+        $search = $search !== '' ? $search : null;
 
-        return view('public.documents', compact('documents', 'category', 'year', 'search', 'years'));
+        return view('public.documents', compact('documents', 'category', 'year', 'search', 'years', 'hasFilters'));
     }
 
     public function search(Request $request)
     {
-        $term = mb_substr(trim((string) $request->query('q')), 0, 100);
+        $term = $this->cleanTerm($request->query('q'));
 
-        if (empty($term)) {
+        if ($term === '') {
             return redirect()->route('public.home');
         }
 
-        $documents = OfficialDocument::active()
+        $documents = OfficialDocument::publicVisible()
             ->where(function ($q) use ($term) {
                 $q->where('title', 'like', "%{$term}%")
                   ->orWhere('code', 'like', "%{$term}%")
                   ->orWhere('summary', 'like', "%{$term}%");
             })
+            ->orderBy('published_at', 'desc')
             ->take(8)
             ->get();
 
-        $services = EducationalService::active()
-            ->where(function ($q) use ($term) {
-                $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('description', 'like', "%{$term}%");
-            })
-            ->take(8)
-            ->get();
+        $services = EducationalService::publicList(term: $term, limit: 8);
 
         return view('public.search', compact('term', 'documents', 'services'));
+    }
+
+    /**
+     * Texto de búsqueda seguro: solo cadenas, recortadas y de hasta 100 caracteres.
+     */
+    private function cleanTerm(mixed $value): string
+    {
+        return is_string($value) ? mb_substr(trim($value), 0, 100) : '';
+    }
+
+    /**
+     * Clave tipo "alternativa_especial": solo minúsculas, números y guion bajo.
+     */
+    private function cleanKey(mixed $value): ?string
+    {
+        return is_string($value) && preg_match('/^[a-z0-9_]{1,50}$/', $value) === 1 ? $value : null;
     }
 }

@@ -29,10 +29,14 @@ Route::get('/services', [PublicPortalController::class, 'services'])->name('publ
 Route::get('/documents', [PublicPortalController::class, 'documents'])->name('public.documents');
 Route::get('/search', [PublicPortalController::class, 'search'])->middleware('throttle:30,1')->name('public.search');
 
-// Portada original de la feria YURA
+// Página del proyecto YURA (ruta histórica /feria)
 Route::get('/feria', function () {
     return view('home');
 })->name('feria');
+
+// Confianza y buscadores
+Route::get('/privacidad', [\App\Http\Controllers\LegalController::class, 'privacy'])->name('public.privacy');
+Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('sitemap');
 
 // Auth Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -55,6 +59,8 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
     // Individual student exports
     Route::get('/students/{student}/export-pdf', [StudentController::class, 'exportPdf'])->name('students.export.pdf');
     Route::get('/students/{student}/export-excel', [StudentController::class, 'exportExcel'])->name('students.export.excel');
+    Route::patch('/students/{student}/info', [StudentController::class, 'updateInfo'])->middleware('rol:admin,academic')->name('students.info');
+    Route::post('/students/{student}/guardian', [StudentController::class, 'assignGuardian'])->middleware('rol:admin,academic')->name('students.guardian');
     Route::patch('students/{student}/restore', [StudentController::class, 'restore'])->name('students.restore');
     Route::delete('students/{student}/force', [StudentController::class, 'forceDestroy'])->name('students.forceDestroy');
     Route::resource('students', StudentController::class)
@@ -149,6 +155,8 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
 
         Route::get('/admin/years', [AcademicYearController::class, 'index'])->name('admin.years.index');
         Route::post('/admin/years', [AcademicYearController::class, 'store'])->name('admin.years.store');
+        Route::get('/admin/years/{year}', [AcademicYearController::class, 'show'])->whereNumber('year')->name('admin.years.show');
+        Route::get('/admin/years/{year}/export', [AcademicYearController::class, 'export'])->whereNumber('year')->name('admin.years.export');
         Route::post('/admin/years/{year}/current', [AcademicYearController::class, 'current'])->name('admin.years.current');
         Route::post('/admin/years/{year}/close', [AcademicYearController::class, 'close'])->name('admin.years.close');
         Route::post('/admin/years/{year}/reopen', [AcademicYearController::class, 'reopen'])->name('admin.years.reopen');

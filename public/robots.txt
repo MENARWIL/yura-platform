@@ -1,2 +1,30 @@
+# YURA Platform: las páginas públicas se pueden indexar; las pantallas internas y la API no.
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /attendance
+Disallow: /courses
+Disallow: /dashboard
+Disallow: /family-members
+Disallow: /grades
+Disallow: /lang/
+Disallow: /login
+Disallow: /logout
+Disallow: /parallels
+Disallow: /profile
+Disallow: /robot-activities
+Disallow: /sanctum
+Disallow: /search
+Disallow: /students
+Disallow: /subjects
+Disallow: /teachers
+Disallow: /teaching-assignments
+Disallow: /tutor
+Disallow: /users
+Disallow: /storage/students/
+Disallow: /storage/users/
+
+# Un robots.txt estático no conoce el dominio. Al publicar el sitio, descomenta y completa:
+# Sitemap: https://TU-DOMINIO/sitemap.xml
+# (Alternativa: servir /robots.txt por ruta con SeoController@robots, que ya calcula la URL sola; en ese caso hay que borrar este archivo.)

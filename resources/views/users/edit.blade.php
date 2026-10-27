@@ -107,12 +107,20 @@
                         @error('foto') <span class="text-danger small d-block">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="form-group mb-3 mt-3 border-top pt-3">
-                        <label>Cambiar Contraseña (Dejar en blanco para mantener la actual)</label>
-                        <input type="password" name="password" class="form-control js-user-field" data-rule="password">
-                        <small class="text-muted">Solo si desea actualizar la contraseña del usuario.</small>
-                        <small class="invalid-feedback"></small>
-                        @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                    <div class="form-row mt-3 border-top pt-3">
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="password">Cambiar Contraseña (Dejar en blanco para mantener la actual)</label>
+                            <input id="password" type="password" name="password" class="form-control js-user-field" data-rule="password" autocomplete="new-password">
+                            <small class="text-muted">Solo si desea actualizar la contraseña del usuario.</small>
+                            <small class="invalid-feedback"></small>
+                            @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="password_confirmation">Confirmar nueva contraseña</label>
+                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control js-user-field" data-rule="confirm" data-match="password" autocomplete="new-password">
+                            <small class="text-muted">Solo si escribió una nueva contraseña.</small>
+                            <small class="invalid-feedback"></small>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer bg-white text-right">
