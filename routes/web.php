@@ -155,6 +155,8 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
 
         Route::get('/admin/years', [AcademicYearController::class, 'index'])->name('admin.years.index');
         Route::post('/admin/years', [AcademicYearController::class, 'store'])->name('admin.years.store');
+        Route::get('/admin/years/{year}', [AcademicYearController::class, 'show'])->whereNumber('year')->name('admin.years.show');
+        Route::get('/admin/years/{year}/export', [AcademicYearController::class, 'export'])->whereNumber('year')->name('admin.years.export');
         Route::post('/admin/years/{year}/current', [AcademicYearController::class, 'current'])->name('admin.years.current');
         Route::post('/admin/years/{year}/close', [AcademicYearController::class, 'close'])->name('admin.years.close');
         Route::post('/admin/years/{year}/reopen', [AcademicYearController::class, 'reopen'])->name('admin.years.reopen');

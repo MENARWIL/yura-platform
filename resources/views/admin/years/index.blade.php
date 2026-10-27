@@ -10,7 +10,8 @@
                 <h4 class="font-weight-bold mb-1 text-dark"><i class="fas fa-calendar-alt mr-2 text-primary"></i>Gestiones escolares</h4>
                 <p class="text-muted small mb-0">
                     La gestión <strong>actual</strong> es donde se guardan las notas, la asistencia y las actividades nuevas.
-                    Una gestión <strong>cerrada</strong> no admite cambios hasta que un administrador la reabra.
+                    Una gestión <strong>cerrada</strong> no admite cambios hasta que el administrador la reabra, pero su información
+                    se puede <strong>consultar</strong> y <strong>descargar</strong> en cualquier momento.
                 </p>
             </div>
 
@@ -43,6 +44,8 @@
                                 <td class="text-right">{{ $year->counts['grades'] }}</td>
                                 <td class="text-right">{{ $year->counts['attendance'] }}</td>
                                 <td class="text-right">
+                                    <a href="{{ route('admin.years.show', $year) }}" class="btn btn-sm btn-outline-secondary" title="Consultar lo que se guardó en {{ $year->name }}"><i class="fas fa-folder-open mr-1" aria-hidden="true"></i>Consultar</a>
+                                    <a href="{{ route('admin.years.export', $year) }}" class="btn btn-sm btn-outline-success" title="Descargar el respaldo de {{ $year->name }} en Excel"><i class="fas fa-file-excel mr-1" aria-hidden="true"></i>Respaldo</a>
                                     @if($year->isClosed())
                                         <form method="POST" action="{{ route('admin.years.reopen', $year) }}" class="d-inline"
                                               onsubmit="return confirm('Reabrir {{ $year->name }} vuelve a permitir cambios en datos de un año cerrado. ¿Continuar?')">
