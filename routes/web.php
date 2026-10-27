@@ -29,10 +29,14 @@ Route::get('/services', [PublicPortalController::class, 'services'])->name('publ
 Route::get('/documents', [PublicPortalController::class, 'documents'])->name('public.documents');
 Route::get('/search', [PublicPortalController::class, 'search'])->middleware('throttle:30,1')->name('public.search');
 
-// Portada original de la feria YURA
+// Página del proyecto YURA (ruta histórica /feria)
 Route::get('/feria', function () {
     return view('home');
 })->name('feria');
+
+// Confianza y buscadores
+Route::get('/privacidad', [\App\Http\Controllers\LegalController::class, 'privacy'])->name('public.privacy');
+Route::get('/sitemap.xml', [\App\Http\Controllers\SeoController::class, 'sitemap'])->name('sitemap');
 
 // Auth Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');

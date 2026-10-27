@@ -15,7 +15,7 @@ class InstitutionalPlatformTest extends TestCase
         $response = $this->get('/');
         $response->assertStatus(200);
         $response->assertSee('YURA PLATFORM');
-        $response->assertSee('Servicios Educativos Institucionales');
+        $response->assertSee('Cómo funciona, en tres pasos');
         $response->assertDontSee('Trámites');
     }
 
