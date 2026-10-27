@@ -57,12 +57,20 @@
                             @error('main_subject_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="password">Contraseña de acceso</label>
-                        <input id="password" type="password" name="password" class="form-control js-person-field @error('password') is-invalid @enderror" data-rule="password" required>
-                        <small class="form-text text-muted">Mínimo 8 caracteres, con mayúsculas, números y símbolos.</small>
-                        <small class="invalid-feedback"></small>
-                        @error('password') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="password">Contraseña de acceso</label>
+                            <input id="password" type="password" name="password" class="form-control js-person-field @error('password') is-invalid @enderror" data-rule="password" autocomplete="new-password" required>
+                            <small class="form-text text-muted">Mínimo 8 caracteres, con mayúsculas, números y símbolos.</small>
+                            <small class="invalid-feedback"></small>
+                            @error('password') <span class="invalid-feedback">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="password_confirmation">Confirmar contraseña</label>
+                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control js-person-field" data-rule="confirm" data-match="password" autocomplete="new-password" required>
+                            <small class="form-text text-muted">Escríbela de nuevo, igual que arriba.</small>
+                            <small class="invalid-feedback"></small>
+                        </div>
                     </div>
                     <div class="form-group mb-0">
                         <label for="foto">Foto</label>

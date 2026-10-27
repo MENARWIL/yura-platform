@@ -52,7 +52,7 @@ class TutorController extends Controller
             'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($tutor->id)],
             'status' => ['required', 'in:active,activo,inactive,inactivo'],
-            'password' => ['nullable', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ], [
             'last_name.required' => __('messages.validation.required'),
             'last_name.regex' => __('messages.validation.name'),
@@ -65,6 +65,7 @@ class TutorController extends Controller
             'email.required' => __('messages.validation.required'),
             'email.email' => __('messages.validation.email'),
             'email.unique' => __('messages.validation.unique'),
+            'password.confirmed' => __('messages.validation.password_confirm'),
             'password.*' => __('messages.validation.password'),
         ]);
 
@@ -172,7 +173,7 @@ class TutorController extends Controller
             'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ], [
             'ci.required' => __('messages.validation.required'),
             'ci.unique' => __('messages.validation.unique'),
@@ -188,6 +189,7 @@ class TutorController extends Controller
             'email.email' => __('messages.validation.email'),
             'email.unique' => __('messages.validation.unique'),
             'password.required' => __('messages.validation.required'),
+            'password.confirmed' => __('messages.validation.password_confirm'),
             'password.min' => __('messages.validation.password'),
             'password.letters' => __('messages.validation.password'),
             'password.mixed' => __('messages.validation.password'),

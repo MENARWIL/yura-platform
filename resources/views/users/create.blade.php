@@ -92,12 +92,20 @@
                         @error('foto') <span class="text-danger small d-block">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label>Contraseña Temporal</label>
-                        <input type="password" name="password" class="form-control js-user-field" data-rule="password" required>
-                        <small class="text-muted">Mínimo 8 caracteres, incluir mayúsculas, números y símbolos.</small>
-                        <small class="invalid-feedback"></small>
-                        @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="password">Contraseña Temporal</label>
+                            <input id="password" type="password" name="password" class="form-control js-user-field" data-rule="password" autocomplete="new-password" required>
+                            <small class="text-muted">Mínimo 8 caracteres, incluir mayúsculas, números y símbolos.</small>
+                            <small class="invalid-feedback"></small>
+                            @error('password') <span class="text-danger small d-block">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="form-group col-md-6 mb-3">
+                            <label for="password_confirmation">Confirmar contraseña</label>
+                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control js-user-field" data-rule="confirm" data-match="password" autocomplete="new-password" required>
+                            <small class="text-muted">Escríbela de nuevo, igual que arriba.</small>
+                            <small class="invalid-feedback"></small>
+                        </div>
                     </div>
                 </div>
                 <div class="card-footer bg-white text-right">

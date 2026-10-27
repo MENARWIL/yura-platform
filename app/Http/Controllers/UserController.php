@@ -70,7 +70,7 @@ class UserController extends Controller
             'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'main_subject_id' => ['required', 'integer', 'exists:subjects,id'],
             'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
@@ -107,7 +107,7 @@ class UserController extends Controller
             'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'rol' => ['required', 'in:' . implode(',', UserAdminService::ROLES)],
             'main_course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
@@ -164,7 +164,7 @@ class UserController extends Controller
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
                 'main_subject_id' => ['required', 'integer', 'exists:subjects,id'],
                 'telefono' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
-                'password' => ['nullable', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+                'password' => ['nullable', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
                 'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             ], $this->userValidationMessages());
 
@@ -207,7 +207,7 @@ class UserController extends Controller
             'rol' => ['required', 'in:' . implode(',', UserAdminService::ROLES)],
             'main_course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'telefono' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
-            'password' => ['nullable', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ], $this->userValidationMessages());
 
@@ -332,6 +332,7 @@ class UserController extends Controller
             'main_subject_id.required' => __('messages.validation.required'),
             'main_course_id.integer' => __('messages.validation.integer'),
             'telefono.regex' => __('messages.validation.phone'),
+            'password.confirmed' => __('messages.validation.password_confirm'),
             'password.min' => __('messages.validation.password'),
             'password.letters' => __('messages.validation.password'),
             'password.mixed' => __('messages.validation.password'),

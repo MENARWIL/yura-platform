@@ -143,6 +143,8 @@ return [
         'invalid' => 'El valor seleccionado no es válido.',
         'unique' => 'Este valor ya está registrado.',
         'password' => 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
+        'password_confirm' => 'Las contraseñas no coinciden. Escríbelas igual en ambos campos.',
+        'password_confirm_required' => 'Repite la contraseña para confirmarla.',
     ],
     'photo_of' => 'Foto de :name',
     'grades_management' => 'Gestión de Calificaciones',

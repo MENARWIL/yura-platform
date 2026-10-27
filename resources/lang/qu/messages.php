@@ -143,6 +143,8 @@ return [
         'invalid' => 'Akllasqa chanqa mana allinchu.',
         'unique' => 'Kay chanqa ñam qillqasqaña kachkan.',
         'password' => 'Contraseñaqa 8 qillqayuq, hatun qillqayuq, yupayuq chaymanta simboloyuq kanman.',
+        'password_confirm' => 'Contraseñakunaqa mana kikinchu. Iskaynimpipi kikinta qillqay.',
+        'password_confirm_required' => 'Contraseñata yapamanta qillqay, takyachinaykipaq.',
     ],
     'photo_of' => 'Rikhuriy :name',
     'grades_management' => 'Nota kamachiy',

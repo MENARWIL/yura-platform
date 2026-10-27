@@ -6,7 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
         email: document.documentElement.lang === 'qu' ? 'Emailqa allin formatopi kanman.' : 'Ingresa un correo válido.',
         phone: document.documentElement.lang === 'qu' ? 'Telefonoqa yupaykunallawan kanman.' : 'El teléfono solo acepta números y símbolos permitidos.',
         ci: document.documentElement.lang === 'qu' ? 'CIqa yupaykunawan, qillqakunawan utaq guionwan kanman.' : 'La C.I. solo acepta letras, números y guiones.',
-        password: document.documentElement.lang === 'qu' ? 'Contraseñaqa 8 qillqayuq, hatun qillqayuq, yupayuq chaymanta simboloyuq kanman.' : 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.'
+        password: document.documentElement.lang === 'qu' ? 'Contraseñaqa 8 qillqayuq, hatun qillqayuq, yupayuq chaymanta simboloyuq kanman.' : 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
+        confirm: document.documentElement.lang === 'qu' ? 'Contraseñakunaqa mana kikinchu. Iskaynimpipi kikinta qillqay.' : 'Las contraseñas no coinciden. Escríbelas igual en ambos campos.',
+        confirmRequired: document.documentElement.lang === 'qu' ? 'Contraseñata yapamanta qillqay, takyachinaykipaq.' : 'Repite la contraseña para confirmarla.'
     };
 
     function validateField(field) {
@@ -26,6 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
             message = messages.ci;
         } else if (value && rule === 'password' && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(value)) {
             message = messages.password;
+        } else if (rule === 'confirm') {
+            // Debe coincidir con el campo indicado en data-match (se compara sin recortar espacios).
+            const target = document.getElementById(field.dataset.match);
+            const original = target ? target.value : '';
+            if (!field.value && original) {
+                message = messages.confirmRequired;
+            } else if (field.value !== original) {
+                message = messages.confirm;
+            }
         }
 
         field.setCustomValidity(message);
@@ -42,12 +53,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     field.value = field.value.replace(/[^0-9+() -]/g, '');
                 });
             }
-            field.addEventListener('input', () => validateField(field));
+            field.addEventListener('input', () => {
+                validateField(field);
+                // Si cambia la contraseña y ya hay algo en la confirmación, se vuelve a comparar.
+                if (field.id) {
+                    form.querySelectorAll('[data-rule="confirm"][data-match="' + field.id + '"]').forEach(confirmField => {
+                        if (confirmField.value) validateField(confirmField);
+                    });
+                }
+            });
             field.addEventListener('blur', () => validateField(field));
             field.addEventListener('change', () => validateField(field));
         });
         form.addEventListener('submit', event => {
-            const valid = Array.from(form.querySelectorAll('.js-user-field')).every(validateField);
+            const fields = Array.from(new Set(form.querySelectorAll('.js-user-field, [data-rule="confirm"]')));
+            const valid = fields.map(validateField).every(Boolean);
             if (!valid) event.preventDefault();
         });
     });

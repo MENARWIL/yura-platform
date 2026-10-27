@@ -141,23 +141,40 @@
                         @enderror
                     </div>
 
-                    <div class="form-group mb-0">
-                        <label for="password">Contraseña</label>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            class="form-control js-person-field @error('password') is-invalid @enderror"
-                            data-rule="password"
-                            autocomplete="new-password"
-                            required
-                            minlength="8"
-                        >
-                        <small class="form-text text-muted">Debe tener al menos 8 caracteres.</small>
-                        <small class="invalid-feedback"></small>
-                        @error('password')
-                            <span class="invalid-feedback">{{ $message }}</span>
-                        @enderror
+                    <div class="form-row">
+                        <div class="form-group col-md-6 mb-0">
+                            <label for="password">Contraseña</label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-control js-person-field @error('password') is-invalid @enderror"
+                                data-rule="password"
+                                autocomplete="new-password"
+                                required
+                                minlength="8"
+                            >
+                            <small class="form-text text-muted">Debe tener al menos 8 caracteres.</small>
+                            <small class="invalid-feedback"></small>
+                            @error('password')
+                                <span class="invalid-feedback">{{ $message }}</span>
+                            @enderror
+                        </div>
+                        <div class="form-group col-md-6 mb-0">
+                            <label for="password_confirmation">Confirmar contraseña</label>
+                            <input
+                                type="password"
+                                id="password_confirmation"
+                                name="password_confirmation"
+                                class="form-control js-person-field"
+                                data-rule="confirm"
+                                data-match="password"
+                                autocomplete="new-password"
+                                required
+                            >
+                            <small class="form-text text-muted">Escríbela de nuevo, igual que arriba.</small>
+                            <small class="invalid-feedback"></small>
+                        </div>
                     </div>
                     </div>
 

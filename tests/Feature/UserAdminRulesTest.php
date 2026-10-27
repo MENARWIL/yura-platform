@@ -197,7 +197,7 @@ class UserAdminRulesTest extends TestCase
         $this->assertSame(0, $target->tokens()->count(), 'el cambio de rol no cerró sesiones');
 
         $target->createToken('app');
-        $this->actingAs($admin)->put("/users/{$target->id}", $this->editPayload($target->fresh(), ['password' => 'Nueva#12345']));
+        $this->actingAs($admin)->put("/users/{$target->id}", $this->editPayload($target->fresh(), ['password' => 'Nueva#12345', 'password_confirmation' => 'Nueva#12345']));
         $this->assertSame(0, $target->tokens()->count(), 'el cambio de contraseña no cerró sesiones');
     }
 
@@ -231,7 +231,7 @@ class UserAdminRulesTest extends TestCase
 
         $this->actingAs($admin)->post('/users', [
             'last_name' => 'Prueba', 'second_last_name' => 'Ejemplo', 'first_name' => 'Academico',
-            'email' => 'academico@example.com', 'password' => 'Clave#12345', 'rol' => 'academic',
+            'email' => 'academico@example.com', 'password' => 'Clave#12345', 'password_confirmation' => 'Clave#12345', 'rol' => 'academic',
         ])->assertRedirect('/users');
 
         $this->assertSame('academic', User::where('email', 'academico@example.com')->firstOrFail()->role);
