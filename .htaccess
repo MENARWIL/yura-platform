@@ -12,7 +12,7 @@ Options -Indexes
     RewriteBase /yura-platform/
 
     # 1) Nada interno se sirve: claves, código, base de datos, registros, dependencias, documentos de trabajo.
-    RewriteRule ^(\.env.*|\.git.*|\.claude.*|composer\.(json|lock)|artisan|phpunit\.xml|package.*\.json|vite\.config.*)$ - [F,NC,L]
+    RewriteRule ^(\.env.*|\.git.*|composer\.(json|lock)|artisan|phpunit\.xml|package.*\.json|vite\.config.*)$ - [F,NC,L]
     RewriteRule ^(app|bootstrap|config|database|docs|resources|routes|storage|tests|vendor|tinker_scripts|consigna)(/|$) - [F,NC,L]
     RewriteRule \.(db|sqlite|sqlite3|sql|log|bak|md)$ - [F,NC,L]
 
