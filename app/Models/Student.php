@@ -97,6 +97,21 @@ class Student extends Model
         });
     }
 
+    /**
+     * Orden de lista de curso: alfabético por apellido paterno, materno y nombres.
+     * Los que no tienen apellidos separados van al final, ordenados por su nombre completo.
+     */
+    public function scopeOrderedForList($query)
+    {
+        return $query
+            ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
+            ->orderBy('last_name')
+            ->orderBy('second_last_name')
+            ->orderBy('first_name')
+            ->orderBy('name')
+            ->orderBy('id');
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);

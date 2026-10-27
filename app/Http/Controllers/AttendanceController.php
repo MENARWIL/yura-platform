@@ -51,7 +51,7 @@ class AttendanceController extends Controller
             $query->where('parallel_id', $selectedParallelId);
         }
 
-        $students = $query->get();
+        $students = $query->orderedForList()->get();
         $studentIds = $students->pluck('id')->all();
 
         $attendanceForDate = Attendance::whereIn('student_id', $studentIds)
@@ -103,7 +103,7 @@ class AttendanceController extends Controller
             $query->where('parallel_id', $selectedParallelId);
         }
 
-        $students = $query->get();
+        $students = $query->orderedForList()->get();
         $studentIds = $students->pluck('id')->all();
 
         $attendanceForDate = Attendance::whereIn('student_id', $studentIds)

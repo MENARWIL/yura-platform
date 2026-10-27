@@ -17,14 +17,16 @@
     @if(!Auth::user()->isResponsibleRole())
         <div class="row mb-3">
             <div class="col-12">
-                <form method="GET" action="{{ route('dashboard') }}" class="d-flex align-items-center">
-                    <label class="mr-3 text-muted small mb-0">Curso:</label>
-                    <select name="course_id" class="form-control custom-select w-auto" onchange="this.form.submit()">
-                        <option value="">Todos los cursos</option>
-                        @foreach($courses as $course)
-                            <option value="{{ $course->id }}" {{ (isset($selectedCourseId) && $selectedCourseId == $course->id) ? 'selected' : '' }}>{{ $course->name }}</option>
-                        @endforeach
-                    </select>
+                <form method="GET" action="{{ route('dashboard') }}" class="filter-bar fb-compact" aria-label="Filtro del panel">
+                    <div class="fb-field {{ !empty($selectedCourseId) ? 'is-set' : '' }}">
+                        <label for="dash-course"><i class="fas fa-layer-group" aria-hidden="true"></i> Curso</label>
+                        <select id="dash-course" name="course_id" onchange="this.form.submit()">
+                            <option value="">Todos los cursos</option>
+                            @foreach($courses as $course)
+                                <option value="{{ $course->id }}" {{ (isset($selectedCourseId) && $selectedCourseId == $course->id) ? 'selected' : '' }}>{{ $course->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </form>
             </div>
         </div>

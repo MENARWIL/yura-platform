@@ -54,7 +54,7 @@ class GradeController extends Controller
             $query->where('parallel_id', $selectedParallelId);
         }
 
-        $students = $query->get();
+        $students = $query->orderedForList()->get();
         $studentIds = $students->pluck('id')->all();
 
         $gradesByStudent = Grade::whereIn('student_id', $studentIds)
@@ -101,7 +101,7 @@ class GradeController extends Controller
             $query->where('parallel_id', $selectedParallelId);
         }
 
-        $students = $query->get();
+        $students = $query->orderedForList()->get();
         $studentIds = $students->pluck('id')->all();
 
         $gradesByStudent = Grade::whereIn('student_id', $studentIds)
@@ -149,7 +149,16 @@ class GradeController extends Controller
             $query->where('student_id', $student->id);
         })->with(['grade', 'user'])->latest()->paginate(15);
 
-        return view('grades.show', compact('student', 'grades', 'history'));
+        // Solo quien puede asignar responsables necesita la lista (ventana "Editar información").
+        $canManageGuardian = $user->isAdmin() || $user->isAcademic();
+        $guardianCandidates = $canManageGuardian
+            ? User::whereIn('role', ['padre', 'madre', 'tutor'])->whereIn('status', ['active', 'activo'])->orderBy('name')->get(['id', 'name', 'ci', 'role'])
+            : collect();
+        $guardians = $canManageGuardian
+            ? $student->familiares()->wherePivot('active', true)->orderByDesc('student_family_members.is_primary')->get()
+            : collect();
+
+        return view('grades.show', compact('student', 'grades', 'history', 'canManageGuardian', 'guardianCandidates', 'guardians'));
     }
 
     public function historyForStudent(Student $student)

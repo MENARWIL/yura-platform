@@ -59,6 +59,8 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
     // Individual student exports
     Route::get('/students/{student}/export-pdf', [StudentController::class, 'exportPdf'])->name('students.export.pdf');
     Route::get('/students/{student}/export-excel', [StudentController::class, 'exportExcel'])->name('students.export.excel');
+    Route::patch('/students/{student}/info', [StudentController::class, 'updateInfo'])->middleware('rol:admin,academic')->name('students.info');
+    Route::post('/students/{student}/guardian', [StudentController::class, 'assignGuardian'])->middleware('rol:admin,academic')->name('students.guardian');
     Route::patch('students/{student}/restore', [StudentController::class, 'restore'])->name('students.restore');
     Route::delete('students/{student}/force', [StudentController::class, 'forceDestroy'])->name('students.forceDestroy');
     Route::resource('students', StudentController::class)

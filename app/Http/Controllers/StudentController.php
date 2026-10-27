@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Exports\StudentsExport;
+use App\Models\AuditLog;
 use App\Models\Parallel;
 use App\Models\Student;
 use App\Models\StudentFamilyMember;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
@@ -333,6 +338,168 @@ class StudentController extends Controller
         }
 
         return redirect()->route('students.index')->with('success', 'Estudiante actualizado con éxito.');
+    }
+
+    /**
+     * Completa los datos del estudiante que faltan (nivel, edad, género) desde su ficha.
+     * Un campo vacío no borra lo que ya está registrado. El profesor no se toca aquí:
+     * se asigna en otra pantalla.
+     */
+    public function updateInfo(Request $request, Student $student): RedirectResponse
+    {
+        $actor = Auth::user();
+        abort_unless($actor->isAdmin() || $actor->isAcademic(), 403, 'No tienes permiso para editar este estudiante.');
+
+        $data = $request->validateWithBag('info', [
+            'level' => ['nullable', 'in:básico,intermedio,avanzado'],
+            'age' => ['nullable', 'integer', 'min:0', 'max:120'],
+            'gender' => ['nullable', 'in:Masculino,Femenino'],
+        ], [
+            'level.in' => 'Elige un nivel de la lista (Qallariy, Chawpi o Sumaq).',
+            'age.integer' => 'La edad debe ser un número entero.',
+            'age.min' => 'La edad no puede ser negativa.',
+            'age.max' => 'La edad no puede ser mayor a 120.',
+            'gender.in' => 'Elige Masculino o Femenino.',
+        ]);
+
+        $changes = [];
+        foreach (['level', 'age', 'gender'] as $field) {
+            if (filled($data[$field] ?? null)) {
+                $changes[$field] = $data[$field];
+            }
+        }
+
+        $student->update($changes);
+        $changed = array_keys($student->getChanges());
+
+        if ($changed) {
+            AuditLog::log('student_info_updated', 'student', $student->id, ['fields' => $changed], $request);
+        }
+
+        return redirect()->route('grades.show', $student)
+            ->with('success', $changed ? 'Información del estudiante actualizada.' : 'No había cambios que guardar.');
+    }
+
+    /**
+     * Asigna un responsable (padre, madre o tutor) a un estudiante desde su ficha.
+     * Sirve cuando el estudiante se registró sin tutor: se elige uno ya registrado
+     * (mode=existing) o se crea uno nuevo en el momento (mode=new).
+     */
+    public function assignGuardian(Request $request, Student $student): RedirectResponse
+    {
+        $actor = Auth::user();
+        abort_unless($actor->isAdmin() || $actor->isAcademic(), 403, 'No tienes permiso para asignar responsables.');
+
+        $mode = $request->input('mode') === 'new' ? 'new' : 'existing';
+        $collapse = fn ($key) => $request->input($key) !== null ? preg_replace('/\s+/', ' ', trim($request->input($key))) : null;
+        $messages = [
+            'user_id.required' => 'Elige un responsable de la lista.',
+            'user_id.exists' => 'El responsable debe ser un usuario activo con rol de padre, madre o tutor.',
+            'relation_type.required' => 'Indica la relación con el estudiante.',
+            'relation_type.in' => __('messages.validation.invalid'),
+            'ci.required' => __('messages.validation.required'),
+            'ci.unique' => __('messages.validation.unique'),
+            'last_name.required' => __('messages.validation.required'),
+            'last_name.regex' => __('messages.validation.name'),
+            'second_last_name.required' => __('messages.validation.required'),
+            'second_last_name.regex' => __('messages.validation.name'),
+            'first_name.required' => __('messages.validation.required'),
+            'first_name.regex' => __('messages.validation.name'),
+            'phone.required' => __('messages.validation.required'),
+            'phone.regex' => __('messages.validation.phone'),
+            'email.required' => __('messages.validation.required'),
+            'email.email' => __('messages.validation.email'),
+            'email.unique' => __('messages.validation.unique'),
+            'password.required' => __('messages.validation.required'),
+            'password.confirmed' => __('messages.validation.password_confirm'),
+            'password.min' => __('messages.validation.password'),
+            'password.letters' => __('messages.validation.password'),
+            'password.mixed' => __('messages.validation.password'),
+            'password.numbers' => __('messages.validation.password'),
+            'password.symbols' => __('messages.validation.password'),
+        ];
+
+        if ($mode === 'new') {
+            $request->merge([
+                'ci' => $collapse('ci'),
+                'last_name' => $collapse('last_name'),
+                'second_last_name' => $collapse('second_last_name'),
+                'first_name' => $collapse('first_name'),
+                'phone' => $collapse('phone'),
+                'email' => $request->input('email') !== null ? strtolower(trim($request->input('email'))) : null,
+            ]);
+
+            $data = $request->validateWithBag('guardian', [
+                'ci' => ['required', 'string', 'max:50', 'regex:/^[0-9A-Za-z-]+$/', Rule::unique('users', 'ci')],
+                'last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+                'second_last_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+                'first_name' => ['required', 'string', 'max:100', 'regex:/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u'],
+                'phone' => ['required', 'string', 'max:20', 'regex:/^[0-9+() -]+$/'],
+                'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+                'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+                'relation_type' => ['required', 'in:padre,madre,tutor'],
+                'is_primary' => ['nullable', 'boolean'],
+            ], $messages);
+        } else {
+            $data = $request->validateWithBag('guardian', [
+                'user_id' => ['required', Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereIn('role', ['padre', 'madre', 'tutor'])->whereIn('status', ['active', 'activo']);
+                })],
+                'relation_type' => ['required', 'in:padre,madre,tutor'],
+                'is_primary' => ['nullable', 'boolean'],
+            ], $messages);
+        }
+
+        $familyUser = DB::transaction(function () use ($data, $mode, $student, $request) {
+            if ($mode === 'new') {
+                $familyUser = User::create([
+                    'ci' => $data['ci'],
+                    'last_name' => $data['last_name'],
+                    'second_last_name' => $data['second_last_name'],
+                    'first_name' => $data['first_name'],
+                    'name' => trim($data['last_name'] . ' ' . $data['second_last_name'] . ' ' . $data['first_name']),
+                    'phone' => $data['phone'],
+                    'email' => $data['email'],
+                    'password' => Hash::make($data['password']),
+                    'role' => $data['relation_type'],
+                    'status' => 'active',
+                ]);
+            } else {
+                $familyUser = User::findOrFail($data['user_id']);
+            }
+
+            $parentKey = $student->getParentUserForeignKey();
+            // Quien ya es el responsable principal no se degrada por desmarcar la casilla.
+            $primary = $request->boolean('is_primary', true) || (int) $student->getAttribute($parentKey) === (int) $familyUser->id;
+
+            if ($primary) {
+                StudentFamilyMember::where('student_id', $student->id)->update(['is_primary' => false]);
+                $student->update([$parentKey => $familyUser->id]);
+            }
+
+            $student->familiares()->syncWithoutDetaching([
+                $familyUser->id => [
+                    'relation_type' => $data['relation_type'],
+                    'is_primary' => $primary,
+                    'can_view' => true,
+                    'can_edit' => false,
+                    'can_receive_reports' => true,
+                    'active' => true,
+                ],
+            ]);
+
+            AuditLog::log('guardian_assigned', 'student', $student->id, [
+                'guardian_user_id' => $familyUser->id,
+                'relation_type' => $data['relation_type'],
+                'is_primary' => $primary,
+                'guardian_created' => $mode === 'new',
+            ], $request);
+
+            return $familyUser;
+        });
+
+        return redirect()->route('grades.show', $student)
+            ->with('success', 'Responsable asignado: ' . $familyUser->name . '.');
     }
 
     public function destroy(Student $student)

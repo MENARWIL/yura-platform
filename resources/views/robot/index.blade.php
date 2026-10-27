@@ -23,24 +23,35 @@
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
-            <form method="GET" action="{{ route('robot-activities.index') }}" class="form-inline mb-3">
-                <label for="activityStatus" class="mr-2">Filtrar por estado</label>
-                <select id="activityStatus" name="status" class="form-control form-control-sm mr-2">
-                    <option value="">Todos</option>
-                    @foreach($allowedStatuses as $activityStatus)
-                        <option value="{{ $activityStatus }}" {{ $status === $activityStatus ? 'selected' : '' }}>
-                            {{ [
-                                'pending' => 'Pendiente',
-                                'in_progress' => 'En ejecución',
-                                'completed' => 'Completada',
-                                'partial' => 'Parcial',
-                                'failed' => 'Fallida',
-                                'cancelled' => 'Cancelada',
-                            ][$activityStatus] }}
-                        </option>
-                    @endforeach
-                </select>
-                <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
+            <form method="GET" action="{{ route('robot-activities.index') }}" class="filter-bar" aria-label="Filtros de actividades">
+                <div class="fb-field fb-fixed {{ $status ? 'is-set' : '' }}">
+                    <label for="activityStatus"><i class="fas fa-tasks" aria-hidden="true"></i> Estado</label>
+                    <select id="activityStatus" name="status">
+                        <option value="">Todos los estados</option>
+                        @foreach($allowedStatuses as $activityStatus)
+                            <option value="{{ $activityStatus }}" {{ $status === $activityStatus ? 'selected' : '' }}>
+                                {{ [
+                                    'pending' => 'Pendiente',
+                                    'in_progress' => 'En ejecución',
+                                    'completed' => 'Completada',
+                                    'partial' => 'Parcial',
+                                    'failed' => 'Fallida',
+                                    'cancelled' => 'Cancelada',
+                                ][$activityStatus] }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fb-actions" style="margin-left: 0;">
+                    <button type="submit" class="fb-btn fb-btn-primary">
+                        <i class="fas fa-filter" aria-hidden="true"></i> Filtrar
+                    </button>
+                    @if($status)
+                        <a href="{{ route('robot-activities.index') }}" class="fb-btn fb-btn-ghost" title="Quitar el filtro">
+                            <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
+                        </a>
+                    @endif
+                </div>
             </form>
 
             <div class="table-responsive">
