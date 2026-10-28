@@ -21,55 +21,60 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
+    /** Tamaños de página que se pueden elegir en la lista de estudiantes. */
+    private const PER_PAGE_OPTIONS = [5, 10, 15, 20];
+
+    private const PER_PAGE_DEFAULT = 5;
+
     public function index(Request $request)
     {
         $filters = $request->validate([
             'student_name' => ['nullable', 'string', 'max:255'],
             'course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
+            'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
         ]);
 
-        $rawStudentName = $filters['student_name'] ?? null;
-        $studentName = $rawStudentName === null
-            ? null
-            : preg_replace('/\s+/', ' ', trim($rawStudentName));
-        $hasNameFilter = $rawStudentName !== null;
-        $hasOtherFilters = ! empty($filters['course_id']) || ! empty($filters['parallel_id']);
+        // Buscador vacío = sin filtro de nombre: la lista vuelve completa.
+        $studentName = preg_replace('/\s+/', ' ', trim((string) ($filters['student_name'] ?? ''))) ?: null;
+        $perPage = (int) ($filters['per_page'] ?? self::PER_PAGE_DEFAULT);
         $user = Auth::user();
 
-        if ($hasNameFilter && $studentName === '' && ! $hasOtherFilters) {
-            $students = collect();
-        } else {
-            $studentModel = new Student();
-            $teacherForeignKey = $studentModel->getTeacherUserForeignKey();
-            $parentForeignKey = $studentModel->getParentUserForeignKey();
+        $parentForeignKey = (new Student())->getParentUserForeignKey();
 
-            $students = Student::with(['course', 'parallel', 'parent', 'teacher'])
-                ->when($user->isProfesor(), function ($query) use ($user, $teacherForeignKey) {
-                    $query->where($teacherForeignKey, $user->id);
-                })
-                ->when($user->isResponsibleRole(), function ($query) use ($user, $parentForeignKey) {
-                    $query->where(function ($q) use ($user, $parentForeignKey) {
-                        $q->where($parentForeignKey, $user->id)
-                            ->orWhereHas('familiares', function ($family) use ($user) {
-                                $family->where('user_id', $user->id);
-                            });
-                    });
-                })
-                ->when($studentName, function ($query, $studentName) {
-                    $query->where('name', 'like', '%' . $studentName . '%');
-                })
-                ->when($filters['course_id'] ?? null, function ($query, $courseId) {
-                    $query->where('course_id', $courseId);
-                })
-                ->when($filters['parallel_id'] ?? null, function ($query, $parallelId) {
-                    $query->where('parallel_id', $parallelId);
-                })
-                ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
-                ->orderBy('last_name')
-                ->orderBy('name')
-                ->get();
-        }
+        $students = Student::with(['course', 'parallel', 'parent', 'teacher'])
+            ->when($user->isProfesor(), function ($query) use ($user) {
+                $query->taughtBy($user);
+            })
+            ->when($user->isResponsibleRole(), function ($query) use ($user, $parentForeignKey) {
+                $query->where(function ($q) use ($user, $parentForeignKey) {
+                    $q->where($parentForeignKey, $user->id)
+                        ->orWhereHas('familiares', function ($family) use ($user) {
+                            $family->where('user_id', $user->id);
+                        });
+                });
+            })
+            ->when($studentName, function ($query, $studentName) {
+                // Busca en nombre completo, nombres y apellidos (ej. "Quispe" o "Ana Quispe").
+                $like = '%' . $studentName . '%';
+                $query->where(function ($q) use ($like) {
+                    $q->where('name', 'like', $like)
+                        ->orWhere('first_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhere('second_last_name', 'like', $like);
+                });
+            })
+            ->when($filters['course_id'] ?? null, function ($query, $courseId) {
+                $query->where('course_id', $courseId);
+            })
+            ->when($filters['parallel_id'] ?? null, function ($query, $parallelId) {
+                $query->where('parallel_id', $parallelId);
+            })
+            ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
+            ->orderBy('last_name')
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString();
 
         // Calculate real average from grades for each student
         foreach ($students as $student) {
@@ -86,23 +91,21 @@ class StudentController extends Controller
             }
         }
 
-        $studentsByCourseAndParallel = $students->groupBy([
-            function (Student $student) {
-                // course_name usa la relación precargada (evita N+1 por la
-                // colisión con la columna de texto students.course).
-                return $student->course_name;
-            },
-            function (Student $student) {
-                return $student->parallel?->name ?? 'Unassigned parallel';
-            },
-        ]);
-
         $courses = \App\Models\Course::orderBy('name')->get();
         $parallels = Parallel::with('course')->orderBy('name')->get();
 
+        // El profesor solo ve en los filtros (y en Exportar) los cursos y paralelos que atiende.
+        if ($user->isProfesor()) {
+            $teacherParallelIds = Student::taughtBy($user)->whereNotNull('parallel_id')->distinct()->pluck('parallel_id')
+                ->merge(Student::assignedParallelIds($user))
+                ->map(fn ($id) => (int) $id)
+                ->unique();
+            $parallels = $parallels->filter(fn ($parallel) => $teacherParallelIds->contains((int) $parallel->id))->values();
+            $courses = $courses->whereIn('id', $parallels->pluck('course_id')->unique())->values();
+        }
+
         return view('students.index', compact(
             'students',
-            'studentsByCourseAndParallel',
             'courses',
             'parallels'
         ));
@@ -680,6 +683,11 @@ class StudentController extends Controller
         $studentUserForeignKey = $student->getStudentUserForeignKey();
 
         if ($user->isProfesor() && $student->getAttribute($teacherForeignKey) == $user->id) {
+            return;
+        }
+
+        // El profesor de una asignación docente del paralelo puede consultar (no modificar) al estudiante.
+        if (! $manage && $user->teachesStudent($student)) {
             return;
         }
 

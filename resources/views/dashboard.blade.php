@@ -239,12 +239,12 @@
                         <h5 class="card-title font-weight-bold mb-0 text-dark"><i class="fas fa-user-graduate mr-2 text-primary"></i>Estudiantes asignados</h5>
                         <a href="{{ route('grades.index') }}" class="btn btn-primary btn-sm">Registrar notas</a>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body p-0" id="assigned-students" data-live-pagination>
                         <div class="table-responsive">
                             <table class="table table-hover mb-0">
                                 <thead class="thead-light"><tr><th>Nombre</th><th>Curso</th><th>Paralelo</th><th>Nivel</th><th>Promedio</th><th>Acciones</th></tr></thead>
                                 <tbody>
-                                    @if(!empty($data['mis_estudiantes'] ?? []))
+                                    @if(($data['mis_estudiantes'] ?? null) && $data['mis_estudiantes']->count())
                                         @foreach($data['mis_estudiantes'] as $student)
                                             @php($studentAverage = $student->grades->where('status', 'completed')->filter(fn($grade) => is_numeric($grade->score))->count() ? round($student->grades->where('status', 'completed')->filter(fn($grade) => is_numeric($grade->score))->avg('score'), 2) : 0)
                                             <tr>
@@ -262,6 +262,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if(($data['mis_estudiantes'] ?? null) && $data['mis_estudiantes']->total() > 0)
+                            <div class="list-footer px-4 pb-3">
+                                <span class="list-count">Mostrando {{ $data['mis_estudiantes']->firstItem() }}–{{ $data['mis_estudiantes']->lastItem() }} de {{ $data['mis_estudiantes']->total() }} estudiantes</span>
+                                {{ $data['mis_estudiantes']->onEachSide(1)->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

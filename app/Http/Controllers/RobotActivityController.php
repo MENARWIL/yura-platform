@@ -38,7 +38,8 @@ class RobotActivityController extends Controller
             ->where('teacher_user_id', $user->id)
             ->when($status, fn ($query) => $query->where('status', $status))
             ->latest()
-            ->paginate(20);
+            ->paginate(in_array((int) request()->query('per_page'), [5, 10, 15, 20], true) ? (int) request()->query('per_page') : 5)
+            ->withQueryString();
 
         return view('robot.index', compact('activities', 'status', 'allowedStatuses'));
     }

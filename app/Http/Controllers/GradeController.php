@@ -34,7 +34,7 @@ class GradeController extends Controller
         $query = Student::with(['parent', 'teacher', 'parallel']);
 
         if ($user->isProfesor()) {
-            $query->where('teacher_user_id', $user->id)
+            $query->taughtBy($user, $selectedSubjectId ?: null)
                 ->when($selectedParallelId, function ($query) use ($selectedParallelId) {
                     return $query->where('parallel_id', $selectedParallelId);
                 });
@@ -43,13 +43,14 @@ class GradeController extends Controller
                 ->where('active', true)
                 ->distinct()
                 ->pluck('subject_id');
-            $ownedParallelIds = Student::where('teacher_user_id', $user->id)
+            $teacherParallelIds = Student::where('teacher_user_id', $user->id)
                 ->whereNotNull('parallel_id')
                 ->distinct()
-                ->pluck('parallel_id');
+                ->pluck('parallel_id')
+                ->merge(Student::assignedParallelIds($user));
 
             $subjects = $subjects->whereIn('id', $assignedSubjectIds)->values();
-            $parallels = $parallels->whereIn('id', $ownedParallelIds)->values();
+            $parallels = $parallels->whereIn('id', $teacherParallelIds)->values();
         } elseif ($selectedParallelId) {
             $query->where('parallel_id', $selectedParallelId);
         }
@@ -93,7 +94,7 @@ class GradeController extends Controller
         $query = Student::with(['parent', 'teacher', 'parallel']);
 
         if ($user->isProfesor()) {
-            $query->where('teacher_user_id', $user->id)
+            $query->taughtBy($user, $selectedSubjectId ?: null)
                 ->when($selectedParallelId, function ($query) use ($selectedParallelId) {
                     return $query->where('parallel_id', $selectedParallelId);
                 });
@@ -211,7 +212,7 @@ class GradeController extends Controller
             'type' => 'nullable|string|max:50',
             'observations' => 'nullable|string|max:1000',
             'reason' => 'nullable|string|max:500',
-            'attendance' => 'nullable|string|in:Presente,Falta,Atraso',
+            'attendance' => 'nullable|string|in:Presente,Falta,Atraso,Licencia',
             'exam_score' => 'nullable|numeric|min:0|max:100',
             'activity_score' => 'nullable|numeric|min:0|max:100',
         ]);
@@ -269,7 +270,7 @@ class GradeController extends Controller
         $data = $request->validate([
             'subject_id' => 'required|integer|exists:subjects,id',
             'attendance' => 'array',
-            'attendance.*' => 'nullable|string|in:Presente,Falta,Atraso',
+            'attendance.*' => 'nullable|string|in:Presente,Falta,Atraso,Licencia',
             'activity_score' => 'array',
             'activity_score.*' => 'nullable|numeric|min:0|max:100',
             'exam_score' => 'array',
@@ -333,8 +334,12 @@ class GradeController extends Controller
             'type' => 'required|string|in:activity,exam,robot,autoeval',
             'activity_number' => 'required|integer|min:1|max:5',
             'quarter' => 'required|integer|in:1,2,3',
-            'score' => 'required|numeric|min:0',
+            // Escala boliviana: notas enteras desde 1 (sin decimales, negativos ni cero).
+            'score' => 'required|integer|min:1',
             'subject_id' => 'required|integer|exists:subjects,id',
+        ], [
+            'score.integer' => 'La nota debe ser un número entero, sin decimales.',
+            'score.min' => 'La nota mínima es 1.',
         ]);
 
         if ($data['type'] === 'robot') {

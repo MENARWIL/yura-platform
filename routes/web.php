@@ -101,6 +101,7 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
         Route::post('/grades/save', [GradeController::class, 'save'])->name('grades.save');
         Route::post('/grades/update-score', [GradeController::class, 'updateScore'])->name('grades.updateScore');
         Route::post('/attendance/save', [AttendanceController::class, 'save'])->name('attendance.save');
+        Route::post('/attendance/save-list', [AttendanceController::class, 'saveList'])->name('attendance.saveList');
         Route::put('/grades/{grade}', [GradeController::class, 'update'])->name('grades.update');
         Route::post('/grades/batch', [GradeController::class, 'batchUpdate'])->name('grades.batchUpdate');
     });

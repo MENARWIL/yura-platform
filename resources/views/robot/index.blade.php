@@ -42,6 +42,14 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="fb-field fb-narrow">
+                    <label for="activityPerPage"><i class="fas fa-list-ol" aria-hidden="true"></i> Mostrar</label>
+                    <select id="activityPerPage" name="per_page" onchange="this.form.submit()">
+                        @foreach([5, 10, 15, 20] as $size)
+                            <option value="{{ $size }}" {{ $activities->perPage() === $size ? 'selected' : '' }}>{{ $size }} por página</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="fb-actions" style="margin-left: 0;">
                     <button type="submit" class="fb-btn fb-btn-primary">
                         <i class="fas fa-filter" aria-hidden="true"></i> Filtrar
@@ -113,7 +121,12 @@
                     </tbody>
                 </table>
             </div>
-            {{ $activities->withQueryString()->links() }}
+            @if($activities->total() > 0)
+                <div class="list-footer">
+                    <span class="list-count">Mostrando {{ $activities->firstItem() }}–{{ $activities->lastItem() }} de {{ $activities->total() }} actividades</span>
+                    {{ $activities->onEachSide(1)->links() }}
+                </div>
+            @endif
         </div>
     </div>
 </div>

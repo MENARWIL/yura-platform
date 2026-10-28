@@ -28,7 +28,7 @@
             </div>
         </div>
         <div class="card-body p-4 bg-white">
-            <form action="{{ route('students.index') }}" method="GET" class="filter-bar" aria-label="Filtros de estudiantes">
+            <form action="{{ route('students.index') }}" method="GET" class="filter-bar" aria-label="Filtros de estudiantes" data-live-search="#students-results">
                 <div class="fb-field fb-wide {{ request('student_name') ? 'is-set' : '' }}">
                     <label for="student_name"><i class="fas fa-user-graduate" aria-hidden="true"></i> Estudiante</label>
                     <div class="fb-search">
@@ -58,6 +58,14 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="fb-field fb-narrow">
+                    <label for="per_page"><i class="fas fa-list-ol" aria-hidden="true"></i> Mostrar</label>
+                    <select name="per_page" id="per_page">
+                        @foreach([5, 10, 15, 20] as $size)
+                            <option value="{{ $size }}" {{ $students->perPage() === $size ? 'selected' : '' }}>{{ $size }} por página</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="fb-actions">
                     @if(request('student_name') || request('course_id') || request('parallel_id'))
                         <a href="{{ route('students.index') }}" class="fb-btn fb-btn-ghost" title="Quitar todos los filtros">
@@ -70,6 +78,7 @@
                 </div>
             </form>
 
+            <div id="students-results" data-live-results>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
@@ -159,6 +168,13 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
+            @if($students->total() > 0)
+                <div class="list-footer">
+                    <span class="list-count">Mostrando {{ $students->firstItem() }}–{{ $students->lastItem() }} de {{ $students->total() }} estudiantes</span>
+                    {{ $students->onEachSide(1)->links() }}
+                </div>
+            @endif
             </div>
         </div>
     </div>

@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Versión de YURA
+    |--------------------------------------------------------------------------
+    |
+    | Versión que se muestra al pie de la plataforma. Se sube en cada entrega
+    | siguiendo MAYOR.MENOR.PARCHE (ej. 0.6.0 → 0.6.1 por correcciones,
+    | 0.7.0 por funciones nuevas, 1.0.0 al salir en producción). Historial en CHANGELOG.md.
+    |
+    */
+
+    'version' => env('APP_VERSION', '0.6.0'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
@@ -65,7 +78,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

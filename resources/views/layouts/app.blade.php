@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}?v={{ @filemtime(public_path('css/custom.css')) }}">
     @yield('css')
 </head>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
     <!-- Navbar -->
@@ -24,12 +24,6 @@
         <ul class="navbar-nav">
             <li class="nav-item">
                 <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-            </li>
-            <li class="nav-item d-none d-sm-inline-block">
-                <span class="nav-link text-white">
-                    <i class="fas fa-user-circle mr-1 opacity-50"></i>
-                    <b>{{ __('messages.member') ?? 'Miembro' }}:</b> {{ Auth::user()->name }}
-                </span>
             </li>
         </ul>
 
@@ -188,24 +182,17 @@
             <!-- /.sidebar-menu -->
         </div>
         <!-- /.sidebar -->
+        <div class="sidebar-version" title="Versión de la plataforma (historial en CHANGELOG.md)">
+            <span class="sv-label">Versión</span> V {{ config('app.version') }}
+        </div>
     </aside>
 
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <div class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1 class="m-0">@yield('title')</h1>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /.content-header -->
-
+        <!-- Sin título de página encima: cada pantalla ya lo muestra en el encabezado de su tarjeta
+             (el título sigue en la pestaña del navegador). -->
         <!-- Main content -->
-        <div class="content">
+        <div class="content pt-4">
             <div class="container-fluid">
                 
                 @if(session('success'))
@@ -242,6 +229,7 @@
 <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
 <script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('vendor/adminlte/js/adminlte.min.js') }}"></script>
+<script src="{{ asset('js/yura-ui.js') }}?v={{ @filemtime(public_path('js/yura-ui.js')) }}"></script>
 
 <!-- Scripts Requeridos -->
 @stack('scripts')

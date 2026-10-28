@@ -3,6 +3,16 @@
 @section('title', 'Asistencia')
 
 @section('content')
+@php
+    $canEdit = auth()->user()->isProfesor();
+    // Letra del botón y nombre visible de cada estado (el valor guardado no cambia).
+    $statusButtons = [
+        'Presente' => ['P', 'Presente'],
+        'Falta' => ['F', 'Falta'],
+        'Atraso' => ['R', 'Retraso'],
+        'Licencia' => ['L', 'Licencia / permiso'],
+    ];
+@endphp
 <div class="animate-fade-in">
     <div class="card card-quechua border-0 shadow-sm">
         <div class="card-header card-header-quechua d-flex align-items-center justify-content-between">
@@ -12,18 +22,18 @@
         </div>
 
         <div class="card-body bg-white p-4">
-            @unless(auth()->user()->isProfesor())
+            @unless($canEdit)
                 <div class="alert alert-info mb-4" role="alert">
                     <i class="fas fa-info-circle mr-2"></i>
                     Modo solo lectura: solo el profesor asignado puede registrar la asistencia.
                 </div>
             @endunless
-            <!-- FILTROS -->
-            <form method="GET" action="{{ route('attendance.index') }}" class="filter-bar" aria-label="Filtros de asistencia">
+            <!-- FILTROS: la página solo se recarga cuando asignatura y paralelo están elegidos. -->
+            <form method="GET" action="{{ route('attendance.index') }}" class="filter-bar" aria-label="Filtros de asistencia" data-filter-required="subject_id,parallel_id,date">
                 <div class="fb-field {{ $selectedSubjectId ? 'is-set' : '' }}">
                     <label for="at-subject"><i class="fas fa-book-open" aria-hidden="true"></i> Asignatura</label>
-                    <select id="at-subject" name="subject_id" onchange="this.form.submit()">
-                        <option value="">Todas las asignaturas</option>
+                    <select id="at-subject" name="subject_id">
+                        <option value="">Elige una asignatura</option>
                         @foreach($subjects as $subject)
                             <option value="{{ $subject->id }}" {{ $selectedSubjectId == $subject->id ? 'selected' : '' }}>
                                 {{ $subject->name }}
@@ -33,8 +43,8 @@
                 </div>
                 <div class="fb-field {{ $selectedParallelId ? 'is-set' : '' }}">
                     <label for="at-parallel"><i class="fas fa-users" aria-hidden="true"></i> Curso y paralelo</label>
-                    <select id="at-parallel" name="parallel_id" onchange="this.form.submit()">
-                        <option value="">Todos los paralelos</option>
+                    <select id="at-parallel" name="parallel_id">
+                        <option value="">Elige curso y paralelo</option>
                         @foreach($parallels as $parallel)
                             <option value="{{ $parallel->id }}" {{ $selectedParallelId == $parallel->id ? 'selected' : '' }}>
                                 {{ $parallel->course->name }} - {{ $parallel->name }}
@@ -42,9 +52,9 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="fb-field fb-narrow">
+                <div class="fb-field fb-narrow is-set">
                     <label for="at-date"><i class="fas fa-calendar-day" aria-hidden="true"></i> Fecha</label>
-                    <input id="at-date" type="date" name="date" value="{{ $selectedDate }}" max="{{ now()->toDateString() }}" onchange="this.form.submit()">
+                    <input id="at-date" type="date" name="date" value="{{ $selectedDate }}" max="{{ now()->toDateString() }}" required>
                 </div>
                 @if($selectedSubjectId || $selectedParallelId)
                     <div class="fb-actions">
@@ -58,6 +68,9 @@
                         @endif
                     </div>
                 @endif
+                <p class="fb-hint" data-filter-hint hidden>
+                    <i class="fas fa-info-circle" aria-hidden="true"></i> Elige asignatura y paralelo; la lista se carga sola al completar los filtros.
+                </p>
             </form>
 
             @if(empty($selectedSubjectId) || empty($selectedParallelId))
@@ -72,8 +85,32 @@
                     </div>
                 </div>
             @else
+                @php $pendingCount = $students->filter(fn ($s) => ! isset($attendanceForDate[$s->id]))->count(); @endphp
+                @if($students->isNotEmpty())
+                <div class="att-summary" id="att-summary">
+                    <div>
+                        <div class="att-legend" aria-label="Resumen del día">
+                            <span style="--c:#1f9d55">Presentes: <b data-count="Presente">0</b></span>
+                            <span style="--c:var(--yura-red)">Faltas: <b data-count="Falta">0</b></span>
+                            <span style="--c:var(--yura-amber)">Retrasos: <b data-count="Atraso">0</b></span>
+                            <span style="--c:var(--yura-action)">Licencias: <b data-count="Licencia">0</b></span>
+                        </div>
+                        @if($canEdit)
+                            <small class="text-muted d-block mt-1" id="att-pending-text" @if(! $pendingCount) hidden @endif>
+                                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                                <span id="att-pending-label">{{ $pendingCount }} sin registrar</span>: aparecen como Presente. Cambia solo a quienes faltaron y presiona «Registrar asistencia».
+                            </small>
+                        @endif
+                    </div>
+                    @if($canEdit)
+                        <button type="button" class="fb-btn fb-btn-primary" id="att-register" @if(! $pendingCount) hidden @endif>
+                            <i class="fas fa-check" aria-hidden="true"></i> Registrar asistencia
+                        </button>
+                    @endif
+                </div>
+                @endif
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle table-bordered">
+                    <table class="table table-hover align-middle table-bordered" id="attendance-table">
                         <thead>
                             <tr>
                                 <th class="px-3 text-center align-middle" title="Número en la lista del curso y paralelo">Nro</th>
@@ -84,7 +121,12 @@
                         </thead>
                         <tbody>
                             @forelse($students as $student)
-                            <tr data-student-id="{{ $student->id }}">
+                            @php
+                                $savedStatus = optional($attendanceForDate[$student->id] ?? null)->status;
+                                // Sin registro: el profesor ve Presente marcado por defecto (aún sin guardar).
+                                $shownStatus = $savedStatus ?? ($canEdit ? 'Presente' : null);
+                            @endphp
+                            <tr data-student-id="{{ $student->id }}" data-status="{{ $shownStatus }}" class="{{ $savedStatus ? '' : 'att-row-pending' }}" @if(! $savedStatus) data-pending="1" @endif>
                                 <td class="text-center align-middle">{{ $loop->iteration }}</td>
                                 <td class="px-4 align-middle">
                                     <div class="d-flex align-items-center">
@@ -102,12 +144,16 @@
                                     <span class="badge badge-quechua-gold px-3">{{ mb_strtoupper($student->level ?? '6TO', 'UTF-8') }}</span>
                                 </td>
                                 <td class="align-middle text-center">
-                                    <select class="form-control form-control-sm attendance-select" data-student-id="{{ $student->id }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
-                                        <option value="">Seleccionar...</option>
-                                        @foreach($attendanceStatuses as $status)
-                                            <option value="{{ $status }}" {{ optional($attendanceForDate[$student->id] ?? null)->status == $status ? 'selected' : '' }}>{{ $status }}</option>
+                                    <div class="att-group" role="radiogroup" aria-label="Asistencia de {{ $student->name }}">
+                                        @foreach($statusButtons as $value => [$letter, $label])
+                                            <button type="button" class="att-btn {{ $shownStatus === $value ? 'is-active' : '' }}" data-status="{{ $value }}"
+                                                role="radio" aria-checked="{{ $shownStatus === $value ? 'true' : 'false' }}" title="{{ $label }}" aria-label="{{ $label }}"
+                                                {{ $canEdit ? '' : 'disabled' }}>{{ $letter }}</button>
                                         @endforeach
-                                    </select>
+                                    </div>
+                                    @if(! $savedStatus && ! $canEdit)
+                                        <small class="d-block text-muted mt-1">Sin registro</small>
+                                    @endif
                                 </td>
                             </tr>
                             @empty
@@ -128,121 +174,134 @@
     </div>
 </div>
 
+@if($canEdit && $selectedSubjectId && $selectedParallelId)
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const csrfToken = '{{ csrf_token() }}';
-        const attendanceSaveUrl = "{{ route('attendance.save') }}";
-        const selectedSubjectId = '{{ $selectedSubjectId }}';
-        const selectedDate = '{{ $selectedDate }}';
+        const saveUrl = "{{ route('attendance.save') }}";
+        const saveListUrl = "{{ route('attendance.saveList') }}";
+        const subjectId = '{{ $selectedSubjectId }}';
+        const date = '{{ $selectedDate }}';
+        const table = document.getElementById('attendance-table');
+        const registerButton = document.getElementById('att-register');
+        const pendingText = document.getElementById('att-pending-text');
+        const pendingLabel = document.getElementById('att-pending-label');
+        if (!table) return;
 
-        const styleTag = document.createElement('style');
-        styleTag.textContent = `
-            .attendance-select.attendance-saving { border-color: #ffcc00 !important; box-shadow: 0 0 0 0.15rem rgba(255, 204, 0, 0.18) !important; }
-            .attendance-select.attendance-saved { border-color: #28a745 !important; box-shadow: 0 0 0 0.15rem rgba(40, 167, 69, 0.18) !important; transition: border-color .2s ease, box-shadow .2s ease; }
-            .attendance-select.attendance-error { border-color: #C8102E !important; box-shadow: 0 0 0 0.15rem rgba(200, 16, 46, 0.18) !important; }
-        `;
-        document.head.appendChild(styleTag);
+        const rows = () => Array.from(table.querySelectorAll('tbody tr[data-student-id]'));
+        const pendingRows = () => rows().filter(row => row.dataset.pending === '1');
+        // Mientras nadie de la lista tenga registro, los clics solo preparan la lista;
+        // cuando ya hay registros del día, cada clic se guarda al instante.
+        const isDraftList = () => pendingRows().length === rows().length;
 
-        function createToastContainer() {
-            const containerId = 'attendance-toast-container';
-            let container = document.getElementById(containerId);
-            if (container) {
-                return container;
-            }
-            container = document.createElement('div');
-            container.id = containerId;
-            container.style.position = 'fixed';
-            container.style.bottom = '1rem';
-            container.style.right = '1rem';
-            container.style.zIndex = '1080';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.gap = '0.5rem';
-            container.style.alignItems = 'flex-end';
-            document.body.appendChild(container);
-            return container;
-        }
-
-        function showSaveToast(message, isError) {
-            const container = createToastContainer();
-            const toast = document.createElement('div');
-            toast.style.minWidth = '200px';
-            toast.style.padding = '0.85rem 1rem';
-            toast.style.background = isError ? 'rgba(200, 16, 46, 0.95)' : 'rgba(40, 167, 69, 0.95)';
-            toast.style.color = '#ffffff';
-            toast.style.borderRadius = '0.75rem';
-            toast.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.12)';
-            toast.style.fontSize = '0.95rem';
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(10px)';
-            toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-            toast.textContent = message;
-            container.appendChild(toast);
-            requestAnimationFrame(() => {
-                toast.style.opacity = '1';
-                toast.style.transform = 'translateY(0)';
+        function paint(row, status) {
+            row.dataset.status = status;
+            row.querySelectorAll('.att-btn').forEach(button => {
+                const active = button.dataset.status === status;
+                button.classList.toggle('is-active', active);
+                button.setAttribute('aria-checked', active ? 'true' : 'false');
             });
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(10px)';
-                toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-            }, 2000);
         }
 
-        function clearState(select) {
-            select.classList.remove('attendance-saving', 'attendance-saved', 'attendance-error');
+        function refreshSummary() {
+            const counts = { Presente: 0, Falta: 0, Atraso: 0, Licencia: 0 };
+            rows().forEach(row => { if (counts[row.dataset.status] !== undefined) counts[row.dataset.status]++; });
+            Object.keys(counts).forEach(key => {
+                const el = document.querySelector(`[data-count="${key}"]`);
+                if (el) el.textContent = counts[key];
+            });
+            const pending = pendingRows().length;
+            if (registerButton) registerButton.hidden = pending === 0;
+            if (pendingText) pendingText.hidden = pending === 0;
+            if (pendingLabel) pendingLabel.textContent = `${pending} sin registrar`;
         }
 
-        async function saveAttendance(select) {
-            const studentId = select.dataset.studentId;
-            const status = select.value;
+        function markSaved(row) {
+            delete row.dataset.pending;
+            row.classList.remove('att-row-pending');
+        }
 
-            if (!studentId || status === '' || !selectedSubjectId) {
+        async function post(url, body) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                body: JSON.stringify(body),
+            });
+            const data = await response.json().catch(() => null);
+            if (!response.ok || (data && data.success === false)) {
+                const firstError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
+                throw new Error(firstError || data?.message || 'No se pudo guardar la asistencia.');
+            }
+            return data;
+        }
+
+        table.addEventListener('click', async function (event) {
+            const button = event.target.closest('.att-btn');
+            if (!button || button.disabled) return;
+            const row = button.closest('tr');
+            const previous = row.dataset.status;
+            const status = button.dataset.status;
+            if (status === previous && row.dataset.pending !== '1') return;
+
+            paint(row, status);
+            if (isDraftList()) {
+                refreshSummary();
                 return;
             }
 
-            clearState(select);
-            select.classList.add('attendance-saving');
-
+            refreshSummary();
             try {
-                const response = await fetch(attendanceSaveUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
-                    body: JSON.stringify({
-                        student_id: studentId,
-                        subject_id: selectedSubjectId,
-                        status: status,
-                        date: selectedDate,
-                    }),
-                });
-
-                const data = await response.json().catch(() => null);
-                clearState(select);
-
-                if (!response.ok || (data && data.success === false)) {
-                    select.classList.add('attendance-error');
-                    showSaveToast(data?.message || 'No se pudo guardar la asistencia.', true);
-                    return;
-                }
-
-                select.classList.add('attendance-saved');
-                showSaveToast('✓ Asistencia registrada');
+                await post(saveUrl, { student_id: row.dataset.studentId, subject_id: subjectId, status: status, date: date });
+                markSaved(row);
+                refreshSummary();
+                YuraToast.show('✓ Asistencia guardada');
             } catch (error) {
-                clearState(select);
-                select.classList.add('attendance-error');
-                showSaveToast('Error de conexión al guardar la asistencia.', true);
+                paint(row, previous);
+                refreshSummary();
+                YuraToast.show(error.message, 'error');
             }
+        });
+
+        if (registerButton) {
+            registerButton.addEventListener('click', async function () {
+                const pending = pendingRows();
+                if (!pending.length) return;
+                const original = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Registrando...';
+                try {
+                    await post(saveListUrl, {
+                        subject_id: subjectId,
+                        date: date,
+                        records: pending.map(row => ({ student_id: row.dataset.studentId, status: row.dataset.status })),
+                    });
+                    pending.forEach(markSaved);
+                    YuraToast.show(`✓ Asistencia registrada (${pending.length} estudiantes)`);
+                } catch (error) {
+                    YuraToast.show(error.message, 'error');
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = original;
+                    refreshSummary();
+                }
+            });
         }
 
-        document.querySelectorAll('.attendance-select').forEach(function (select) {
-            select.addEventListener('change', function () {
-                saveAttendance(this);
-            });
+        refreshSummary();
+    });
+</script>
+@elseif($selectedSubjectId && $selectedParallelId)
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const counts = { Presente: 0, Falta: 0, Atraso: 0, Licencia: 0 };
+        document.querySelectorAll('#attendance-table tbody tr[data-status]').forEach(row => {
+            if (counts[row.dataset.status] !== undefined) counts[row.dataset.status]++;
+        });
+        Object.keys(counts).forEach(key => {
+            const el = document.querySelector(`[data-count="${key}"]`);
+            if (el) el.textContent = counts[key];
         });
     });
 </script>
+@endif
 @endsection

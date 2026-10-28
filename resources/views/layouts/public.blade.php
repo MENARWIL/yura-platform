@@ -517,6 +517,7 @@
         }
         .footer-bottom a { color: #D6E0F5; text-decoration: underline; text-underline-offset: 3px; }
         .footer-bottom a:hover { color: #FFFFFF; }
+        .footer-version { font-weight: 700; letter-spacing: .5px; color: #D6E0F5; }
 
         /* Responsive */
         @media (max-width: 1180px) {
@@ -735,6 +736,7 @@
         <div class="footer-bottom">
             <span>&copy; {{ date('Y') }} YURA Platform{{ $yuraOrg ? ' · '.$yuraOrg : '' }}. {{ __('layout.footer_rights') }}</span>
             <a href="{{ route('public.privacy') }}">{{ __('layout.footer_privacy') }}</a>
+            <span class="footer-version" title="Versión de la plataforma">V {{ config('app.version') }}</span>
         </div>
     </footer>
 

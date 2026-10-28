@@ -14,7 +14,7 @@
                 @method('PATCH')
                 <div class="card-body p-4">
                     <div class="form-group mb-4">
-                        <label class="font-weight-bold small">Nombre Completo (Se mostrará como Integrante)</label>
+                        <label class="font-weight-bold small">Nombre Completo (se muestra en el menú lateral)</label>
                         <input type="text" name="name" class="form-control form-control-lg @error('name') is-invalid @enderror" value="{{ old('name', $user->name) }}" required>
                         @error('name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                     </div>

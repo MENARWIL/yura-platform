@@ -10,6 +10,8 @@ use App\Models\TeachingAssignment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class AttendanceController extends Controller
 {
@@ -31,7 +33,7 @@ class AttendanceController extends Controller
         $query = Student::with(['parent', 'teacher', 'parallel']);
 
         if ($user->isProfesor()) {
-            $query->where('teacher_user_id', $user->id)
+            $query->taughtBy($user, $selectedSubjectId ?: null)
                 ->when($selectedParallelId, function ($query) use ($selectedParallelId) {
                     return $query->where('parallel_id', $selectedParallelId);
                 });
@@ -40,13 +42,14 @@ class AttendanceController extends Controller
                 ->where('active', true)
                 ->distinct()
                 ->pluck('subject_id');
-            $ownedParallelIds = Student::where('teacher_user_id', $user->id)
+            $teacherParallelIds = Student::where('teacher_user_id', $user->id)
                 ->whereNotNull('parallel_id')
                 ->distinct()
-                ->pluck('parallel_id');
+                ->pluck('parallel_id')
+                ->merge(Student::assignedParallelIds($user));
 
             $subjects = $subjects->whereIn('id', $assignedSubjectIds)->values();
-            $parallels = $parallels->whereIn('id', $ownedParallelIds)->values();
+            $parallels = $parallels->whereIn('id', $teacherParallelIds)->values();
         } elseif ($selectedParallelId) {
             $query->where('parallel_id', $selectedParallelId);
         }
@@ -62,7 +65,7 @@ class AttendanceController extends Controller
             ->get()
             ->keyBy('student_id');
 
-        $attendanceStatuses = ['Presente', 'Falta', 'Atraso'];
+        $attendanceStatuses = Attendance::STATUSES;
 
         return view('attendance.index', compact(
             'students',
@@ -95,7 +98,7 @@ class AttendanceController extends Controller
         $query = Student::with(['parent', 'teacher', 'parallel']);
 
         if ($user->isProfesor()) {
-            $query->where('teacher_user_id', $user->id)
+            $query->taughtBy($user, $selectedSubjectId ?: null)
                 ->when($selectedParallelId, function ($query) use ($selectedParallelId) {
                     return $query->where('parallel_id', $selectedParallelId);
                 });
@@ -138,9 +141,9 @@ class AttendanceController extends Controller
         $data = $request->validate([
             'student_id' => 'required|integer|exists:students,id',
             'subject_id' => 'required|integer|exists:subjects,id',
-            'status' => 'required|string|in:Presente,Falta,Atraso',
-            'date' => 'required|date',
-        ]);
+            'status' => ['required', 'string', Rule::in(Attendance::STATUSES)],
+            'date' => 'required|date|before_or_equal:today',
+        ], $this->validationMessages());
 
         $student = Student::findOrFail($data['student_id']);
         if ($user->isProfesor() && ! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
@@ -167,6 +170,53 @@ class AttendanceController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Registra la lista completa del día en una sola petición (la pantalla parte con
+     * todos en Presente y el profesor solo cambia a los que faltaron).
+     */
+    public function saveList(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'subject_id' => 'required|integer|exists:subjects,id',
+            'date' => 'required|date|before_or_equal:today',
+            'records' => 'required|array|min:1|max:300',
+            'records.*.student_id' => 'required|integer|distinct|exists:students,id',
+            'records.*.status' => ['required', 'string', Rule::in(Attendance::STATUSES)],
+        ], $this->validationMessages());
+
+        $subjectId = (int) $data['subject_id'];
+        $students = Student::whereIn('id', array_column($data['records'], 'student_id'))->get()->keyBy('id');
+
+        foreach ($students as $student) {
+            if (! $this->hasTeachingAssignment($user, $student, $subjectId)) {
+                abort(403, __('messages.unauthorized'));
+            }
+        }
+
+        DB::transaction(function () use ($data, $subjectId) {
+            foreach ($data['records'] as $record) {
+                Attendance::updateOrCreate(
+                    ['student_id' => $record['student_id'], 'subject_id' => $subjectId, 'date' => $data['date']],
+                    ['status' => $record['status']]
+                );
+            }
+        });
+
+        return response()->json(['success' => true, 'saved' => count($data['records'])]);
+    }
+
+    private function validationMessages(): array
+    {
+        return [
+            'date.before_or_equal' => 'No se puede registrar asistencia en una fecha futura.',
+            'status.in' => 'Estado de asistencia no válido.',
+            'records.*.status.in' => 'Estado de asistencia no válido.',
+        ];
     }
 
     private function hasTeachingAssignment(User $user, Student $student, int $subjectId): bool
