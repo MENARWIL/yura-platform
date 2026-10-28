@@ -735,8 +735,10 @@ a:focus {
 .table-scroll-box > .table { margin-bottom: 0; }
 
 /* Versión de la plataforma fija al fondo del menú lateral. */
-.main-sidebar .sidebar { padding-bottom: 48px; }
-.sidebar-version { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 20px; border-top: 1px solid rgba(255, 255, 255, .12); color: rgba(255, 255, 255, .7); font-size: .8rem; font-weight: 700; letter-spacing: .5px; white-space: nowrap; overflow: hidden; }
+/* El menú ocupa el alto disponible y se desplaza; la versión queda debajo, sin tapar opciones. */
+.layout-fixed .main-sidebar { display: flex; flex-direction: column; }
+.layout-fixed .main-sidebar .sidebar { flex: 1 1 auto; min-height: 0; height: auto !important; overflow-y: auto; }
+.sidebar-version { flex: 0 0 auto; padding: 12px 20px; background: inherit; border-top: 1px solid rgba(255, 255, 255, .12); color: rgba(255, 255, 255, .7); font-size: .8rem; font-weight: 700; letter-spacing: .5px; white-space: nowrap; overflow: hidden; }
 .sidebar-version .sv-label { font-weight: 500; color: rgba(255, 255, 255, .5); margin-right: 4px; }
 /* Menú recogido: solo el número, centrado. */
 .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .sidebar-version { padding: 12px 0; text-align: center; font-size: .7rem; }

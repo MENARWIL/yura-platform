@@ -60,7 +60,7 @@
                 <td>{{ optional($student->course)->name ?? $student->getAttribute('course') ?? 'N/A' }}</td>
                 <td>{{ $student->parallel->name ?? 'N/A' }}</td>
                 <td>{{ $student->padre->name ?? 'N/A' }}</td>
-                <td>{{ $student->profesor->name ?? 'N/A' }}</td>
+                <td>{{ $student->teachersLabel() ?? 'N/A' }}</td>
                 <td>
                     <span class="badge {{ $student->estado == 'activo' ? 'badge-success' : 'badge-danger' }}">
                         {{ mb_strtoupper($student->estado, 'UTF-8') }}

@@ -127,6 +127,35 @@ class Student extends Model
         });
     }
 
+    /**
+     * Profesores del estudiante para mostrar: los de las asignaciones docentes activas de su
+     * paralelo (con sus asignaturas) y, si lo hay, el asignado directamente.
+     * Ej.: "Carlos Vargas Mamani (Quechua)". Devuelve null si no tiene ninguno.
+     */
+    public function teachersLabel(): ?string
+    {
+        $assignments = $this->parallel_id
+            ? TeachingAssignment::with(['teacher', 'subject'])
+                ->where('parallel_id', $this->parallel_id)
+                ->where('active', true)
+                ->get()
+                ->filter(fn ($assignment) => $assignment->teacher)
+            : collect();
+
+        $labels = $assignments->groupBy('teacher_user_id')->map(function ($group) {
+            $subjects = $group->map(fn ($assignment) => $assignment->subject?->name)->filter()->unique()->sort()->implode(', ');
+
+            return $group->first()->teacher->name . ($subjects ? " ({$subjects})" : '');
+        });
+
+        $direct = $this->getAttribute($this->getTeacherUserForeignKey());
+        if ($direct && ! $labels->has($direct) && ($teacher = User::find($direct))) {
+            $labels->put($direct, $teacher->name);
+        }
+
+        return $labels->isEmpty() ? null : $labels->values()->implode(' · ');
+    }
+
     /** Paralelos de las asignaciones docentes activas de un profesor. */
     public static function assignedParallelIds(User $teacher, ?int $subjectId = null): array
     {

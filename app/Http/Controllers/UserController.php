@@ -11,18 +11,51 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
-    public function index()
+    /** Roles que se pueden filtrar en la lista de usuarios (valor guardado => nombre visible). */
+    private const ROLE_FILTERS = [
+        'admin' => 'Administrador',
+        'academic' => 'Académico',
+        'profesor' => 'Profesor',
+        'familia' => 'Padre, madre o tutor',
+        'estudiante' => 'Estudiante',
+        'robot' => 'Robot',
+    ];
+
+    public function index(Request $request)
     {
-        $users = User::with(['mainCourse', 'students.parallel.course', 'teachingAssignments.parallel.course'])
+        $filters = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+            'role' => ['nullable', Rule::in(array_keys(self::ROLE_FILTERS))],
+            'per_page' => ['nullable', 'integer', Rule::in([5, 10, 15, 20])],
+        ]);
+        $search = preg_replace('/\s+/', ' ', trim((string) ($filters['q'] ?? ''))) ?: null;
+
+        $users = User::with(['mainCourse', 'mainSubject', 'students.parallel.course', 'teachingAssignments.parallel.course', 'teachingAssignments.subject'])
             ->where('id', '!=', Auth::id())
+            ->when($search, function ($query, $search) {
+                $like = '%' . $search . '%';
+                $query->where(function ($q) use ($like) {
+                    foreach (['name', 'first_name', 'last_name', 'second_last_name', 'email', 'phone', 'ci'] as $column) {
+                        $q->orWhere($column, 'like', $like);
+                    }
+                });
+            })
+            ->when($filters['role'] ?? null, function ($query, $role) {
+                $role === 'familia'
+                    ? $query->whereIn('role', ['padre', 'madre', 'tutor'])
+                    : $query->where('role', $role);
+            })
             ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
             ->orderBy('last_name')
             ->orderBy('name')
-            ->get();
+            ->paginate((int) ($filters['per_page'] ?? 5))
+            ->withQueryString();
+        $roleFilters = self::ROLE_FILTERS;
         $deletedUsers = User::onlyTrashed()
             ->with(['mainCourse', 'students.parallel.course', 'teachingAssignments.parallel.course'])
             ->where('id', '!=', Auth::id())
@@ -31,7 +64,7 @@ class UserController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('users.index', compact('users', 'deletedUsers'));
+        return view('users.index', compact('users', 'deletedUsers', 'roleFilters'));
     }
 
     public function create()

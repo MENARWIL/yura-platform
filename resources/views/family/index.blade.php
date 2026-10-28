@@ -19,12 +19,12 @@
         </div>
 
         <div class="card-body bg-white p-4">
-            <form action="{{ route('family-members.index') }}" method="GET" class="filter-bar" aria-label="Filtros de familias">
+            <form action="{{ route('family-members.index') }}" method="GET" class="filter-bar" aria-label="Filtros de familias" data-live-search="#family-results">
                 <div class="fb-field fb-wide {{ request('student_name') ? 'is-set' : '' }}">
-                    <label for="student_name"><i class="fas fa-user-graduate" aria-hidden="true"></i> Estudiante</label>
+                    <label for="student_name"><i class="fas fa-user-graduate" aria-hidden="true"></i> Estudiante o tutor</label>
                     <div class="fb-search">
                         <i class="fas fa-search" aria-hidden="true"></i>
-                        <input type="search" id="student_name" name="student_name" value="{{ request('student_name') }}" placeholder="Buscar por nombre" autocomplete="off">
+                        <input type="search" id="student_name" name="student_name" value="{{ request('student_name') }}" placeholder="Nombre o apellido" autocomplete="off">
                     </div>
                 </div>
                 <div class="fb-field {{ request('course_id') ? 'is-set' : '' }}">
@@ -45,6 +45,14 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="fb-field fb-narrow">
+                    <label for="family_per_page"><i class="fas fa-list-ol" aria-hidden="true"></i> Mostrar</label>
+                    <select id="family_per_page" name="per_page">
+                        @foreach([5, 10, 15, 20] as $size)
+                            <option value="{{ $size }}" {{ $familyMembers->perPage() === $size ? 'selected' : '' }}>{{ $size }} por página</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="fb-actions">
                     @if(request('student_name') || request('course_id') || request('parallel_id'))
                         <a href="{{ route('family-members.index') }}" class="fb-btn fb-btn-ghost" title="Quitar todos los filtros">
@@ -57,6 +65,7 @@
                 </div>
             </form>
 
+            <div id="family-results" data-live-results>
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
@@ -113,11 +122,13 @@
                     </tbody>
                 </table>
             </div>
-
-        </div>
-    </div>
-</div>
-
+            @if($familyMembers->total() > 0)
+                <div class="list-footer">
+                    <span class="list-count">Mostrando {{ $familyMembers->firstItem() }}–{{ $familyMembers->lastItem() }} de {{ $familyMembers->total() }} relaciones</span>
+                    {{ $familyMembers->onEachSide(1)->links() }}
+                </div>
+            @endif
+            {{-- Ventanas de edición dentro de la zona en vivo: así acompañan a la página que se muestra. --}}
 @if(in_array(auth()->user()->role, ['admin', 'academic']))
     @foreach($familyMembers as $familyMember)
         <div class="modal fade" id="editFamilyMember{{ $familyMember->id }}" tabindex="-1" role="dialog" aria-hidden="true">
@@ -159,4 +170,10 @@
         </div>
     @endforeach
 @endif
+            </div>
+
+        </div>
+    </div>
+</div>
+
 @endsection
