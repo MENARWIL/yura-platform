@@ -68,7 +68,10 @@
                             <td class="text-center text-muted">{{ optional($user->mainCourse)->name ?? '-' }}</td>
                             <td class="text-center text-muted">
                                 @if($user->isProfesor())
-                                    {{ $user->students->pluck('parallel.name')->filter()->unique()->implode(', ') ?: '-' }}
+                                    {{-- Paralelos de sus asignaciones docentes activas y de los estudiantes asignados directamente. --}}
+                                    {{ $user->teachingAssignments->where('active', true)->map(fn ($a) => trim(($a->parallel?->course?->name ?? '') . ' ' . ($a->parallel?->name ?? '')))
+                                        ->merge($user->students->map(fn ($s) => trim(($s->parallel?->course?->name ?? '') . ' ' . ($s->parallel?->name ?? ''))))
+                                        ->filter()->unique()->implode(', ') ?: '-' }}
                                 @else
                                     -
                                 @endif

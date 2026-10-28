@@ -17,14 +17,14 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['mainCourse', 'students.parallel'])
+        $users = User::with(['mainCourse', 'students.parallel.course', 'teachingAssignments.parallel.course'])
             ->where('id', '!=', Auth::id())
             ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
             ->orderBy('last_name')
             ->orderBy('name')
             ->get();
         $deletedUsers = User::onlyTrashed()
-            ->with(['mainCourse', 'students.parallel'])
+            ->with(['mainCourse', 'students.parallel.course', 'teachingAssignments.parallel.course'])
             ->where('id', '!=', Auth::id())
             ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
             ->orderBy('last_name')

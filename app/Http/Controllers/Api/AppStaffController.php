@@ -25,7 +25,7 @@ class AppStaffController extends Controller
 
         $query = Student::with(['course', 'parallel', 'profesor', 'grades.subject', 'attendances'])->orderBy('name');
         if ($user->isProfesor()) {
-            $query->where($query->getModel()->getTeacherUserForeignKey(), $user->id);
+            $query->taughtBy($user);
         }
         if ($term = trim((string) $request->query('q'))) {
             $query->where('name', 'like', '%' . $term . '%');

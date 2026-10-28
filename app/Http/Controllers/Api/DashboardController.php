@@ -22,15 +22,14 @@ class DashboardController extends Controller
             ];
             $data['recientes'] = Student::with(['padre', 'profesor', 'parallel', 'course'])->latest()->take(5)->get();
         } elseif ($user->isProfesor()) {
-            $teacherForeignKey = (new Student())->getTeacherUserForeignKey();
             $levelColumn = 'level';
 
             $data['metrics'] = [
-                'mis_estudiantes_count' => Student::where($teacherForeignKey, $user->id)->count(),
+                'mis_estudiantes_count' => Student::taughtBy($user)->count(),
             ];
             // Ranking is computed from real grades (Student::realOverallAverage()) instead of
             // the legacy `score` column, which is not kept in sync with the `grades` table.
-            $data['ranking'] = Student::where($teacherForeignKey, $user->id)
+            $data['ranking'] = Student::taughtBy($user)
                 ->get()
                 ->map(function (Student $student) {
                     $student->real_average = $student->realOverallAverage() ?? 0;
@@ -42,9 +41,9 @@ class DashboardController extends Controller
                 ->values();
 
             $data['distribucion'] = [
-                'basico' => Student::where($teacherForeignKey, $user->id)->where($levelColumn, 'básico')->count(),
-                'intermedio' => Student::where($teacherForeignKey, $user->id)->where($levelColumn, 'intermedio')->count(),
-                'avanzado' => Student::where($teacherForeignKey, $user->id)->where($levelColumn, 'avanzado')->count(),
+                'basico' => Student::taughtBy($user)->where($levelColumn, 'básico')->count(),
+                'intermedio' => Student::taughtBy($user)->where($levelColumn, 'intermedio')->count(),
+                'avanzado' => Student::taughtBy($user)->where($levelColumn, 'avanzado')->count(),
             ];
         } elseif ($user->isEstudiante()) {
             $student = $user->studentProfile()->with(['profesor', 'padre'])->first();

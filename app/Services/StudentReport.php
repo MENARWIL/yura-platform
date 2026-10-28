@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Attendance;
 use App\Models\Student;
 
 /**
@@ -59,9 +60,13 @@ class StudentReport
             ->where('status', 'completed')
             ->where('is_robot_activity', true)
             ->filter(fn ($grade) => $grade->score !== null);
-        $attendanceTotal = $student->attendances->count();
-        $attendancePresent = $student->attendances->filter(
-            fn ($attendance) => strtolower(trim((string) $attendance->status)) === 'presente'
+        // La licencia (ausencia justificada) no entra en el total; ver Attendance::presentPercent().
+        $countedAttendance = $student->attendances->reject(
+            fn ($attendance) => Attendance::normalizeStatus($attendance->status) === 'licencia'
+        );
+        $attendanceTotal = $countedAttendance->count();
+        $attendancePresent = $countedAttendance->filter(
+            fn ($attendance) => Attendance::normalizeStatus($attendance->status) === 'presente'
         )->count();
 
         return [

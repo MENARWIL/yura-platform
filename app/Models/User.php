@@ -314,6 +314,24 @@ class User extends Authenticatable
         return $this->id === $student->getAttribute($parentForeignKey);
     }
 
+    /**
+     * El profesor atiende al estudiante si lo tiene asignado directamente o si tiene una
+     * asignación docente activa en su paralelo (mismo criterio que Student::scopeTaughtBy).
+     */
+    public function teachesStudent(Student $student): bool
+    {
+        if (! $this->isProfesor()) {
+            return false;
+        }
+
+        if ((int) $student->getAttribute($student->getTeacherUserForeignKey()) === (int) $this->id) {
+            return true;
+        }
+
+        return $student->parallel_id !== null
+            && in_array((int) $student->parallel_id, array_map('intval', Student::assignedParallelIds($this)), true);
+    }
+
     public function canViewStudent(Student $student): bool
     {
         if ($this->isAdmin()) {
@@ -321,9 +339,7 @@ class User extends Authenticatable
         }
 
         if ($this->isProfesor()) {
-            $teacherForeignKey = $student->getTeacherUserForeignKey();
-
-            return $this->id === $student->getAttribute($teacherForeignKey);
+            return $this->teachesStudent($student);
         }
 
         if ($this->isEstudiante()) {
