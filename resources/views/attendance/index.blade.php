@@ -22,6 +22,12 @@
         </div>
 
         <div class="card-body bg-white p-4">
+            @if($errors->has('date_from') || $errors->has('date_to'))
+                <div class="alert alert-danger mb-4" role="alert">
+                    <i class="fas fa-exclamation-circle mr-2"></i>
+                    No se pudo exportar: {{ $errors->first('date_from') ?: $errors->first('date_to') }}
+                </div>
+            @endif
             @unless($canEdit)
                 <div class="alert alert-info mb-4" role="alert">
                     <i class="fas fa-info-circle mr-2"></i>
@@ -62,9 +68,9 @@
                             <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
                         </a>
                         @if($selectedSubjectId && $selectedParallelId)
-                            <a href="{{ route('attendance.export.pdf', ['subject_id' => $selectedSubjectId, 'parallel_id' => $selectedParallelId, 'date' => $selectedDate]) }}" class="fb-btn fb-btn-outline">
+                            <button type="button" class="fb-btn fb-btn-outline" data-toggle="modal" data-target="#exportAttendanceModal">
                                 <i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar PDF
-                            </a>
+                            </button>
                         @endif
                     </div>
                 @endif
@@ -173,6 +179,92 @@
         </div>
     </div>
 </div>
+
+@if($selectedSubjectId && $selectedParallelId)
+@php
+    $today = now();
+    $exportPresets = [
+        'Hoy' => [$today->toDateString(), $today->toDateString()],
+        'Esta semana' => [$today->copy()->startOfWeek()->toDateString(), $today->toDateString()],
+        'Este mes' => [$today->copy()->startOfMonth()->toDateString(), $today->toDateString()],
+        'Este año' => [$today->copy()->startOfYear()->toDateString(), $today->toDateString()],
+    ];
+@endphp
+<div class="modal fade" id="exportAttendanceModal" tabindex="-1" role="dialog" aria-labelledby="exportAttendanceTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="GET" action="{{ route('attendance.export.pdf') }}" id="export-attendance-form">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="exportAttendanceTitle">
+                        <i class="fas fa-file-pdf text-danger mr-2" aria-hidden="true"></i> Exportar asistencia en PDF
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="subject_id" value="{{ $selectedSubjectId }}">
+                    <input type="hidden" name="parallel_id" value="{{ $selectedParallelId }}">
+                    <p class="text-muted small mb-3">
+                        {{ $subjects->firstWhere('id', $selectedSubjectId)?->name }} ·
+                        @php $exportParallel = $parallels->firstWhere('id', $selectedParallelId); @endphp
+                        {{ $exportParallel ? $exportParallel->course->name . ' - ' . $exportParallel->name : '' }}
+                    </p>
+                    <div class="d-flex flex-wrap mb-3" style="gap: 6px;" aria-label="Periodos rápidos">
+                        @foreach($exportPresets as $label => [$from, $to])
+                            <button type="button" class="btn btn-sm btn-outline-primary export-preset" data-from="{{ $from }}" data-to="{{ $to }}">{{ $label }}</button>
+                        @endforeach
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="export-date-from" class="font-weight-bold small">Desde</label>
+                            <input type="date" class="form-control" id="export-date-from" name="date_from" value="{{ $today->copy()->startOfMonth()->toDateString() }}" max="{{ $today->toDateString() }}" required>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="export-date-to" class="font-weight-bold small">Hasta</label>
+                            <input type="date" class="form-control" id="export-date-to" name="date_to" value="{{ $selectedDate }}" max="{{ $today->toDateString() }}" required>
+                        </div>
+                    </div>
+                    <p class="text-danger small mb-0" id="export-date-error" hidden></p>
+                    <p class="text-muted small mb-0">
+                        Hasta un mes sale el detalle día por día; con más días, el total por estudiante.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link text-muted" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-download mr-1" aria-hidden="true"></i> Descargar PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('export-attendance-form');
+        const from = document.getElementById('export-date-from');
+        const to = document.getElementById('export-date-to');
+        const error = document.getElementById('export-date-error');
+        if (!form) return;
+
+        form.querySelectorAll('.export-preset').forEach(button => {
+            button.addEventListener('click', function () {
+                from.value = this.dataset.from;
+                to.value = this.dataset.to;
+                error.hidden = true;
+            });
+        });
+        form.addEventListener('submit', function (event) {
+            if (from.value && to.value && from.value > to.value) {
+                event.preventDefault();
+                error.textContent = 'La fecha «Desde» debe ser anterior o igual a «Hasta».';
+                error.hidden = false;
+                return;
+            }
+            error.hidden = true;
+            // La descarga empieza sola; se cierra la ventana para seguir trabajando.
+            setTimeout(() => window.jQuery && window.jQuery('#exportAttendanceModal').modal('hide'), 300);
+        });
+    });
+</script>
+@endif
 
 @if($canEdit && $selectedSubjectId && $selectedParallelId)
 <script>
