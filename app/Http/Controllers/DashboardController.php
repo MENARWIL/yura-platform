@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\Course;
 use App\Models\Student;
 use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -51,15 +53,12 @@ class DashboardController extends Controller
             $data['hijos_count'] = $data['mis_hijos']->count();
             $data['tutor_report'] = [
                 'average' => $allGrades->count() ? round($allGrades->avg('score'), 2) : null,
-                'attendance_percent' => $allAttendance->count()
-                    ? round(($allAttendance->filter(fn ($attendance) => strtolower(trim((string) $attendance->status)) === 'presente')->count() / $allAttendance->count()) * 100, 2)
-                    : null,
+                'attendance_percent' => Attendance::presentPercent($allAttendance),
                 'robot_total' => $data['mis_hijos']->sum(fn ($student) => $student->dashboard_report['robot_total']),
             ];
         } elseif ($user->isProfesor()) {
-            $teacherForeignKey = (new Student())->getTeacherUserForeignKey();
             $levelColumn = 'level';
-            $studentsQuery = Student::where($teacherForeignKey, $user->id)
+            $studentsQuery = Student::taughtBy($user)
                 ->when($selectedCourseId, function ($q) use ($selectedCourseId) {
                     return $q->where('course_id', $selectedCourseId);
                 })
@@ -75,16 +74,30 @@ class DashboardController extends Controller
                 return $student;
             });
 
-            $todayAttendance = $students->flatMap(fn ($student) => $student->attendances->where('date', $today));
-            $presentToday = $todayAttendance->filter(fn ($attendance) => strtolower(trim((string) $attendance->status)) === 'presente')->count();
-            $attendancePercent = $todayAttendance->count() ? round(($presentToday / $todayAttendance->count()) * 100, 2) : 0;
+            // 'date' es Carbon: se compara como Y-m-d (where('date', $today) nunca coincidía y daba 0%).
+            $todayAttendance = $students->flatMap(fn ($student) => $student->attendances->filter(
+                fn ($attendance) => $attendance->date?->toDateString() === $today
+            ));
+            $attendancePercent = Attendance::presentPercent($todayAttendance) ?? 0;
 
             $data['mis_estudiantes_count'] = $students->count();
-            $data['mis_estudiantes'] = $students;
-            $data['promedio_general'] = $studentAverages->count() ? round($studentAverages->avg('promedio_academico'), 2) : 0;
+            // Tabla «Estudiantes asignados»: de 5 en 5, en orden de lista (las métricas usan a todos).
+            $listed = $students->sortBy(fn ($s) => [$s->last_name ? 0 : 1, mb_strtolower((string) $s->last_name), mb_strtolower((string) $s->second_last_name), mb_strtolower((string) $s->first_name), mb_strtolower((string) $s->name)])->values();
+            $page = LengthAwarePaginator::resolveCurrentPage('estudiantes');
+            $data['mis_estudiantes'] = (new LengthAwarePaginator(
+                $listed->forPage($page, 5)->values(),
+                $listed->count(),
+                5,
+                $page,
+                ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => 'estudiantes']
+            ))->withQueryString();
+            // Solo cuentan los estudiantes con notas: sin calificaciones no hay "bajo rendimiento"
+            // ni deben bajar el promedio general con un 0 que no es real.
+            $graded = $studentAverages->filter(fn ($student) => $student->grades->where('status', 'completed')->contains(fn ($grade) => is_numeric($grade->score)));
+            $data['promedio_general'] = $graded->count() ? round($graded->avg('promedio_academico'), 2) : 0;
             $data['asistencia_hoy'] = $attendancePercent;
-            $data['bajo_rendimiento'] = $studentAverages->filter(fn ($student) => $student->promedio_academico < 60)->count();
-            $data['ranking'] = $studentAverages->sortByDesc('promedio_academico')->take(5)->values();
+            $data['bajo_rendimiento'] = $graded->filter(fn ($student) => $student->promedio_academico < 60)->count();
+            $data['ranking'] = $graded->sortByDesc('promedio_academico')->take(5)->values();
             $data['notas_recientes'] = \App\Models\Grade::whereIn('student_id', $students->pluck('id'))
                 ->with(['student', 'subject'])
                 ->orderByDesc('created_at')
@@ -125,15 +138,9 @@ class DashboardController extends Controller
         $data['total_courses'] = $totalCourses;
 
         // Metrics for dashboard cards, calculated from real data.
-        $todaysAttendance = \App\Models\Attendance::whereDate('date', today())->get();
-        $todaysAttendanceTotal = $todaysAttendance->count();
-        $todaysAttendancePresent = $todaysAttendance->filter(
-            fn ($attendance) => strtolower(trim((string) $attendance->status)) === 'presente'
-        )->count();
+        $todaysPercent = Attendance::presentPercent(Attendance::whereDate('date', today())->get(['status']), 0);
         // No hay registros de asistencia hoy: se muestra 0% en vez de un porcentaje inventado.
-        $data['today_attendance'] = $todaysAttendanceTotal
-            ? round(($todaysAttendancePresent / $todaysAttendanceTotal) * 100) . '%'
-            : '0%';
+        $data['today_attendance'] = ($todaysPercent ?? 0) . '%';
 
         // Retos de robot lanzados este mes (no el histórico total), para reflejar la actividad reciente del aula.
         $data['robot_challenges'] = \App\Models\Grade::where('is_robot_activity', true)

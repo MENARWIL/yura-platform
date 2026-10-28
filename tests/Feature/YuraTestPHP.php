@@ -124,7 +124,7 @@ it('permite al profesor registrar una nota de actividad en el cuaderno pedagógi
     $response = $this->actingAs($this->teacher)->post('/grades/save', [
         'student_id' => $student->id,
         'subject_id' => $this->course->id,
-        'score' => 87.5,
+        'score' => 88,
         'type' => 'activity',
         'activity_number' => 1,
         'quarter' => '1',
@@ -138,7 +138,7 @@ it('permite al profesor registrar una nota de actividad en el cuaderno pedagógi
     $this->assertDatabaseHas('grades', [
         'student_id' => $student->id,
         'subject_id' => $this->course->id,
-        'score' => 87.5,
+        'score' => 88,
         'type' => 'activity',
         'quarter' => 1,
         'status' => 'completed',

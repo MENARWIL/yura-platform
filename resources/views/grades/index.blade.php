@@ -52,10 +52,10 @@
                 </div>
             @endunless
             <!-- FILTROS DEL CUADERNO -->
-            <form method="GET" action="{{ route('grades.index') }}" class="filter-bar" aria-label="Filtros del cuaderno pedagógico">
+            <form method="GET" action="{{ route('grades.index') }}" class="filter-bar" aria-label="Filtros del cuaderno pedagógico" data-filter-required="subject_id,parallel_id,quarter">
                 <div class="fb-field {{ $selectedSubjectId ? 'is-set' : '' }}">
                     <label for="gf-subject"><i class="fas fa-book-open" aria-hidden="true"></i> Asignatura</label>
-                    <select id="gf-subject" name="subject_id" onchange="this.form.submit()">
+                    <select id="gf-subject" name="subject_id">
                         <option value="">Todas las asignaturas</option>
                         @foreach($subjects as $subject)
                             <option value="{{ $subject->id }}" {{ $selectedSubjectId == $subject->id ? 'selected' : '' }}>
@@ -66,7 +66,7 @@
                 </div>
                 <div class="fb-field {{ $selectedParallelId ? 'is-set' : '' }}">
                     <label for="gf-parallel"><i class="fas fa-users" aria-hidden="true"></i> Curso y paralelo</label>
-                    <select id="gf-parallel" name="parallel_id" onchange="this.form.submit()">
+                    <select id="gf-parallel" name="parallel_id">
                         <option value="">Todos los paralelos</option>
                         @foreach($parallels as $parallel)
                             <option value="{{ $parallel->id }}" {{ $selectedParallelId == $parallel->id ? 'selected' : '' }}>
@@ -77,7 +77,7 @@
                 </div>
                 <div class="fb-field">
                     <label for="gf-quarter"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Trimestre</label>
-                    <select id="gf-quarter" name="quarter" onchange="this.form.submit()">
+                    <select id="gf-quarter" name="quarter">
                         <option value="1" {{ $selectedQuarter == 1 ? 'selected' : '' }}>Primer Trimestre</option>
                         <option value="2" {{ $selectedQuarter == 2 ? 'selected' : '' }}>Segundo Trimestre</option>
                         <option value="3" {{ $selectedQuarter == 3 ? 'selected' : '' }}>Tercer Trimestre</option>
@@ -89,16 +89,19 @@
                             <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
                         </a>
                         @if($selectedSubjectId && $selectedParallelId)
-                            @if(auth()->user()->isProfesor())
-                                <button type="button" id="save-all-grades" class="fb-btn fb-btn-primary">
-                                    <i class="fas fa-save" aria-hidden="true"></i> Guardar notas
-                                </button>
-                            @endif
                             <a href="{{ route('grades.export.pdf', ['subject_id' => $selectedSubjectId, 'parallel_id' => $selectedParallelId, 'quarter' => $selectedQuarter]) }}" class="fb-btn fb-btn-outline">
                                 <i class="fas fa-file-pdf" aria-hidden="true"></i> Exportar PDF
                             </a>
                         @endif
                     </div>
+                @endif
+                <p class="fb-hint" data-filter-hint hidden>
+                    <i class="fas fa-info-circle" aria-hidden="true"></i> Elige asignatura y paralelo; el cuaderno se carga solo al completar los filtros.
+                </p>
+                @if($selectedSubjectId && $selectedParallelId && auth()->user()->isProfesor())
+                    <p class="fb-hint">
+                        <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Cada nota se guarda sola al salir de la casilla. Notas enteras de 1 a 100 (autoevaluación de 1 a 5).
+                    </p>
                 @endif
             </form>
 
@@ -115,7 +118,7 @@
                     </div>
                 </div>
             @else
-                <div class="table-responsive">
+                <div class="table-responsive table-scroll-box">
                     <table class="table table-hover align-middle table-bordered cuaderno-ser-saber-hacer" id="gradesTable">
                     <thead>
                         <tr>
@@ -205,27 +208,27 @@
                             {{-- SER (3) --}}
                             @foreach($ser as $n => $value)
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="activity" data-number="{{ $n }}" data-dimension="ser" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
+                                <input type="number" step="1" min="1" max="100" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="activity" data-number="{{ $n }}" data-dimension="ser" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
                             @endforeach
                             <td class="text-center font-weight-bold align-middle dim-cell dim-ser">{{ $promSer ?? '-' }}</td>
                             {{-- SABER (5) --}}
                             @foreach($saber as $n => $value)
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="exam" data-number="{{ $n }}" data-dimension="saber" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
+                                <input type="number" step="1" min="1" max="100" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="exam" data-number="{{ $n }}" data-dimension="saber" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
                             @endforeach
                             <td class="text-center font-weight-bold align-middle dim-cell dim-saber">{{ $promSaber ?? '-' }}</td>
                             {{-- HACER (5) - se completa normalmente con el resultado de la actividad del robot --}}
                             @foreach($hacer as $n => $value)
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="robot" data-number="{{ $n }}" data-dimension="hacer" value="{{ $value }}" placeholder="🤖" disabled title="Se completa automáticamente con el resultado de una actividad Yura.">
+                                <input type="number" step="1" min="1" max="100" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="robot" data-number="{{ $n }}" data-dimension="hacer" value="{{ $value }}" placeholder="🤖" disabled title="Se completa automáticamente con el resultado de una actividad Yura.">
                             </td>
                             @endforeach
                             <td class="text-center font-weight-bold align-middle dim-cell dim-hacer">{{ $promHacer ?? '-' }}</td>
                             <td class="text-center font-weight-bold align-middle total-cell">{{ $total ?? '-' }}</td>
                             <td class="text-center align-middle">
-                                <input type="number" step="0.1" min="0" max="5" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="autoeval" data-number="1" data-dimension="autoeval" value="{{ $autoeval }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
+                                <input type="number" step="1" min="1" max="5" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="autoeval" data-number="1" data-dimension="autoeval" value="{{ $autoeval }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
                             <td class="text-center font-weight-bold align-middle nota-bimestral-cell">{{ $notaBimestral ?? '-' }}</td>
                         </tr>
@@ -310,54 +313,21 @@
             }
         }
 
-        function createToastContainer() {
-            const containerId = 'grade-toast-container';
-            let container = document.getElementById(containerId);
-            if (container) {
-                return container;
-            }
+        const showSaveToast = (message, type) => window.YuraToast.show(message, type);
 
-            container = document.createElement('div');
-            container.id = containerId;
-            container.style.position = 'fixed';
-            container.style.bottom = '1rem';
-            container.style.right = '1rem';
-            container.style.zIndex = '1080';
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.gap = '0.5rem';
-            container.style.alignItems = 'flex-end';
-            document.body.appendChild(container);
-            return container;
+        // Límites por columna: SER/SABER sobre 100, autoevaluación sobre 5. Siempre enteros desde 1.
+        function maxFor(input) {
+            return input.dataset.type === 'autoeval' ? 5 : 100;
         }
 
-        function showSaveToast(message) {
-            const container = createToastContainer();
-            const toast = document.createElement('div');
-            toast.className = 'grade-save-toast';
-            toast.style.minWidth = '200px';
-            toast.style.padding = '0.85rem 1rem';
-            toast.style.background = 'rgba(40, 167, 69, 0.95)';
-            toast.style.color = '#ffffff';
-            toast.style.borderRadius = '0.75rem';
-            toast.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.12)';
-            toast.style.fontSize = '0.95rem';
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(10px)';
-            toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-            toast.textContent = message;
-            container.appendChild(toast);
-
-            requestAnimationFrame(() => {
-                toast.style.opacity = '1';
-                toast.style.transform = 'translateY(0)';
-            });
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(10px)';
-                toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-            }, 2000);
+        function validationError(input) {
+            const raw = input.value.trim();
+            const max = maxFor(input);
+            if (raw === '') return null;
+            if (!/^\d+$/.test(raw)) return 'La nota debe ser un número entero, sin decimales ni signos.';
+            const value = Number(raw);
+            if (value < 1 || value > max) return `La nota debe estar entre 1 y ${max}.`;
+            return null;
         }
 
         function clearGradeState(input) {
@@ -382,26 +352,34 @@
         function markInputError(input) {
             clearGradeState(input);
             input.classList.add('grade-save-error');
+            input._gradeSaveTimer = setTimeout(() => clearGradeState(input), 3000);
+        }
+
+        // Vuelve a la última nota guardada (las notas no se borran desde el cuaderno).
+        function revert(input) {
+            input.value = input.dataset.saved ?? '';
+            const row = input.closest('tr');
+            if (row) recalcRowAverage(row);
         }
 
         async function saveGrade(input) {
-            const studentId = input.dataset.student;
-            const type = input.dataset.type;
-            const activityNumber = input.dataset.number;
-            const score = parseGradeValue(input.value);
-
-            if (score === null || score < 0 || score > 100) {
-                return false;
+            const error = validationError(input);
+            if (error) {
+                markInputError(input);
+                showSaveToast(error, 'error');
+                revert(input);
+                return;
             }
-
-            const payload = {
-                student_id: studentId,
-                subject_id: '{{ $selectedSubjectId }}',
-                type: type,
-                activity_number: activityNumber,
-                quarter: '{{ $selectedQuarter }}',
-                score: score,
-            };
+            if (input.value.trim() === '') {
+                if (input.dataset.saved) {
+                    showSaveToast('La nota no se puede dejar vacía; se restauró la anterior.', 'error');
+                }
+                revert(input);
+                return;
+            }
+            if (input.value.trim() === (input.dataset.saved ?? '')) {
+                return;
+            }
 
             markInputProcessing(input);
 
@@ -413,55 +391,63 @@
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': csrfToken,
                     },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({
+                        student_id: input.dataset.student,
+                        subject_id: '{{ $selectedSubjectId }}',
+                        type: input.dataset.type,
+                        activity_number: input.dataset.number,
+                        quarter: '{{ $selectedQuarter }}',
+                        score: Number(input.value),
+                    }),
                 });
 
                 const data = await response.json().catch(() => null);
                 if (!response.ok || !data?.success) {
+                    const firstError = data?.errors ? Object.values(data.errors)[0]?.[0] : null;
                     markInputError(input);
-                    console.error('Error guardando nota:', response.statusText, data?.message || 'Respuesta inválida');
+                    showSaveToast(firstError || data?.message || 'No se pudo guardar la nota.', 'error');
+                    revert(input);
                     return;
                 }
 
+                input.dataset.saved = input.value.trim();
                 markInputSaved(input);
-                showSaveToast('✓ Calificación guardada');
-                return true;
+                showSaveToast('✓ Cambios guardados');
             } catch (error) {
                 markInputError(input);
-                console.error('Error en la petición:', error);
-                return false;
+                showSaveToast('Error de conexión: la nota no se guardó.', 'error');
+                revert(input);
             }
         }
 
         gradeInputs.forEach(input => {
+            // Muestra "87.00" como "87" (las notas antiguas con decimales reales se dejan tal cual).
+            if (input.value !== '' && Number.isInteger(Number(input.value))) {
+                input.value = String(Number(input.value));
+            }
+            input.dataset.saved = input.value;
+
             const row = input.closest('tr');
             if (row) {
                 recalcRowAverage(row);
             }
 
-            input.addEventListener('change', function () {
-                const row = this.closest('tr');
-                if (row) {
-                    recalcRowAverage(row);
+            // Bloquea signos, decimales y notación científica desde el teclado.
+            input.addEventListener('keydown', function (event) {
+                if (['-', '+', 'e', 'E', '.', ','].includes(event.key)) {
+                    event.preventDefault();
                 }
+            });
+            input.addEventListener('input', function () {
+                const digits = this.value.replace(/\D/g, '').slice(0, 3);
+                if (digits !== this.value) this.value = digits;
+                const row = this.closest('tr');
+                if (row) recalcRowAverage(row);
+            });
+            input.addEventListener('change', function () {
                 saveGrade(this);
             });
         });
-
-        const saveAllButton = document.getElementById('save-all-grades');
-        if (saveAllButton) {
-            saveAllButton.addEventListener('click', async function () {
-                const originalText = this.innerHTML;
-                this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
-                const results = await Promise.all(Array.from(gradeInputs).map(saveGrade));
-                this.disabled = false;
-                this.innerHTML = originalText;
-                if (results.some(Boolean)) {
-                    showSaveToast('✓ Notas guardadas correctamente');
-                }
-            });
-        }
     });
 </script>
 

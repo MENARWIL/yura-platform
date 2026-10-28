@@ -23,9 +23,40 @@ class Attendance extends Model
         'status',
     ];
 
+    /** Estados que el profesor puede registrar (se guardan tal cual en la columna status). */
+    public const STATUSES = ['Presente', 'Falta', 'Atraso', 'Licencia'];
+
     protected $casts = [
         'date' => 'date',
     ];
+
+    public static function normalizeStatus(?string $status): string
+    {
+        return mb_strtolower(trim((string) $status), 'UTF-8');
+    }
+
+    /**
+     * Porcentaje de asistencia (Presente sobre el total). La licencia es una ausencia
+     * justificada: no cuenta como presente ni como falta, así que se excluye del total.
+     * Devuelve null cuando no hay registros que contar.
+     */
+    public static function presentPercent(iterable $attendances, int $precision = 2): ?float
+    {
+        $counted = 0;
+        $present = 0;
+        foreach ($attendances as $attendance) {
+            $status = self::normalizeStatus($attendance->status);
+            if ($status === 'licencia') {
+                continue;
+            }
+            $counted++;
+            if ($status === 'presente') {
+                $present++;
+            }
+        }
+
+        return $counted ? round(($present / $counted) * 100, $precision) : null;
+    }
 
     public function student(): BelongsTo
     {

@@ -18,14 +18,13 @@ class StudentController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
         $studentModel = new Student();
-        $teacherForeignKey = $studentModel->getTeacherUserForeignKey();
         $parentForeignKey = $studentModel->getParentUserForeignKey();
         $studentUserForeignKey = $studentModel->getStudentUserForeignKey();
 
         $query = Student::with(['padre', 'profesor', 'parallel', 'course']);
 
         if ($user->isProfesor()) {
-            $query->where($teacherForeignKey, $user->id);
+            $query->taughtBy($user);
         } elseif ($user->isEstudiante()) {
             $query->where($studentUserForeignKey, $user->id);
         } elseif (! $user->isAdmin()) {

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use App\Models\AcademicYear;
@@ -28,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Grade::observe(GradeObserver::class);
+
+        // Las pantallas internas usan Bootstrap 4 (AdminLTE); Laravel genera Tailwind por defecto.
+        Paginator::useBootstrapFour();
 
         // Cada estudiante tiene una matrícula en la gestión actual que sigue a su curso y paralelo.
         Student::saved(function (Student $student) {

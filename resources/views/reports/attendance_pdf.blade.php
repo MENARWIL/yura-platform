@@ -15,6 +15,7 @@
         .badge-presente { background-color: #d4edda; color: #155724; }
         .badge-falta { background-color: #f8d7da; color: #721c24; }
         .badge-atraso { background-color: #fff3cd; color: #856404; }
+        .badge-licencia { background-color: #dbe6fb; color: #1847b5; }
         .badge-sin-registro { background-color: #eee; color: #888; }
         .summary { margin-top: 20px; padding: 12px; background-color: #f8f9fa; border-radius: 10px; }
         .summary-item { display: inline-block; width: 30%; }
@@ -37,6 +38,7 @@
     @php
         $presentCount = 0;
         $totalCount = 0;
+        $countedCount = 0;
     @endphp
 
     <table>
@@ -55,12 +57,14 @@
                     $normalized = strtolower(trim((string) $status));
                     if ($status) {
                         $totalCount++;
+                        if ($normalized !== 'licencia') { $countedCount++; }
                         if ($normalized === 'presente') { $presentCount++; }
                     }
                     $badgeClass = match($normalized) {
                         'presente' => 'badge-presente',
                         'falta' => 'badge-falta',
                         'atraso' => 'badge-atraso',
+                        'licencia' => 'badge-licencia',
                         default => 'badge-sin-registro',
                     };
                 @endphp
@@ -86,8 +90,8 @@
             <b>{{ $totalCount }}</b>
         </div>
         <div class="summary-item">
-            <small>% Presentes (sobre registrados)</small>
-            <b>{{ $totalCount ? round(($presentCount / $totalCount) * 100, 1) : 0 }}%</b>
+            <small>% Presentes (sin contar licencias)</small>
+            <b>{{ $countedCount ? round(($presentCount / $countedCount) * 100, 1) : 0 }}%</b>
         </div>
     </div>
 

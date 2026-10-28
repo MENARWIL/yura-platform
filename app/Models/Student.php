@@ -112,6 +112,33 @@ class Student extends Model
             ->orderBy('id');
     }
 
+    /**
+     * Estudiantes que atiende un profesor: los que tiene asignados directamente o los de
+     * los paralelos de sus asignaciones docentes activas (opcionalmente de una asignatura).
+     * Es el mismo criterio con el que se le permite guardar notas y asistencia.
+     */
+    public function scopeTaughtBy($query, User $teacher, ?int $subjectId = null)
+    {
+        $parallelIds = self::assignedParallelIds($teacher, $subjectId);
+
+        return $query->where(function ($q) use ($teacher, $parallelIds) {
+            $q->where($this->getTeacherUserForeignKey(), $teacher->id)
+                ->when($parallelIds, fn ($inner) => $inner->orWhereIn('parallel_id', $parallelIds));
+        });
+    }
+
+    /** Paralelos de las asignaciones docentes activas de un profesor. */
+    public static function assignedParallelIds(User $teacher, ?int $subjectId = null): array
+    {
+        return TeachingAssignment::where('teacher_user_id', $teacher->id)
+            ->where('active', true)
+            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
+            ->whereNotNull('parallel_id')
+            ->distinct()
+            ->pluck('parallel_id')
+            ->all();
+    }
+
     public function enrollments(): HasMany
     {
         return $this->hasMany(Enrollment::class);
@@ -537,17 +564,7 @@ class Student extends Model
 
     public function realAttendancePercent(): ?float
     {
-        $total = $this->attendances()->count();
-
-        if ($total === 0) {
-            return null;
-        }
-
-        $present = $this->attendances()
-            ->whereRaw('LOWER(TRIM(status)) = ?', ['presente'])
-            ->count();
-
-        return round(($present / $total) * 100, 2);
+        return Attendance::presentPercent($this->attendances()->get(['status']));
     }
 
     private function averageGradeScoreForTypes(array $types): ?float
