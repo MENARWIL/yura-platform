@@ -32,6 +32,8 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- Vistas compiladas aparte: así las pruebas no chocan en Windows con las que usa el navegador (XAMPP). -->
+        <env name="VIEW_COMPILED_PATH" value="storage/framework/views-testing"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
 </phpunit>
