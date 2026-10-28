@@ -153,6 +153,16 @@
         });
     }
 
+    // Las ventanas (modales) que vienen dentro de una lista en vivo se abren desde <body>: dentro de
+    // una tarjeta animada quedarían detrás del fondo oscuro.
+    if (window.jQuery) {
+        window.jQuery(document).on('show.bs.modal', '[data-live-results] .modal, [data-live-pagination] .modal', function () {
+            var stale = document.body.querySelector(':scope > #' + CSS.escape(this.id));
+            if (stale && stale !== this) stale.remove();
+            document.body.appendChild(this);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('form[data-filter-required]').forEach(initRequiredFilters);
         document.querySelectorAll('form[data-live-search]').forEach(initLiveSearch);

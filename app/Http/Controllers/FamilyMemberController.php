@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\StudentFamilyMember;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -17,9 +18,11 @@ class FamilyMemberController extends Controller
             'student_name' => ['nullable', 'string', 'max:255'],
             'course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
+            'per_page' => ['nullable', 'integer', Rule::in([5, 10, 15, 20])],
         ]);
 
         $authUser = Auth::user();
+        $search = preg_replace('/\s+/', ' ', trim((string) ($filters['student_name'] ?? ''))) ?: null;
 
         $familyMembers = StudentFamilyMember::with(['student.course', 'student.parallel', 'user'])
             ->where('active', true)
@@ -27,10 +30,20 @@ class FamilyMemberController extends Controller
             ->when($authUser->isResponsibleRole(), function ($query) use ($authUser) {
                 $query->where('user_id', $authUser->id);
             })
+            // Busca por nombre o apellidos del estudiante, o por el nombre del tutor.
+            ->when($search, function ($query, $search) {
+                $like = '%' . $search . '%';
+                $query->where(function ($q) use ($like) {
+                    $q->whereHas('student', fn ($s) => $s->where('name', 'like', $like)
+                        ->orWhere('first_name', 'like', $like)
+                        ->orWhere('last_name', 'like', $like)
+                        ->orWhere('second_last_name', 'like', $like))
+                        ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $like)
+                            ->orWhere('last_name', 'like', $like));
+                });
+            })
             ->whereHas('student', function ($query) use ($filters) {
-                $query->when($filters['student_name'] ?? null, function ($studentQuery, $studentName) {
-                    $studentQuery->where('name', 'like', '%' . $studentName . '%');
-                })->when($filters['course_id'] ?? null, function ($studentQuery, $courseId) {
+                $query->when($filters['course_id'] ?? null, function ($studentQuery, $courseId) {
                     $studentQuery->where('course_id', $courseId);
                 })->when($filters['parallel_id'] ?? null, function ($studentQuery, $parallelId) {
                     $studentQuery->where('parallel_id', $parallelId);
@@ -46,6 +59,17 @@ class FamilyMemberController extends Controller
                     : '1_' . mb_strtolower($member->user->name ?? '');
             })
             ->values();
+
+        // De 5 en 5 (o lo que elija el usuario), sobre la lista ya ordenada por apellido del tutor.
+        $perPage = (int) ($filters['per_page'] ?? 5);
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $familyMembers = (new LengthAwarePaginator(
+            $familyMembers->forPage($page, $perPage)->values(),
+            $familyMembers->count(),
+            $perPage,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        ))->withQueryString();
 
         $courses = \App\Models\Course::orderBy('name')->get();
         $parallels = \App\Models\Parallel::with('course')->orderBy('name')->get();

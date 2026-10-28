@@ -16,14 +16,43 @@
             </div>
         </div>
         <div class="card-body p-4 bg-white">
-            <div class="form-group mb-4">
-                <label for="user-search" class="sr-only">{{ __('messages.search') }}</label>
-                <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
-                    <input type="search" id="user-search" class="form-control" placeholder="{{ __('messages.search_users') }}" autocomplete="off">
+            <form action="{{ route('users.index') }}" method="GET" class="filter-bar" aria-label="Filtros de usuarios" data-live-search="#users-results">
+                <div class="fb-field fb-wide {{ request('q') ? 'is-set' : '' }}">
+                    <label for="user-search"><i class="fas fa-user" aria-hidden="true"></i> Usuario</label>
+                    <div class="fb-search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                        <input type="search" id="user-search" name="q" value="{{ request('q') }}" placeholder="Nombre, apellido, correo, teléfono o CI" autocomplete="off">
+                    </div>
                 </div>
-                <small id="user-search-count" class="form-text text-muted"></small>
-            </div>
+                <div class="fb-field {{ request('role') ? 'is-set' : '' }}">
+                    <label for="user-role"><i class="fas fa-id-badge" aria-hidden="true"></i> Rol</label>
+                    <select id="user-role" name="role">
+                        <option value="">Todos los roles</option>
+                        @foreach($roleFilters as $value => $label)
+                            <option value="{{ $value }}" {{ request('role') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fb-field fb-narrow">
+                    <label for="user-per-page"><i class="fas fa-list-ol" aria-hidden="true"></i> Mostrar</label>
+                    <select id="user-per-page" name="per_page">
+                        @foreach([5, 10, 15, 20] as $size)
+                            <option value="{{ $size }}" {{ $users->perPage() === $size ? 'selected' : '' }}>{{ $size }} por página</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fb-actions">
+                    @if(request('q') || request('role'))
+                        <a href="{{ route('users.index') }}" class="fb-btn fb-btn-ghost" title="Quitar todos los filtros">
+                            <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
+                        </a>
+                    @endif
+                    <button type="submit" class="fb-btn fb-btn-primary">
+                        <i class="fas fa-search" aria-hidden="true"></i> Buscar
+                    </button>
+                </div>
+            </form>
+            <div id="users-results" data-live-results>
             <div class="table-responsive">
                 <table class="table table-hover align-middle" id="users-table">
                     <thead>
@@ -65,7 +94,12 @@
                                     {{ $user->role }}
                                 </span>
                             </td>
-                            <td class="text-center text-muted">{{ optional($user->mainCourse)->name ?? '-' }}</td>
+                            <td class="text-center text-muted">
+                                {{-- Asignaturas de sus asignaciones docentes activas (o la asignatura principal del profesor). --}}
+                                {{ $user->isProfesor()
+                                    ? ($user->teachingAssignments->where('active', true)->pluck('subject.name')->push($user->mainSubject?->name)->filter()->unique()->implode(', ') ?: '-')
+                                    : '-' }}
+                            </td>
                             <td class="text-center text-muted">
                                 @if($user->isProfesor())
                                     {{-- Paralelos de sus asignaciones docentes activas y de los estudiantes asignados directamente. --}}
@@ -104,8 +138,18 @@
                             </td>
                         </tr>
                         @endforeach
+                        @if($users->isEmpty())
+                            <tr><td colspan="7" class="text-center text-muted py-5">No hay usuarios para los filtros seleccionados.</td></tr>
+                        @endif
                     </tbody>
                 </table>
+            </div>
+            @if($users->total() > 0)
+                <div class="list-footer">
+                    <span class="list-count">Mostrando {{ $users->firstItem() }}–{{ $users->lastItem() }} de {{ $users->total() }} usuarios</span>
+                    {{ $users->onEachSide(1)->links() }}
+                </div>
+            @endif
             </div>
 
             @if($deletedUsers->isNotEmpty())
@@ -162,27 +206,4 @@
         </div>
     </div>
 </div>
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('user-search');
-    const rows = Array.from(document.querySelectorAll('#users-table .user-row'));
-    const count = document.getElementById('user-search-count');
-    const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-    function filterUsers() {
-        const term = normalize(input.value.trim());
-        let visible = 0;
-        rows.forEach(row => {
-            const matches = !term || normalize(row.textContent).includes(term);
-            row.classList.toggle('d-none', !matches);
-            if (matches) visible++;
-        });
-        count.textContent = term ? `${visible} {{ __('messages.search_results') }}` : '';
-    }
-
-    input.addEventListener('input', filterUsers);
-});
-</script>
-@endpush
 @endsection

@@ -29,7 +29,8 @@
                             @php
                                 $levelValue = $student->level ?? $student->nivel;
                                 $ageValue = $student->age ?? $student->edad;
-                                $teacherName = $student->teacher?->name ?? $student->profesor?->name;
+                                // Profesores de la asignación docente del paralelo (y el directo, si lo hay).
+                                $teacherName = $student->teachersLabel();
                             @endphp
                             @if(filled($levelValue))
                                 <p class="h5 font-weight-bold">{{ mb_strtoupper($levelValue, 'UTF-8') }}</p>

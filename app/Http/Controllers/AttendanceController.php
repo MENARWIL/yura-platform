@@ -9,12 +9,16 @@ use App\Models\Subject;
 use App\Models\TeachingAssignment;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class AttendanceController extends Controller
 {
+    /** Días que caben como columnas en el PDF; con más, solo va el resumen por estudiante. */
+    private const PDF_MAX_DAY_COLUMNS = 31;
+
     public function index(Request $request)
     {
         /** @var User $user */
@@ -88,9 +92,28 @@ class AttendanceController extends Controller
             abort(403, __('messages.unauthorized'));
         }
 
-        $selectedSubjectId = $request->integer('subject_id');
-        $selectedParallelId = $request->integer('parallel_id');
-        $selectedDate = $request->input('date') ?: now()->toDateString();
+        // Rango de fechas que elige el profesor (un solo día con «date», por compatibilidad).
+        $request->merge([
+            'date_from' => $request->input('date_from', $request->input('date')) ?: now()->toDateString(),
+            'date_to' => $request->input('date_to', $request->input('date')) ?: now()->toDateString(),
+        ]);
+        $range = $request->validate([
+            'subject_id' => 'nullable|integer|exists:subjects,id',
+            'parallel_id' => 'nullable|integer|exists:parallels,id',
+            'date_from' => 'required|date|before_or_equal:today',
+            'date_to' => 'required|date|after_or_equal:date_from|before_or_equal:today',
+        ], $this->validationMessages() + [
+            'date_from.before_or_equal' => 'La fecha «Desde» no puede ser futura.',
+            'date_to.after_or_equal' => 'La fecha «Hasta» debe ser igual o posterior a «Desde».',
+        ]);
+        $dateFrom = Carbon::parse($range['date_from'])->startOfDay();
+        $dateTo = Carbon::parse($range['date_to'])->startOfDay();
+        if ($dateFrom->diffInDays($dateTo) > 366) {
+            return back()->withErrors(['date_to' => 'El rango no puede superar un año.'])->withInput();
+        }
+
+        $selectedSubjectId = (int) ($range['subject_id'] ?? 0);
+        $selectedParallelId = (int) ($range['parallel_id'] ?? 0);
 
         $subject = $selectedSubjectId ? Subject::find($selectedSubjectId) : null;
         $parallel = $selectedParallelId ? Parallel::with('course')->find($selectedParallelId) : null;
@@ -109,24 +132,54 @@ class AttendanceController extends Controller
         $students = $query->orderedForList()->get();
         $studentIds = $students->pluck('id')->all();
 
-        $attendanceForDate = Attendance::whereIn('student_id', $studentIds)
+        $records = Attendance::whereIn('student_id', $studentIds)
             ->when($selectedSubjectId, function ($query) use ($selectedSubjectId) {
                 return $query->where('subject_id', $selectedSubjectId);
             })
-            ->whereDate('date', $selectedDate)
-            ->get()
-            ->keyBy('student_id');
+            ->whereDate('date', '>=', $dateFrom->toDateString())
+            ->whereDate('date', '<=', $dateTo->toDateString())
+            ->orderBy('date')
+            ->get();
+
+        // Solo los días con algún registro (días de clase); [estudiante][Y-m-d] => estado.
+        $days = $records->map(fn ($r) => $r->date->toDateString())->unique()->sort()->values();
+        $grid = [];
+        foreach ($records as $record) {
+            $grid[$record->student_id][$record->date->toDateString()] = $record->status;
+        }
+        $totals = $students->mapWithKeys(function ($student) use ($records) {
+            $own = $records->where('student_id', $student->id);
+            $count = fn (string $status) => $own->filter(fn ($r) => Attendance::normalizeStatus($r->status) === $status)->count();
+
+            return [$student->id => [
+                'Presente' => $count('presente'),
+                'Falta' => $count('falta'),
+                'Atraso' => $count('atraso'),
+                'Licencia' => $count('licencia'),
+                'percent' => Attendance::presentPercent($own, 1),
+            ]];
+        });
+        // Con muchos días la tabla no cabe en la hoja: se muestra solo el resumen por estudiante.
+        $showDays = $days->isNotEmpty() && $days->count() <= self::PDF_MAX_DAY_COLUMNS;
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.attendance_pdf', compact(
             'students',
-            'attendanceForDate',
             'subject',
             'parallel',
-            'selectedDate'
+            'dateFrom',
+            'dateTo',
+            'days',
+            'grid',
+            'totals',
+            'showDays'
         ));
-        $pdf->setPaper('A4', 'portrait');
+        $pdf->setPaper('A4', $showDays && $days->count() > 6 ? 'landscape' : 'portrait');
 
-        return $pdf->download('asistencia_' . date('Ymd_His') . '.pdf');
+        $name = $dateFrom->equalTo($dateTo)
+            ? $dateFrom->format('Ymd')
+            : $dateFrom->format('Ymd') . '_a_' . $dateTo->format('Ymd');
+
+        return $pdf->download('asistencia_' . $name . '.pdf');
     }
 
     public function save(Request $request)

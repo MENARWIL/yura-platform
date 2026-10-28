@@ -277,6 +277,129 @@ class QaWebImprovementsTest extends TestCase
         $this->assertSame(['Estudiante 6', 'Estudiante 7'], collect($page2->items())->pluck('name')->all());
     }
 
+    public function test_attendance_pdf_exports_a_date_range_chosen_by_the_teacher(): void
+    {
+        $ana = $this->student('Ana Quispe', ['teacher_user_id' => null]);
+        $luis = $this->student('Luis Mamani', ['teacher_user_id' => null]);
+        $records = [
+            [$ana, '2026-10-05', 'Presente'], [$luis, '2026-10-05', 'Falta'],
+            [$ana, '2026-10-06', 'Licencia'], [$luis, '2026-10-06', 'Presente'],
+            [$ana, '2026-09-20', 'Falta'], // fuera del rango
+        ];
+        foreach ($records as [$student, $date, $status]) {
+            Attendance::create(['student_id' => $student->id, 'subject_id' => $this->subject->id, 'date' => $date, 'status' => $status]);
+        }
+        $base = '/attendance/export-pdf?subject_id=' . $this->subject->id . '&parallel_id=' . $this->parallel->id;
+
+        $this->actingAs($this->teacher)->get($base . '&date_from=2026-10-01&date_to=2026-10-10')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertDownload('asistencia_20261001_a_20261010.pdf');
+
+        // Un solo día con el parámetro de siempre sigue funcionando.
+        $this->actingAs($this->teacher)->get($base . '&date=2026-10-05')
+            ->assertOk()->assertDownload('asistencia_20261005.pdf');
+
+        $this->actingAs($this->teacher)->get($base . '&date_from=2026-10-10&date_to=2026-10-01')
+            ->assertSessionHasErrors('date_to');
+        $this->actingAs($this->teacher)->get($base . '&date_from=2026-10-01&date_to=' . now()->addDay()->toDateString())
+            ->assertSessionHasErrors('date_to');
+    }
+
+    public function test_attendance_pdf_range_counts_per_student(): void
+    {
+        $ana = $this->student('Ana Quispe', ['teacher_user_id' => null]);
+        foreach ([['2026-10-05', 'Presente'], ['2026-10-06', 'Falta'], ['2026-10-07', 'Licencia'], ['2026-09-01', 'Falta']] as [$date, $status]) {
+            Attendance::create(['student_id' => $ana->id, 'subject_id' => $this->subject->id, 'date' => $date, 'status' => $status]);
+        }
+
+        $html = view('reports.attendance_pdf', $this->pdfData($ana, '2026-10-01', '2026-10-10'))->render();
+
+        $this->assertStringContainsString('Periodo:', $html);
+        $this->assertStringContainsString('01/10/2026 al 10/10/2026', $html);
+        $this->assertStringContainsString('05/10', $html);
+        $this->assertStringNotContainsString('01/09', $html);
+        // 1 presente y 1 falta (la licencia no cuenta): 50 %.
+        $this->assertStringContainsString('50%', $html);
+    }
+
+    private function pdfData(Student $student, string $from, string $to): array
+    {
+        $this->actingAs($this->teacher);
+        $records = Attendance::where('student_id', $student->id)->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->orderBy('date')->get();
+        $days = $records->map(fn ($r) => $r->date->toDateString())->unique()->values();
+
+        return [
+            'students' => collect([$student]),
+            'subject' => $this->subject,
+            'parallel' => $this->parallel,
+            'dateFrom' => \Illuminate\Support\Carbon::parse($from),
+            'dateTo' => \Illuminate\Support\Carbon::parse($to),
+            'days' => $days,
+            'grid' => [$student->id => $records->mapWithKeys(fn ($r) => [$r->date->toDateString() => $r->status])->all()],
+            'totals' => collect([$student->id => [
+                'Presente' => 1, 'Falta' => 1, 'Atraso' => 0, 'Licencia' => 1,
+                'percent' => Attendance::presentPercent($records, 1),
+            ]]),
+            'showDays' => true,
+        ];
+    }
+
+    public function test_student_record_shows_teacher_from_teaching_assignment(): void
+    {
+        $admin = User::factory()->create(['rol' => 'admin', 'estado' => 'activo']);
+        $student = $this->student('Ana Quispe', ['teacher_user_id' => null]);
+        $otherParallel = Parallel::create(['name' => 'B', 'course_id' => $this->course->id, 'max_students' => 40]);
+        $alone = $this->student('Sin Profesor', ['teacher_user_id' => null, 'parallel_id' => $otherParallel->id]);
+
+        $this->assertSame($this->teacher->name . ' (' . $this->subject->name . ')', $student->teachersLabel());
+        $this->assertNull($alone->teachersLabel());
+
+        $this->actingAs($admin)->get(route('grades.show', $student))
+            ->assertOk()->assertSee($this->teacher->name);
+    }
+
+    public function test_family_relations_are_paginated_and_searchable_by_surname_or_tutor(): void
+    {
+        $admin = User::factory()->create(['rol' => 'admin', 'estado' => 'activo']);
+        foreach (range(1, 6) as $i) {
+            $tutor = User::factory()->create(['rol' => 'tutor', 'estado' => 'activo', 'name' => "Tutor Numero{$i}", 'last_name' => "Tutor{$i}"]);
+            $student = $this->student("Estudiante {$i}", ['first_name' => "Nombre{$i}", 'last_name' => "Apellido{$i}"]);
+            \App\Models\StudentFamilyMember::create([
+                'student_id' => $student->id, 'user_id' => $tutor->id, 'relation_type' => 'tutor',
+                'is_primary' => true, 'active' => true, 'can_view' => true,
+            ]);
+        }
+
+        $this->actingAs($admin)->get('/family-members')
+            ->assertOk()->assertSee('Mostrando 1–5 de 6 relaciones');
+
+        $this->actingAs($admin)->get('/family-members?student_name=Apellido3')
+            ->assertOk()->assertSee('Estudiante 3')->assertDontSee('Estudiante 4');
+
+        $this->actingAs($admin)->get('/family-members?student_name=Numero5')
+            ->assertOk()->assertSee('Estudiante 5')->assertDontSee('Estudiante 2');
+    }
+
+    public function test_user_list_is_paginated_and_searchable_on_the_server(): void
+    {
+        $admin = User::factory()->create(['rol' => 'admin', 'estado' => 'activo']);
+        foreach (range(1, 6) as $i) {
+            User::factory()->create(['rol' => 'tutor', 'estado' => 'activo', 'name' => "Persona Tutor{$i}", 'last_name' => sprintf('Zeta%02d', $i), 'email' => "tutor{$i}@example.test"]);
+        }
+
+        $response = $this->actingAs($admin)->get('/users')->assertOk();
+        $this->assertCount(5, $response->viewData('users'));
+
+        // Busca en todas las páginas, no solo en la visible.
+        $this->actingAs($admin)->get('/users?q=tutor6@example.test')
+            ->assertOk()->assertSee('Persona Tutor6')->assertDontSee('Persona Tutor1');
+
+        $familia = $this->actingAs($admin)->get('/users?role=familia&per_page=20')->viewData('users');
+        $this->assertSame(6, $familia->total());
+        $this->assertSame(1, $this->actingAs($admin)->get('/users?role=profesor')->viewData('users')->total());
+    }
+
     public function test_clearing_the_student_search_shows_the_full_list(): void
     {
         $admin = User::factory()->create(['rol' => 'admin', 'estado' => 'activo']);
