@@ -23,3 +23,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Documentación interna (se queda solo en local)
+/CHANGELOG.md
+/tests/QA/
+/docs/
+*.pdf
+*.docx
