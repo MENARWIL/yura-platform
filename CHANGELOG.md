@@ -17,8 +17,13 @@ y se agrega su sección aquí.
 Mejoras sobre la 0.6.0: exportación de asistencia por fechas, profesor visible en la ficha y listas largas con búsqueda y paginación.
 
 ### Agregado
+- Baja de estudiantes (solo el administrador): «Dar de baja / Transferir» en la ficha, con motivo elegido de una lista (transferencia a otra unidad educativa, abandono escolar u otro), destino, fecha y detalle. El estudiante no se borra: pasa a «inactivo», deja de aparecer en listas, notas, asistencia, panel, app y actividades del robot, no ocupa cupo, y se guarda un respaldo de sus datos (curso, responsables, notas y asistencia). Filtro «Dados de baja» en Estudiantes y botón «Reincorporar». Queda en la Auditoría.
+- API de la app para el profesor: asistencia y cuaderno de notas con las mismas reglas que la web.
 - Exportar la asistencia en PDF de una fecha a otra (con atajos Hoy, Esta semana, Este mes y Este año): detalle día por día hasta 31 días con registro y, con más, el total por estudiante con su porcentaje.
 - Relaciones activas (Gestión Académica) y Usuarios con búsqueda en vivo en el servidor y 5 por página; Relaciones busca por nombre o apellidos del estudiante o del tutor, y Usuarios por nombre, apellidos, correo, teléfono o CI, con filtro por rol.
+
+### Cambiado
+- Se eliminó la columna `name` de los estudiantes: el nombre se guarda solo en sus partes (apellido paterno, materno y nombres). El nombre completo lo arma el sistema al mostrarlo y la API lo sigue entregando como `name`, así la app y el robot no cambian. Búsquedas y orden de listas usan las partes. El apellido materno es opcional. Ningún nombre de la lista existente cambió.
 
 ### Corregido
 - La ficha del estudiante y los reportes de estudiantes (PDF y Excel) mostraban «Sin asignar» en Profesor aunque hubiera asignación docente.

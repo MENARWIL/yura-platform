@@ -21,7 +21,7 @@ class DashboardController extends Controller
         $courses = Course::all();
         $data = [];
 
-        $totalStudents = Student::count();
+        $totalStudents = Student::active()->count();
         $totalCourses = Course::count();
 
         if ($user->isAdmin()) {
@@ -58,7 +58,7 @@ class DashboardController extends Controller
             ];
         } elseif ($user->isProfesor()) {
             $levelColumn = 'level';
-            $studentsQuery = Student::taughtBy($user)
+            $studentsQuery = Student::taughtBy($user)->active()
                 ->when($selectedCourseId, function ($q) use ($selectedCourseId) {
                     return $q->where('course_id', $selectedCourseId);
                 })
@@ -134,7 +134,7 @@ class DashboardController extends Controller
             $data['hijos_count'] = $data['mis_hijos']->count();
         }
 
-        $data['total_students'] = $selectedCourseId ? Student::where('course_id', $selectedCourseId)->count() : $totalStudents;
+        $data['total_students'] = $selectedCourseId ? Student::active()->where('course_id', $selectedCourseId)->count() : $totalStudents;
         $data['total_courses'] = $totalCourses;
 
         // Metrics for dashboard cards, calculated from real data.

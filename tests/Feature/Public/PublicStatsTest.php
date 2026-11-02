@@ -135,7 +135,7 @@ class PublicStatsTest extends TestCase
         $this->grade($kept, 'pending');
         // Las notas de un estudiante eliminado no se cuentan.
         $this->grade($this->student('Eliminado con notas'), 'completed');
-        Student::where('name', 'Eliminado con notas')->first()->delete();
+        Student::whereFullName('Eliminado con notas')->first()->delete();
 
         $summary = PublicStats::summary();
 

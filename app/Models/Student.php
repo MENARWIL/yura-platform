@@ -17,6 +17,34 @@ class Student extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * El nombre se guarda solo en sus partes: last_name (paterno), second_last_name (materno) y
+     * first_name (nombres). No hay columna `name` en la base: `$student->name` se arma al leerlo
+     * ("PATERNO MATERNO NOMBRES") y también sale en el JSON de la API, porque lo usan la app,
+     * el robot, los PDF y los reportes.
+     */
+    protected $appends = ['name'];
+
+    /** Nombre completo recibido de un cliente antiguo (solo «nombre»), mientras se guarda. */
+    private ?string $legacyFullName = null;
+
+    protected static function booted(): void
+    {
+        static::saving(function (Student $student) {
+            $clean = fn ($value) => ($v = preg_replace('/\s+/', ' ', trim((string) $value))) === '' ? null : $v;
+            foreach (['last_name', 'second_last_name', 'first_name'] as $part) {
+                $student->setAttribute($part, $clean($student->getAttribute($part)));
+            }
+
+            // Cliente antiguo que solo manda el nombre completo: se guarda en «nombres».
+            if ($student->legacyFullName !== null
+                && $student->last_name === null && $student->second_last_name === null && $student->first_name === null) {
+                $student->setAttribute('first_name', $clean($student->legacyFullName));
+            }
+            $student->legacyFullName = null;
+        });
+    }
+
     protected $fillable = [
         'name',
         'first_name',
@@ -97,9 +125,40 @@ class Student extends Model
         });
     }
 
+    /** Estado de un estudiante dado de baja (transferencia o retiro); el resto se considera activo. */
+    public const STATUS_WITHDRAWN = 'inactivo';
+
+    /** Solo estudiantes en clases: excluye a los dados de baja (siguen en la base con su respaldo). */
+    public function scopeActive($query)
+    {
+        return $query->where(fn ($q) => $q->whereNull('status')->orWhere('status', '!=', self::STATUS_WITHDRAWN));
+    }
+
+    /** Solo los dados de baja. */
+    public function scopeWithdrawn($query)
+    {
+        return $query->where('status', self::STATUS_WITHDRAWN);
+    }
+
+    public function isWithdrawn(): bool
+    {
+        return $this->status === self::STATUS_WITHDRAWN;
+    }
+
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(StudentWithdrawal::class)->latest('id');
+    }
+
+    /** La baja vigente (sin reincorporación), si la hay. */
+    public function currentWithdrawal(): ?StudentWithdrawal
+    {
+        return $this->withdrawals()->whereNull('reverted_at')->first();
+    }
+
     /**
      * Orden de lista de curso: alfabético por apellido paterno, materno y nombres.
-     * Los que no tienen apellidos separados van al final, ordenados por su nombre completo.
+     * Los que no tienen apellido paterno van al final, ordenados por materno y nombres.
      */
     public function scopeOrderedForList($query)
     {
@@ -108,8 +167,46 @@ class Student extends Model
             ->orderBy('last_name')
             ->orderBy('second_last_name')
             ->orderBy('first_name')
-            ->orderBy('name')
             ->orderBy('id');
+    }
+
+    /**
+     * Busca por nombre: en cada parte y en el nombre completo ("QUISPE MAMANI ANA" o "Quispe Ana").
+     * Como no hay columna `name`, el nombre completo se arma en la consulta.
+     */
+    public function scopeSearchName($query, string $term)
+    {
+        $like = '%' . $term . '%';
+        $full = self::fullNameSql($query, ['last_name', 'second_last_name', 'first_name']);
+        $short = self::fullNameSql($query, ['last_name', 'first_name']);
+
+        return $query->where(function ($q) use ($like, $full, $short) {
+            $q->where('first_name', 'like', $like)
+                ->orWhere('last_name', 'like', $like)
+                ->orWhere('second_last_name', 'like', $like)
+                ->orWhereRaw("{$full} LIKE ?", [$like])
+                ->orWhereRaw("{$short} LIKE ?", [$like]);
+        });
+    }
+
+    /** Estudiante cuyo nombre completo ("PATERNO MATERNO NOMBRES") es exactamente $fullName. */
+    public function scopeWhereFullName($query, string $fullName)
+    {
+        $full = self::fullNameSql($query, ['last_name', 'second_last_name', 'first_name']);
+
+        return $query->whereRaw("{$full} = ?", [preg_replace('/\s+/', ' ', trim($fullName))]);
+    }
+
+    /** SQL que une las columnas con un espacio, saltando las vacías (MySQL y SQLite de las pruebas). */
+    private static function fullNameSql($query, array $columns): string
+    {
+        if ($query->getConnection()->getDriverName() === 'sqlite') {
+            $parts = array_map(fn ($c) => "COALESCE(NULLIF({$c}, '') || ' ', '')", $columns);
+
+            return 'TRIM(' . implode(' || ', $parts) . ')';
+        }
+
+        return "CONCAT_WS(' ', " . implode(', ', array_map(fn ($c) => "NULLIF({$c}, '')", $columns)) . ')';
     }
 
     /**
@@ -229,22 +326,34 @@ class Student extends Model
 
     public function getNombreAttribute($value)
     {
-        return $this->attributes['name'] ?? $value;
+        return $this->name;
     }
 
     public function setNombreAttribute($value): void
     {
-        $this->attributes['name'] = $value;
+        $this->setNameAttribute($value);
     }
 
-    public function getNameAttribute($value)
+    /** Nombre completo armado desde las partes: "PATERNO MATERNO NOMBRES". */
+    public function getNameAttribute(): string
     {
-        return $this->attributes['name'] ?? $value;
+        $full = implode(' ', array_filter([
+            $this->attributes['last_name'] ?? null,
+            $this->attributes['second_last_name'] ?? null,
+            $this->attributes['first_name'] ?? null,
+        ], fn ($part) => $part !== null && $part !== ''));
+
+        // Aún sin guardar y con solo el nombre completo de un cliente antiguo.
+        return $full !== '' ? $full : (string) $this->legacyFullName;
     }
 
+    /**
+     * No hay columna `name`: si un cliente antiguo manda solo el nombre completo, se guarda
+     * en «nombres» al crear el registro (ver booted()). Con las partes presentes, se ignora.
+     */
     public function setNameAttribute($value): void
     {
-        $this->attributes['name'] = $value;
+        $this->legacyFullName = $value === null ? null : (string) $value;
     }
 
     public function getFullNameAttribute($value)

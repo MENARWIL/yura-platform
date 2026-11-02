@@ -74,7 +74,7 @@ class FamilyAndStudentAuthTest extends TestCase
             ->get('/family-members')
             ->assertOk();
 
-        $this->assertDatabaseHas('students', ['id' => $student->id, 'name' => 'Ana Paz']);
+        $this->assertSame('Ana Paz', $student->fresh()->name);
     }
 
     public function test_admin_can_create_student_and_assign_a_family_member(): void
@@ -111,7 +111,7 @@ class FamilyAndStudentAuthTest extends TestCase
 
         $response->assertRedirect('/students');
 
-        $student = Student::where('name', 'Perez Gomez Maria')->firstOrFail();
+        $student = Student::whereFullName('Perez Gomez Maria')->firstOrFail();
 
         $this->assertNull($student->user_id);
         $this->assertDatabaseHas('student_family_members', [
@@ -324,7 +324,7 @@ class FamilyAndStudentAuthTest extends TestCase
             ])
             ->assertRedirect(route('students.index'));
 
-        $student = Student::where('name', 'Flores Rojas Estudiante')->firstOrFail();
+        $student = Student::whereFullName('Flores Rojas Estudiante')->firstOrFail();
 
         $this->assertDatabaseHas('student_family_members', [
             'student_id' => $student->id,
@@ -372,7 +372,7 @@ class FamilyAndStudentAuthTest extends TestCase
             'asistencia' => 95,
         ]);
 
-        $student = Student::where('name', 'Quispe Mamani Luciano')->firstOrFail();
+        $student = Student::whereFullName('Quispe Mamani Luciano')->firstOrFail();
 
         $this->assertNull($student->user_id);
         $this->assertDatabaseMissing('users', [
@@ -412,7 +412,7 @@ class FamilyAndStudentAuthTest extends TestCase
             'asistencia' => 96,
         ]);
 
-        $student = Student::where('name', 'Ramos Vargas Sofia')->firstOrFail();
+        $student = Student::whereFullName('Ramos Vargas Sofia')->firstOrFail();
 
         $this->actingAs($admin)->post('/family-members', [
             'student_id' => $student->id,

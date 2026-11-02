@@ -5,9 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AppAdminController;
+use App\Http\Controllers\Api\AppAdminStudentController;
 use App\Http\Controllers\Api\AppAdminYearController;
 use App\Http\Controllers\Api\AppController;
 use App\Http\Controllers\Api\AppStaffController;
+use App\Http\Controllers\Api\AppTeacherController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\RobotActivityController;
@@ -39,6 +41,15 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
         });
         Route::get('/robot-activities', [AppStaffController::class, 'robotActivities'])->middleware('api.role:profesor');
 
+        // Profesor: asistencia y cuaderno de notas de sus asignaciones (mismas reglas que la web).
+        Route::middleware('api.role:profesor')->prefix('teacher')->group(function () {
+            Route::get('/assignments', [AppTeacherController::class, 'assignments']);
+            Route::get('/attendance', [AppTeacherController::class, 'attendance']);
+            Route::post('/attendance', [AppTeacherController::class, 'saveAttendance']);
+            Route::get('/grades', [AppTeacherController::class, 'grades']);
+            Route::post('/grades', [AppTeacherController::class, 'saveGrade']);
+        });
+
         // Solo administrador: las reglas son las de la web (UserAdminService)
         Route::middleware('api.role:admin')->prefix('admin')->group(function () {
             Route::get('/overview', [AppAdminController::class, 'overview']);
@@ -46,6 +57,13 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
             Route::post('/years/{id}/current', [AppAdminYearController::class, 'current'])->whereNumber('id');
             Route::post('/years/{id}/close', [AppAdminYearController::class, 'close'])->whereNumber('id');
             Route::post('/years/{id}/reopen', [AppAdminYearController::class, 'reopen'])->whereNumber('id');
+            // CRUD de estudiantes (listar, crear, mostrar, actualizar, borrar).
+            Route::get('/students', [AppAdminStudentController::class, 'index']);
+            Route::post('/students', [AppAdminStudentController::class, 'store']);
+            Route::get('/students/{id}', [AppAdminStudentController::class, 'show'])->whereNumber('id');
+            Route::match(['put', 'patch'], '/students/{id}', [AppAdminStudentController::class, 'update'])->whereNumber('id');
+            Route::delete('/students/{id}', [AppAdminStudentController::class, 'destroy'])->whereNumber('id');
+
             Route::get('/users', [AppAdminController::class, 'index']);
             Route::post('/users', [AppAdminController::class, 'store']);
             Route::get('/users/{id}', [AppAdminController::class, 'show'])->whereNumber('id');

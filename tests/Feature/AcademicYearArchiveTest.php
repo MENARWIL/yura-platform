@@ -133,7 +133,7 @@ class AcademicYearArchiveTest extends TestCase
     public function test_the_consult_does_not_reopen_the_year_and_writes_stay_blocked(): void
     {
         [$y2026, , $admin] = $this->closedYearWithData();
-        $student = Student::where('name', 'like', 'Alanes%')->firstOrFail();
+        $student = Student::where('last_name', 'like', 'Alanes%')->firstOrFail();
 
         $this->actingAs($admin)->get("/admin/years/{$y2026->id}")->assertOk();
         $this->actingAs($admin)->get("/admin/years/{$y2026->id}/export")->assertOk();

@@ -29,7 +29,7 @@ class AppAdminController extends Controller
     {
         $col = $this->statusColumn();
 
-        $recent = Student::with(['course', 'parallel'])->latest()->take(5)->get()->map(fn (Student $s) => [
+        $recent = Student::with(['course', 'parallel'])->active()->latest()->take(5)->get()->map(fn (Student $s) => [
             'id' => $s->id,
             'name' => $s->name,
             'course' => $s->course_name,
@@ -37,7 +37,7 @@ class AppAdminController extends Controller
         ]);
 
         return response()->json(['data' => [
-            'students' => Student::count(),
+            'students' => Student::active()->count(),
             'teachers' => User::ofRole('profesor')->count(),
             'families' => User::ofRole(['padre', 'madre', 'tutor'])->count(),
             'users_active' => User::query()->whereIn($col, ['active', 'activo'])->count(),

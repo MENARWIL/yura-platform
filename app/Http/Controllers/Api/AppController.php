@@ -35,7 +35,7 @@ class AppController extends Controller
 
         $children = Student::visibleToFamily($user)
             ->with(['course', 'parallel', 'profesor', 'grades.subject', 'attendances'])
-            ->orderBy('name')
+            ->orderedForList()
             ->get()
             ->map(function (Student $student) {
                 return StudentReport::listItem($student);

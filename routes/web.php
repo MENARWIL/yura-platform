@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentWithdrawalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
@@ -61,6 +62,9 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
     Route::get('/students/{student}/export-excel', [StudentController::class, 'exportExcel'])->name('students.export.excel');
     Route::patch('/students/{student}/info', [StudentController::class, 'updateInfo'])->middleware('rol:admin,academic')->name('students.info');
     Route::post('/students/{student}/guardian', [StudentController::class, 'assignGuardian'])->middleware('rol:admin,academic')->name('students.guardian');
+    // Baja (transferencia o retiro) y reincorporación: solo el administrador.
+    Route::post('/students/{student}/withdrawal', [StudentWithdrawalController::class, 'store'])->middleware('rol:admin')->name('students.withdraw');
+    Route::delete('/students/{student}/withdrawal', [StudentWithdrawalController::class, 'destroy'])->middleware('rol:admin')->name('students.reinstate');
     Route::patch('students/{student}/restore', [StudentController::class, 'restore'])->name('students.restore');
     Route::delete('students/{student}/force', [StudentController::class, 'forceDestroy'])->name('students.forceDestroy');
     Route::resource('students', StudentController::class)

@@ -35,8 +35,8 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
-                                        <label class="text-muted small text-uppercase font-weight-bold">Apellido materno</label>
-                                        <input type="text" name="second_last_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name', $student->second_last_name) }}" required style="font-size: 1rem;">
+                                        <label class="text-muted small text-uppercase font-weight-bold">Apellido materno <span class="text-lowercase font-weight-normal">(si tiene)</span></label>
+                                        <input type="text" name="second_last_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name', $student->second_last_name) }}" style="font-size: 1rem;">
                                         @error('second_last_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                                     </div>
                                 </div>

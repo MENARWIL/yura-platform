@@ -32,8 +32,8 @@
                                 @error('last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
-                                <label for="second_last_name">Apellido materno</label>
-                                <input type="text" name="second_last_name" id="second_last_name" class="form-control @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name') }}" required>
+                                <label for="second_last_name">Apellido materno <small class="text-muted">(si tiene)</small></label>
+                                <input type="text" name="second_last_name" id="second_last_name" class="form-control @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name') }}">
                                 @error('second_last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">

@@ -204,9 +204,9 @@ class QaWebImprovementsTest extends TestCase
         $filters = '?subject_id=' . $this->subject->id . '&parallel_id=' . $this->parallel->id;
 
         $this->actingAs($this->teacher)->get('/attendance' . $filters)
-            ->assertOk()->assertSee('Ana Quispe')->assertDontSee('Fuera Delparalelo');
+            ->assertOk()->assertSee('Quispe Ana')->assertDontSee('Fuera Delparalelo');
         $this->actingAs($this->teacher)->get('/grades' . $filters)
-            ->assertOk()->assertSee('Ana Quispe')->assertDontSee('Fuera Delparalelo');
+            ->assertOk()->assertSee('Quispe Ana')->assertDontSee('Fuera Delparalelo');
         $this->actingAs($this->teacher)->get('/students')
             ->assertOk()->assertSee('Quispe')->assertDontSee('Delparalelo');
 
@@ -274,7 +274,7 @@ class QaWebImprovementsTest extends TestCase
         $response->assertSee('Mostrando 1–5 de 7 estudiantes');
 
         $page2 = $this->actingAs($this->teacher)->get('/dashboard?estudiantes=2')->viewData('data')['mis_estudiantes'];
-        $this->assertSame(['Estudiante 6', 'Estudiante 7'], collect($page2->items())->pluck('name')->all());
+        $this->assertSame(['Apellido06 Nombre6', 'Apellido07 Nombre7'], collect($page2->items())->pluck('name')->all());
     }
 
     public function test_attendance_pdf_exports_a_date_range_chosen_by_the_teacher(): void
@@ -375,10 +375,10 @@ class QaWebImprovementsTest extends TestCase
             ->assertOk()->assertSee('Mostrando 1–5 de 6 relaciones');
 
         $this->actingAs($admin)->get('/family-members?student_name=Apellido3')
-            ->assertOk()->assertSee('Estudiante 3')->assertDontSee('Estudiante 4');
+            ->assertOk()->assertSee('Apellido3 Nombre3')->assertDontSee('Apellido4 Nombre4');
 
         $this->actingAs($admin)->get('/family-members?student_name=Numero5')
-            ->assertOk()->assertSee('Estudiante 5')->assertDontSee('Estudiante 2');
+            ->assertOk()->assertSee('Apellido5 Nombre5')->assertDontSee('Apellido2 Nombre2');
     }
 
     public function test_user_list_is_paginated_and_searchable_on_the_server(): void
@@ -398,6 +398,51 @@ class QaWebImprovementsTest extends TestCase
         $familia = $this->actingAs($admin)->get('/users?role=familia&per_page=20')->viewData('users');
         $this->assertSame(6, $familia->total());
         $this->assertSame(1, $this->actingAs($admin)->get('/users?role=profesor')->viewData('users')->total());
+    }
+
+    public function test_students_table_has_no_name_column_and_full_name_comes_from_parts(): void
+    {
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('students', 'name'));
+
+        $student = $this->student('cualquier cosa', ['first_name' => 'Ana  María', 'last_name' => ' Quispe', 'second_last_name' => 'Mamani']);
+        $this->assertSame('Quispe Mamani Ana María', $student->fresh()->name);
+        $this->assertSame('Quispe Mamani Ana María', $student->fresh()->toArray()['name']); // la API lo sigue recibiendo
+
+        // Al cambiar una parte, el nombre completo cambia solo.
+        $student->update(['second_last_name' => 'Condori']);
+        $this->assertSame('Quispe Condori Ana María', $student->fresh()->name);
+
+        // El apellido se respeta donde viene (si solo hay materno, queda como materno).
+        $single = $this->student('x', ['first_name' => 'Zarai', 'last_name' => null, 'second_last_name' => 'Berrios']);
+        $this->assertNull($single->fresh()->last_name);
+        $this->assertSame('Berrios Zarai', $single->fresh()->name);
+
+        // Un cliente antiguo que solo manda el nombre completo: se guarda en «nombres».
+        $legacy = $this->student('NOMBRE COMPLETO ANTIGUO');
+        $this->assertSame('NOMBRE COMPLETO ANTIGUO', $legacy->fresh()->first_name);
+        $this->assertSame('NOMBRE COMPLETO ANTIGUO', $legacy->fresh()->name);
+
+        // Búsquedas por nombre completo, sin columna.
+        $this->assertTrue(Student::whereFullName('Quispe Condori Ana María')->exists());
+        $this->assertTrue(Student::searchName('Quispe Ana')->exists());
+    }
+
+    public function test_student_with_a_single_surname_can_be_registered(): void
+    {
+        $admin = User::factory()->create(['rol' => 'admin', 'estado' => 'activo']);
+
+        $this->actingAs($admin)->post('/students', [
+            'last_name' => 'Berrios',
+            'second_last_name' => '',
+            'first_name' => 'Zarai Mishel',
+            'age' => 11,
+            'gender' => 'Femenino',
+            'level' => 'básico',
+            'parallel_id' => $this->parallel->id,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('students', ['first_name' => 'Zarai Mishel', 'last_name' => 'Berrios', 'second_last_name' => null]);
+        $this->assertTrue(Student::whereFullName('Berrios Zarai Mishel')->exists());
     }
 
     public function test_clearing_the_student_search_shows_the_full_list(): void

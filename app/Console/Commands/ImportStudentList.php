@@ -85,15 +85,20 @@ class ImportStudentList extends Command
                 }
                 [$course, $parallel] = $parallels[$key];
 
-                $name = trim(preg_replace('/\s+/', ' ', $row['paterno'] . ' ' . $row['materno'] . ' ' . $row['nombres']));
-                if (Student::where('parallel_id', $parallel->id)->where('name', $name)->exists()) {
+                $part = fn (string $value) => $value !== '' ? $value : null;
+                $exists = Student::where('parallel_id', $parallel->id)
+                    ->where('first_name', $row['nombres'])
+                    ->where(fn ($q) => $part($row['paterno']) === null ? $q->whereNull('last_name') : $q->where('last_name', $row['paterno']))
+                    ->where(fn ($q) => $part($row['materno']) === null ? $q->whereNull('second_last_name') : $q->where('second_last_name', $row['materno']))
+                    ->exists();
+                if ($exists) {
                     $skipped++; // ya estaba: se puede volver a correr sin duplicar
 
                     continue;
                 }
 
+                // El nombre se guarda en sus partes (no hay columna name).
                 Student::create([
-                    'name' => $name,
                     'last_name' => $row['paterno'] !== '' ? $row['paterno'] : null,
                     'second_last_name' => $row['materno'] !== '' ? $row['materno'] : null,
                     'first_name' => $row['nombres'],

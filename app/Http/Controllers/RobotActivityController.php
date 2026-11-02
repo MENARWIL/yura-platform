@@ -178,7 +178,8 @@ class RobotActivityController extends Controller
             ->whereHas('subject', fn ($query) => $query->where('active', true))
             ->get();
         $parallelIds = $assignments->pluck('parallel_id')->unique();
-        $parallels = Parallel::with(['course', 'students'])
+        // Las bajas no participan en actividades nuevas.
+        $parallels = Parallel::with(['course', 'students' => fn ($query) => $query->active()])
             ->whereIn('id', $parallelIds)
             ->orderBy('course_id')
             ->orderBy('name')
@@ -249,7 +250,7 @@ class RobotActivityController extends Controller
         }
 
         $parallel = Parallel::with(['course', 'students' => function ($query) {
-            $query->orderBy('id');
+            $query->active()->orderBy('id');
         }])->findOrFail($data['parallel_id']);
         if (! TeachingAssignment::where('teacher_user_id', $user->id)
             ->where('subject_id', $data['subject_id'])

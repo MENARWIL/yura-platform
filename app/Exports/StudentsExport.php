@@ -20,7 +20,7 @@ class StudentsExport implements FromCollection, WithHeadings, WithMapping
     */
     public function collection()
     {
-        return Student::with(['padre', 'profesor', 'parallel', 'course'])
+        return Student::with(['padre', 'profesor', 'parallel', 'course'])->active()
             ->when($this->courseId, fn ($query) => $query->where('course_id', $this->courseId))
             ->when($this->parallelId, fn ($query) => $query->where('parallel_id', $this->parallelId))
             ->get();

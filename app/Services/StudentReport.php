@@ -21,7 +21,8 @@ class StudentReport
             'name' => $student->name,
             'course' => $student->course_name,
             'parallel' => $student->parallel?->name,
-            'teacher' => $student->profesor?->name,
+            // Profesores de la asignación docente del paralelo (el campo directo suele estar vacío).
+            'teacher' => $student->teachersLabel(),
         ];
     }
 

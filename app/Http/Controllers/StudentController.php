@@ -33,16 +33,20 @@ class StudentController extends Controller
             'course_id' => ['nullable', 'integer', 'exists:courses,id'],
             'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
             'per_page' => ['nullable', 'integer', Rule::in(self::PER_PAGE_OPTIONS)],
+            'estado' => ['nullable', Rule::in(['activos', 'baja'])],
         ]);
 
         // Buscador vacío = sin filtro de nombre: la lista vuelve completa.
         $studentName = preg_replace('/\s+/', ' ', trim((string) ($filters['student_name'] ?? ''))) ?: null;
         $perPage = (int) ($filters['per_page'] ?? self::PER_PAGE_DEFAULT);
         $user = Auth::user();
+        // Los dados de baja solo los ve el administrador, con el filtro «Dados de baja».
+        $showWithdrawn = $user->isAdmin() && ($filters['estado'] ?? null) === 'baja';
 
         $parentForeignKey = (new Student())->getParentUserForeignKey();
 
-        $students = Student::with(['course', 'parallel', 'parent', 'teacher'])
+        $students = Student::with(['course', 'parallel', 'parent', 'teacher', 'withdrawals'])
+            ->when($showWithdrawn, fn ($query) => $query->withdrawn(), fn ($query) => $query->active())
             ->when($user->isProfesor(), function ($query) use ($user) {
                 $query->taughtBy($user);
             })
@@ -54,25 +58,15 @@ class StudentController extends Controller
                         });
                 });
             })
-            ->when($studentName, function ($query, $studentName) {
-                // Busca en nombre completo, nombres y apellidos (ej. "Quispe" o "Ana Quispe").
-                $like = '%' . $studentName . '%';
-                $query->where(function ($q) use ($like) {
-                    $q->where('name', 'like', $like)
-                        ->orWhere('first_name', 'like', $like)
-                        ->orWhere('last_name', 'like', $like)
-                        ->orWhere('second_last_name', 'like', $like);
-                });
-            })
+            // Busca en nombres, apellidos y nombre completo (ej. "Quispe" o "Quispe Ana").
+            ->when($studentName, fn ($query, $studentName) => $query->searchName($studentName))
             ->when($filters['course_id'] ?? null, function ($query, $courseId) {
                 $query->where('course_id', $courseId);
             })
             ->when($filters['parallel_id'] ?? null, function ($query, $parallelId) {
                 $query->where('parallel_id', $parallelId);
             })
-            ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
-            ->orderBy('last_name')
-            ->orderBy('name')
+            ->orderedForList()
             ->paginate($perPage)
             ->withQueryString();
 
@@ -105,6 +99,7 @@ class StudentController extends Controller
         }
 
         return view('students.index', compact(
+            'showWithdrawn',
             'students',
             'courses',
             'parallels'
@@ -153,7 +148,7 @@ class StudentController extends Controller
 
         $rules = [
             'last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
-            'second_last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'second_last_name' => 'nullable|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
             'first_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
             'age' => 'required|integer|min:0|max:120',
             'gender' => 'required|in:Masculino,Femenino',
@@ -181,7 +176,7 @@ class StudentController extends Controller
         ];
 
         $data = $request->validate($rules, $this->studentValidationMessages());
-        $data['name'] = trim(preg_replace('/\s+/', ' ', $data['last_name'] . ' ' . $data['second_last_name'] . ' ' . $data['first_name']));
+        // El nombre completo (name) lo arma el modelo desde paterno, materno y nombres.
         $parallel = Parallel::with('course')->findOrFail($data['parallel_id']);
 
         if (! empty($data['course_id']) && (int) $data['course_id'] !== (int) $parallel->course_id) {
@@ -190,7 +185,7 @@ class StudentController extends Controller
                 ->withInput();
         }
 
-        if ($parallel->students()->count() >= $parallel->max_students) {
+        if ($parallel->students()->active()->count() >= $parallel->max_students) {
             return redirect()->back()
                 ->withErrors(['parallel_id' => 'Este paralelo ha alcanzado su capacidad máxima de estudiantes'])
                 ->withInput();
@@ -278,7 +273,7 @@ class StudentController extends Controller
 
         $rules = [
             'last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
-            'second_last_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
+            'second_last_name' => 'nullable|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
             'first_name' => 'required|string|max:100|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/',
             'age' => 'required|integer|min:0|max:120',
             'gender' => 'required|in:Masculino,Femenino',
@@ -298,10 +293,10 @@ class StudentController extends Controller
         ];
 
         $data = $request->validate($rules, $this->studentValidationMessages());
-        $data['name'] = trim(preg_replace('/\s+/', ' ', $data['last_name'] . ' ' . $data['second_last_name'] . ' ' . $data['first_name']));
+        // El nombre completo (name) lo arma el modelo desde paterno, materno y nombres.
         $parallel = Parallel::with('course')->findOrFail($data['parallel_id']);
 
-        if ($parallel->id !== $student->parallel_id && $parallel->students()->count() >= $parallel->max_students) {
+        if ($parallel->id !== $student->parallel_id && $parallel->students()->active()->count() >= $parallel->max_students) {
             return redirect()->back()
                 ->withErrors(['parallel_id' => 'Este paralelo ha alcanzado su capacidad máxima de estudiantes'])
                 ->withInput();
@@ -771,7 +766,7 @@ class StudentController extends Controller
             'parallel_id' => ['nullable', 'integer', 'exists:parallels,id'],
         ]);
 
-        $students = Student::with(['padre', 'profesor', 'course', 'parallel'])
+        $students = Student::with(['padre', 'profesor', 'course', 'parallel'])->active()
             ->when($filters['course_id'] ?? null, fn ($query, $courseId) => $query->where('course_id', $courseId))
             ->when($filters['parallel_id'] ?? null, fn ($query, $parallelId) => $query->where('parallel_id', $parallelId))
             ->get();
