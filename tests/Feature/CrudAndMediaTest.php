@@ -81,7 +81,7 @@ class CrudAndMediaTest extends TestCase
         ]);
 
         $studentResponse->assertRedirect('/students');
-        $student = Student::where('name', 'Estudiante Rojas Prueba')->firstOrFail();
+        $student = Student::whereFullName('Estudiante Rojas Prueba')->firstOrFail();
         $this->assertNotNull($student->foto_path);
         Storage::disk('public')->assertExists($student->foto_path);
 

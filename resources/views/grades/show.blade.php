@@ -11,13 +11,40 @@
                     <h3 class="card-title mb-0 font-weight-bold">
                         <i class="fas fa-user-graduate mr-2"></i> {{ $student->nombre }}
                     </h3>
-                    @if($canManageGuardian)
+                    @if($canManageGuardian && ! $student->isWithdrawn())
                         <button type="button" class="btn btn-light btn-sm rounded-pill px-3 ml-auto font-weight-bold text-primary" data-toggle="modal" data-target="#guardianModal">
                             <i class="fas fa-user-edit mr-1"></i> Editar información
                         </button>
                     @endif
+                    @if(auth()->user()->isAdmin() && ! $student->isWithdrawn())
+                        <button type="button" class="btn btn-outline-light btn-sm rounded-pill px-3 ml-2 font-weight-bold" data-toggle="modal" data-target="#withdrawModal">
+                            <i class="fas fa-user-minus mr-1"></i> Dar de baja / Transferir
+                        </button>
+                    @endif
                 </div>
                 <div class="card-body bg-white p-4">
+                    @if($student->isWithdrawn())
+                        @php $baja = $student->currentWithdrawal(); @endphp
+                        <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between mb-4" role="status">
+                            <div class="mr-3">
+                                <strong><i class="fas fa-user-minus mr-1"></i>
+                                    {{ $baja?->type === 'transferencia' ? 'Transferido' : 'Dado de baja' }}
+                                    {{ $baja?->withdrawn_on ? 'el ' . $baja->withdrawn_on->format('d/m/Y') : '' }}</strong>
+                                @if($baja?->destination)<span> · a {{ $baja->destination }}</span>@endif
+                                @if($baja?->reason)<div class="small mt-1">Motivo: {{ $baja->reason }}</div>@endif
+                                <div class="small text-muted mt-1">No aparece en listas, notas ni asistencia. Su información y un respaldo de sus datos se conservan.</div>
+                            </div>
+                            @if(auth()->user()->isAdmin())
+                                <form method="POST" action="{{ route('students.reinstate', $student) }}" onsubmit="return confirm('¿Reincorporar a {{ addslashes($student->name) }}? Volverá a aparecer en las listas.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 font-weight-bold">
+                                        <i class="fas fa-undo mr-1"></i> Reincorporar
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endif
                     @if($student->foto_path)
                         <div class="text-center mb-4">
                             <img src="{{ asset('storage/' . $student->foto_path) }}" alt="{{ __('messages.photo_of', ['name' => $student->nombre]) }}" class="rounded-circle shadow-sm" style="width:110px;height:110px;object-fit:cover;">
@@ -526,6 +553,77 @@
         if (window.jQuery) jQuery('#guardianModal').modal('show');
         @endif
     });
+</script>
+@endpush
+@endif
+
+@if(auth()->user()->isAdmin() && ! $student->isWithdrawn())
+@php $wErr = $errors->getBag('withdrawal'); @endphp
+<div class="modal fade" id="withdrawModal" tabindex="-1" role="dialog" aria-labelledby="withdrawModalTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('students.withdraw', $student) }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold" id="withdrawModalTitle">
+                        <i class="fas fa-user-minus text-danger mr-2" aria-hidden="true"></i> Dar de baja a {{ $student->name }}
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">El estudiante <b>no se borra</b>: deja de aparecer en listas, notas y asistencia, y se guarda un respaldo de sus datos (curso, responsables, notas y asistencia). Se puede reincorporar.</p>
+                    <div class="form-group">
+                        <label class="font-weight-bold small d-block">Motivo de la baja</label>
+                        @foreach(\App\Models\StudentWithdrawal::MOTIVES as $value => $label)
+                            <div class="custom-control custom-radio mb-1">
+                                <input type="radio" id="w-motive-{{ $value }}" name="motive" value="{{ $value }}" class="custom-control-input withdraw-motive" {{ old('motive', 'transferencia') === $value ? 'checked' : '' }}>
+                                <label class="custom-control-label" for="w-motive-{{ $value }}">{{ $label }}</label>
+                            </div>
+                        @endforeach
+                        @if($wErr->has('motive'))<div class="text-danger small">{{ $wErr->first('motive') }}</div>@endif
+                    </div>
+                    <div class="form-group" id="w-destination-group">
+                        <label for="w-destination" class="font-weight-bold small">Unidad educativa de destino</label>
+                        <input type="text" id="w-destination" name="destination" maxlength="255" class="form-control {{ $wErr->has('destination') ? 'is-invalid' : '' }}" value="{{ old('destination') }}" placeholder="Ej.: U.E. Simón Bolívar">
+                        @if($wErr->has('destination'))<div class="invalid-feedback">{{ $wErr->first('destination') }}</div>@endif
+                    </div>
+                    <div class="form-group">
+                        <label for="w-date" class="font-weight-bold small">Fecha de baja</label>
+                        <input type="date" id="w-date" name="withdrawn_on" class="form-control {{ $wErr->has('withdrawn_on') ? 'is-invalid' : '' }}" value="{{ old('withdrawn_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required>
+                        @if($wErr->has('withdrawn_on'))<div class="invalid-feedback">{{ $wErr->first('withdrawn_on') }}</div>@endif
+                    </div>
+                    <div class="form-group mb-0">
+                        <label for="w-detail" class="font-weight-bold small" id="w-detail-label">Detalle <span class="text-muted font-weight-normal">(opcional)</span></label>
+                        <textarea id="w-detail" name="detail" rows="2" maxlength="1000" class="form-control {{ $wErr->has('detail') ? 'is-invalid' : '' }}" placeholder="Ej.: la familia se muda a El Alto">{{ old('detail') }}</textarea>
+                        @if($wErr->has('detail'))<div class="invalid-feedback">{{ $wErr->first('detail') }}</div>@endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link text-muted" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-user-minus mr-1" aria-hidden="true"></i> Confirmar baja</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // La unidad educativa de destino solo se pide en una transferencia.
+    const group = document.getElementById('w-destination-group');
+    const detailLabel = document.getElementById('w-detail-label');
+    const detail = document.getElementById('w-detail');
+    const sync = () => {
+        group.hidden = !document.getElementById('w-motive-transferencia').checked;
+        // Con «Otro motivo» hay que escribirlo; con los demás, el detalle es opcional.
+        const other = document.getElementById('w-motive-otro').checked;
+        detailLabel.innerHTML = other ? 'Escribe el motivo' : 'Detalle <span class="text-muted font-weight-normal">(opcional)</span>';
+        detail.required = other;
+    };
+    document.querySelectorAll('.withdraw-motive').forEach(r => r.addEventListener('change', sync));
+    sync();
+    @if($wErr->any()) window.jQuery && window.jQuery('#withdrawModal').modal('show'); @endif
+});
 </script>
 @endpush
 @endif

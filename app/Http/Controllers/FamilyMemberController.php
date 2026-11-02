@@ -33,11 +33,8 @@ class FamilyMemberController extends Controller
             // Busca por nombre o apellidos del estudiante, o por el nombre del tutor.
             ->when($search, function ($query, $search) {
                 $like = '%' . $search . '%';
-                $query->where(function ($q) use ($like) {
-                    $q->whereHas('student', fn ($s) => $s->where('name', 'like', $like)
-                        ->orWhere('first_name', 'like', $like)
-                        ->orWhere('last_name', 'like', $like)
-                        ->orWhere('second_last_name', 'like', $like))
+                $query->where(function ($q) use ($like, $search) {
+                    $q->whereHas('student', fn ($s) => $s->searchName($search))
                         ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $like)
                             ->orWhere('last_name', 'like', $like));
                 });

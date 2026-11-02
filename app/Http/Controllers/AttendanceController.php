@@ -8,6 +8,8 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\TeachingAssignment;
 use App\Models\User;
+use App\Services\TeacherRecords;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +36,7 @@ class AttendanceController extends Controller
         $selectedParallelId = $request->integer('parallel_id');
         $selectedDate = $request->input('date') ?: now()->toDateString();
 
-        $query = Student::with(['parent', 'teacher', 'parallel']);
+        $query = Student::with(['parent', 'teacher', 'parallel'])->active();
 
         if ($user->isProfesor()) {
             $query->taughtBy($user, $selectedSubjectId ?: null)
@@ -118,7 +120,7 @@ class AttendanceController extends Controller
         $subject = $selectedSubjectId ? Subject::find($selectedSubjectId) : null;
         $parallel = $selectedParallelId ? Parallel::with('course')->find($selectedParallelId) : null;
 
-        $query = Student::with(['parent', 'teacher', 'parallel']);
+        $query = Student::with(['parent', 'teacher', 'parallel'])->active();
 
         if ($user->isProfesor()) {
             $query->taughtBy($user, $selectedSubjectId ?: null)
@@ -182,7 +184,7 @@ class AttendanceController extends Controller
         return $pdf->download('asistencia_' . $name . '.pdf');
     }
 
-    public function save(Request $request)
+    public function save(Request $request, TeacherRecords $records)
     {
         /** @var User $user */
         $user = Auth::user();
@@ -198,69 +200,48 @@ class AttendanceController extends Controller
             'date' => 'required|date|before_or_equal:today',
         ], $this->validationMessages());
 
-        $student = Student::findOrFail($data['student_id']);
-        if ($user->isProfesor() && ! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
-            abort(403, __('messages.unauthorized'));
-        }
+        $this->record($records, $user, (int) $data['subject_id'], $data['date'], [
+            ['student_id' => (int) $data['student_id'], 'status' => $data['status']],
+        ]);
 
-        try {
-            Attendance::updateOrCreate(
-                [
-                    'student_id' => $student->id,
-                    'subject_id' => $data['subject_id'],
-                    'date' => $data['date'],
-                ],
-                [
-                    'status' => $data['status'],
-                ]
-            );
-
-            return response()->json(['success' => true]);
-        } catch (\Exception $e) {
-            report($e);
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json(['success' => true]);
     }
 
     /**
      * Registra la lista completa del día en una sola petición (la pantalla parte con
      * todos en Presente y el profesor solo cambia a los que faltaron).
      */
-    public function saveList(Request $request)
+    public function saveList(Request $request, TeacherRecords $records)
     {
         /** @var User $user */
         $user = Auth::user();
 
-        $data = $request->validate([
-            'subject_id' => 'required|integer|exists:subjects,id',
-            'date' => 'required|date|before_or_equal:today',
-            'records' => 'required|array|min:1|max:300',
-            'records.*.student_id' => 'required|integer|distinct|exists:students,id',
-            'records.*.status' => ['required', 'string', Rule::in(Attendance::STATUSES)],
-        ], $this->validationMessages());
+        // Mismas reglas que la app móvil (App\Services\TeacherRecords).
+        $data = $request->validate(TeacherRecords::attendanceRules(), $this->validationMessages());
+        $saved = $this->record($records, $user, (int) $data['subject_id'], $data['date'], $data['records']);
 
-        $subjectId = (int) $data['subject_id'];
-        $students = Student::whereIn('id', array_column($data['records'], 'student_id'))->get()->keyBy('id');
+        return response()->json(['success' => true, 'saved' => $saved]);
+    }
 
-        foreach ($students as $student) {
-            if (! $this->hasTeachingAssignment($user, $student, $subjectId)) {
-                abort(403, __('messages.unauthorized'));
-            }
-        }
-
-        DB::transaction(function () use ($data, $subjectId) {
-            foreach ($data['records'] as $record) {
+    private function record(TeacherRecords $records, User $user, int $subjectId, string $date, array $list): int
+    {
+        // Administración y académico pueden corregir; el profesor, solo en su asignación docente.
+        if (! $user->isProfesor()) {
+            foreach ($list as $item) {
                 Attendance::updateOrCreate(
-                    ['student_id' => $record['student_id'], 'subject_id' => $subjectId, 'date' => $data['date']],
-                    ['status' => $record['status']]
+                    ['student_id' => $item['student_id'], 'subject_id' => $subjectId, 'date' => $date],
+                    ['status' => $item['status']]
                 );
             }
-        });
 
-        return response()->json(['success' => true, 'saved' => count($data['records'])]);
+            return count($list);
+        }
+
+        try {
+            return $records->saveAttendance($user, $subjectId, $date, $list);
+        } catch (AuthorizationException) {
+            abort(403, __('messages.unauthorized'));
+        }
     }
 
     private function validationMessages(): array
@@ -272,16 +253,4 @@ class AttendanceController extends Controller
         ];
     }
 
-    private function hasTeachingAssignment(User $user, Student $student, int $subjectId): bool
-    {
-        $assignmentQuery = TeachingAssignment::where('teacher_user_id', $user->id)
-            ->where('subject_id', $subjectId)
-            ->where('active', true);
-
-        if ((int) $student->teacher_user_id === (int) $user->id) {
-            return $assignmentQuery->exists();
-        }
-
-        return $assignmentQuery->where('parallel_id', $student->parallel_id)->exists();
-    }
 }

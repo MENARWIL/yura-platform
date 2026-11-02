@@ -34,7 +34,7 @@ class Parallel extends Model
 
     public function studentCount(): int
     {
-        return $this->students()->count();
+        return $this->students()->active()->count(); // las bajas no ocupan cupo
     }
 
     public function isFull(): bool

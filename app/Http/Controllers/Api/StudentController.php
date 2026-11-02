@@ -21,7 +21,7 @@ class StudentController extends Controller
         $parentForeignKey = $studentModel->getParentUserForeignKey();
         $studentUserForeignKey = $studentModel->getStudentUserForeignKey();
 
-        $query = Student::with(['padre', 'profesor', 'parallel', 'course']);
+        $query = Student::with(['padre', 'profesor', 'parallel', 'course'])->active();
 
         if ($user->isProfesor()) {
             $query->taughtBy($user);
@@ -71,7 +71,11 @@ class StudentController extends Controller
         }
 
         $data = $request->validate([
-            'nombre' => 'required|string|max:255',
+            // Lo correcto es enviar las partes; «nombre» completo queda solo para apps antiguas.
+            'last_name' => 'required_without:nombre|nullable|string|max:100',
+            'second_last_name' => 'nullable|string|max:100',
+            'first_name' => 'required_with:last_name|nullable|string|max:100',
+            'nombre' => 'required_without:last_name|nullable|string|max:255',
             'edad' => 'required|numeric',
             'genero' => 'required|in:Masculino,Femenino',
             'nivel' => 'required|in:básico,intermedio,avanzado',
@@ -93,14 +97,17 @@ class StudentController extends Controller
 
         $parallel = Parallel::with('course')->findOrFail($data['parallel_id']);
 
-        if ($parallel->students()->count() >= $parallel->max_students) {
+        if ($parallel->students()->active()->count() >= $parallel->max_students) {
             return response()->json([
                 'success' => false,
                 'message' => 'Este paralelo ha alcanzado su capacidad máxima de estudiantes.',
             ], 422);
         }
 
-        $data['name'] = $data['nombre'];
+        // Con partes, el modelo arma «name»; sin ellas (app antigua) se guarda el nombre completo tal cual.
+        if (empty($data['last_name'])) {
+            $data['name'] = $data['nombre'];
+        }
         unset($data['nombre']);
         $data['course'] = $parallel->course->name;
         $data['course_id'] = $parallel->course_id;

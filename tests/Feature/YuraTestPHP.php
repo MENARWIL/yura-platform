@@ -193,5 +193,5 @@ function registerYuraStudent(User $admin, User $teacher, Parallel $parallel): St
         'attendance' => 100,
     ])->assertRedirect(route('students.index'));
 
-    return Student::where('name', YURA_STUDENT_NAME)->firstOrFail();
+    return Student::whereFullName(YURA_STUDENT_NAME)->firstOrFail();
 }

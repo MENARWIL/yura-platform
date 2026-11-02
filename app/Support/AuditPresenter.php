@@ -31,6 +31,11 @@ class AuditPresenter
         'guardian_assigned' => ['Responsable asignado', 'normal'],
         'student_info_updated' => ['Datos completados', 'normal'],
         'students.import' => ['Estudiantes importados', 'normal'],
+        'student.create' => ['Estudiante registrado', 'normal'],
+        'student.update' => ['Estudiante actualizado', 'normal'],
+        'student.delete' => ['Estudiante eliminado', 'danger'],
+        'student_withdrawn' => ['Estudiante dado de baja', 'danger'],
+        'student_reinstated' => ['Estudiante reincorporado', 'normal'],
     ];
 
     private const ENTITIES = [
@@ -98,7 +103,7 @@ class AuditPresenter
 
         return [
             'user' => $ids['user'] ? User::withTrashed()->whereIn('id', array_unique($ids['user']))->pluck('name', 'id')->all() : [],
-            'student' => $ids['student'] ? Student::withTrashed()->whereIn('id', array_unique($ids['student']))->pluck('name', 'id')->all() : [],
+            'student' => $ids['student'] ? Student::withTrashed()->whereIn('id', array_unique($ids['student']))->get(['id', 'last_name', 'second_last_name', 'first_name'])->pluck('name', 'id')->all() : [],
             'academic_year' => $ids['academic_year'] ? AcademicYear::whereIn('id', array_unique($ids['academic_year']))->pluck('name', 'id')->all() : [],
         ];
     }

@@ -11,8 +11,11 @@ use App\Models\Attendance;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\TeachingAssignment;
+use App\Services\TeacherRecords;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class GradeController extends Controller
 {
@@ -31,7 +34,7 @@ class GradeController extends Controller
         $selectedParallelId = $request->integer('parallel_id');
         $selectedQuarter = $request->input('quarter', 1);
 
-        $query = Student::with(['parent', 'teacher', 'parallel']);
+        $query = Student::with(['parent', 'teacher', 'parallel'])->active();
 
         if ($user->isProfesor()) {
             $query->taughtBy($user, $selectedSubjectId ?: null)
@@ -91,7 +94,7 @@ class GradeController extends Controller
         $subject = $selectedSubjectId ? Subject::find($selectedSubjectId) : null;
         $parallel = $selectedParallelId ? Parallel::with('course')->find($selectedParallelId) : null;
 
-        $query = Student::with(['parent', 'teacher', 'parallel']);
+        $query = Student::with(['parent', 'teacher', 'parallel'])->active();
 
         if ($user->isProfesor()) {
             $query->taughtBy($user, $selectedSubjectId ?: null)
@@ -318,7 +321,7 @@ class GradeController extends Controller
         return back()->with('success', __('messages.grades_updated'));
     }
 
-    public function save(Request $request)
+    public function save(Request $request, TeacherRecords $records)
     {
         /** @var User $user */
         $user = Auth::user();
@@ -327,78 +330,17 @@ class GradeController extends Controller
             abort(403, __('messages.unauthorized'));
         }
 
-        $data = $request->validate([
-            'student_id' => 'required|integer|exists:students,id',
-            // activity = dimensión SER, exam = dimensión SABER, robot = dimensión HACER,
-            // autoeval = autoevaluación del estudiante (cuaderno pedagógico SER/SABER/HACER).
-            'type' => 'required|string|in:activity,exam,robot,autoeval',
-            'activity_number' => 'required|integer|min:1|max:5',
-            'quarter' => 'required|integer|in:1,2,3',
-            // Escala boliviana: notas enteras desde 1 (sin decimales, negativos ni cero).
-            'score' => 'required|integer|min:1',
-            'subject_id' => 'required|integer|exists:subjects,id',
-        ], [
-            'score.integer' => 'La nota debe ser un número entero, sin decimales.',
-            'score.min' => 'La nota mínima es 1.',
-        ]);
+        // Mismas reglas que la app móvil (App\Services\TeacherRecords).
+        $data = $request->validate(TeacherRecords::gradeRules(), TeacherRecords::messages());
 
-        if ($data['type'] === 'robot') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Las calificaciones HACER se registran al recibir los resultados de una actividad Yura.',
-            ], 422);
-        }
-
-        // La autoevaluación se califica directamente sobre 5 puntos; el resto de
-        // columnas (SER/SABER/HACER) se ingresan en escala 0-100 y se escalan
-        // a los puntos de su dimensión al mostrarse en el cuaderno.
-        $maxScore = $data['type'] === 'autoeval' ? 5 : 100;
-        if ($data['score'] > $maxScore) {
-            return response()->json([
-                'success' => false,
-                'message' => "La nota no puede superar {$maxScore} puntos para este campo.",
-            ], 422);
-        }
-
-        $student = Student::findOrFail($data['student_id']);
-        if (! $this->hasTeachingAssignment($user, $student, (int) $data['subject_id'])) {
+        try {
+            $grade = $records->saveGrade($user, $data);
+        } catch (AuthorizationException) {
             abort(403, __('messages.unauthorized'));
+        } catch (ValidationException $e) {
+            // La pantalla del cuaderno espera { success: false, message } (nota del robot o fuera de rango).
+            return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first()], 422);
         }
-
-        $subjectId = (int) $data['subject_id'];
-
-        $grade = Grade::where('student_id', $student->id)
-            ->where('type', $data['type'])
-            ->where('activity_number', $data['activity_number'])
-            ->where('quarter', $data['quarter'])
-            ->where('subject_id', $subjectId)
-            ->first();
-
-        if (! $grade) {
-            $grade = new Grade();
-            $grade->student_id = $student->id;
-            $grade->subject_id = $subjectId;
-            $grade->type = $data['type'];
-            $grade->activity_number = $data['activity_number'];
-            $grade->quarter = $data['quarter'];
-            $grade->status = 'completed';
-        }
-
-        $oldScore = $grade->exists ? $grade->score : null;
-        $grade->score = $data['score'];
-        $grade->save();
-
-        if ($grade->wasRecentlyCreated || (string) $oldScore === (string) $data['score']) {
-            return response()->json(['success' => true, 'grade_id' => $grade->id]);
-        }
-
-        GradeHistory::create([
-            'grade_id' => $grade->id,
-            'user_id' => $user->id,
-            'old_score' => $oldScore,
-            'new_score' => $data['score'],
-            'reason' => 'Actualización desde el cuaderno pedagógico',
-        ]);
 
         return response()->json(['success' => true, 'grade_id' => $grade->id]);
     }

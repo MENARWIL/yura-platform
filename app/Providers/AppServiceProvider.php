@@ -6,6 +6,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
@@ -32,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Las pantallas internas usan Bootstrap 4 (AdminLTE); Laravel genera Tailwind por defecto.
         Paginator::useBootstrapFour();
+
+        // En un hosting con HTTPS (APP_URL https://...) todos los enlaces salen con https,
+        // aunque el servidor reciba la visita por http detrás de su proxy.
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
 
         // Cada estudiante tiene una matrícula en la gestión actual que sigue a su curso y paralelo.
         Student::saved(function (Student $student) {

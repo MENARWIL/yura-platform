@@ -23,12 +23,12 @@ class AppStaffController extends Controller
         $user = $request->user();
         $perPage = $this->perPage($request);
 
-        $query = Student::with(['course', 'parallel', 'profesor', 'grades.subject', 'attendances'])->orderBy('name');
+        $query = Student::with(['course', 'parallel', 'profesor', 'grades.subject', 'attendances'])->active()->orderedForList();
         if ($user->isProfesor()) {
             $query->taughtBy($user);
         }
         if ($term = trim((string) $request->query('q'))) {
-            $query->where('name', 'like', '%' . $term . '%');
+            $query->searchName($term);
         }
         $courseId = (int) $request->query('course_id');
         $parallelId = (int) $request->query('parallel_id');

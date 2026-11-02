@@ -58,6 +58,15 @@
                         @endforeach
                     </select>
                 </div>
+                @if(auth()->user()->isAdmin())
+                    <div class="fb-field fb-narrow {{ $showWithdrawn ? 'is-set' : '' }}">
+                        <label for="estado"><i class="fas fa-user-check" aria-hidden="true"></i> Estado</label>
+                        <select name="estado" id="estado">
+                            <option value="activos" {{ $showWithdrawn ? '' : 'selected' }}>Activos</option>
+                            <option value="baja" {{ $showWithdrawn ? 'selected' : '' }}>Dados de baja</option>
+                        </select>
+                    </div>
+                @endif
                 <div class="fb-field fb-narrow">
                     <label for="per_page"><i class="fas fa-list-ol" aria-hidden="true"></i> Mostrar</label>
                     <select name="per_page" id="per_page">
@@ -115,7 +124,15 @@
                                     <small class="text-muted"><i class="fas fa-user-friends mr-1"></i> {{ $student->parent?->name ?? $student->padre?->name ?? 'Sin asignar' }}</small>
                                 </div>
                             </td>
-                            @if($student->last_name || $student->first_name)
+                            @if($showWithdrawn && ($baja = $student->withdrawals->firstWhere('reverted_at', null)))
+                                <td colspan="3">
+                                    <span class="font-weight-bold text-dark">{{ $student->name }}</span>
+                                    <small class="d-block">
+                                        <span class="badge badge-danger-soft border px-2">{{ $baja->type === 'transferencia' ? 'Transferido' : 'Retirado' }}</span>
+                                        {{ $baja->withdrawn_on?->format('d/m/Y') }}{{ $baja->destination ? ' · a ' . $baja->destination : '' }}
+                                    </small>
+                                </td>
+                            @elseif($student->last_name || $student->first_name)
                                 <td class="font-weight-bold text-dark">{{ $student->last_name ?: '-' }}</td>
                                 <td class="font-weight-bold text-dark">{{ $student->second_last_name ?: '-' }}</td>
                                 <td class="text-dark">{{ $student->first_name ?: '-' }}</td>
