@@ -30,9 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Detrás de un intermediario (ngrok, Nginx, Cloudflare) Laravel debe confiar en él para saber
         // que la visita llegó por HTTPS; si no, arma enlaces http:// y la página sale sin estilos.
-        // TRUSTED_PROXIES: IPs separadas por coma (ej. 127.0.0.1). Vacío = no confiar en ninguno.
-        $trusted = array_values(array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', '')))));
-        $middleware->trustProxies(at: $trusted ?: null);
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\App\Services\ClosedAcademicYearException $e, \Illuminate\Http\Request $request) {
