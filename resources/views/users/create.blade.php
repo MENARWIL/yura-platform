@@ -59,8 +59,12 @@
                                     <option value="madre" {{ old('rol') == 'madre' ? 'selected' : '' }}>Madre</option>
                                     <option value="tutor" {{ old('rol') == 'tutor' ? 'selected' : '' }}>Tutor</option>
                                     <option value="profesor" {{ old('rol') == 'profesor' ? 'selected' : '' }}>Profesor</option>
-                                    <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador</option>
-                                    <option value="estudiante" {{ old('rol') == 'estudiante' ? 'selected' : '' }}>Estudiante</option>
+                                    @unless(auth()->user()->isDirector())
+                                        {{-- El director no puede crear administradores. --}}
+                                        <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador</option>
+                                    @endunless
+                                    <option value="director" {{ old('rol') == 'director' ? 'selected' : '' }}>Director</option>
+                                    <option value="academic" {{ old('rol') == 'academic' ? 'selected' : '' }}>Panel Administrativo</option>
                                 </select>
                             </div>
                         </div>

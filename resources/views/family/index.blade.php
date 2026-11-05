@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="animate-fade-in">
-    @if(!in_array(auth()->user()->role, ['admin', 'academic']))
+    @if(!(auth()->user()->isAdmin() || auth()->user()->isAcademic()))
         <div class="alert alert-info mb-4" role="alert">
             <i class="fas fa-info-circle mr-2"></i>
             Modo solo lectura: no puedes modificar las relaciones familiares.
@@ -75,7 +75,7 @@
                             <th>Tutor principal</th>
                             <th>Estado tutor</th>
                             <th>Relación</th>
-                            @if(in_array(auth()->user()->role, ['admin', 'academic']))
+                            @if((auth()->user()->isAdmin() || auth()->user()->isAcademic()))
                                 <th class="text-right">Acciones</th>
                             @endif
                         </tr>
@@ -98,12 +98,12 @@
                                     </span>
                                 </td>
                                 <td><span class="badge badge-light border text-uppercase">{{ $familyMember->relation_type }}</span></td>
-                                @if(in_array(auth()->user()->role, ['admin', 'academic']))
+                                @if((auth()->user()->isAdmin() || auth()->user()->isAcademic()))
                                     <td class="text-right">
                                         <a href="{{ route('students.edit', $familyMember->student) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit mr-1"></i> Editar</a>
                                         <a href="{{ route('tutors.edit', $familyMember->user) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-user-edit mr-1"></i> Tutor</a>
                                         <button type="button" class="btn btn-sm btn-outline-dark" data-toggle="modal" data-target="#editFamilyMember{{ $familyMember->id }}"><i class="fas fa-people-arrows mr-1"></i> Cambiar tutor</button>
-                                        <form action="{{ route('family-members.destroy', $familyMember) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Quieres eliminar esta relación?')">
+                                        <form action="{{ route('family-members.destroy', $familyMember) }}" method="POST" class="d-inline" data-confirm="¿Quieres eliminar esta relación?">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash mr-1"></i> Eliminar</button>
@@ -113,7 +113,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ in_array(auth()->user()->role, ['admin', 'academic']) ? '6' : '5' }}" class="text-center text-muted py-5">
+                                <td colspan="{{ (auth()->user()->isAdmin() || auth()->user()->isAcademic()) ? '6' : '5' }}" class="text-center text-muted py-5">
                                     <i class="fas fa-users-slash fa-2x mb-2"></i><br>
                                     No hay relaciones activas para los filtros seleccionados.
                                 </td>
@@ -129,7 +129,7 @@
                 </div>
             @endif
             {{-- Ventanas de edición dentro de la zona en vivo: así acompañan a la página que se muestra. --}}
-@if(in_array(auth()->user()->role, ['admin', 'academic']))
+@if((auth()->user()->isAdmin() || auth()->user()->isAcademic()))
     @foreach($familyMembers as $familyMember)
         <div class="modal fade" id="editFamilyMember{{ $familyMember->id }}" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">

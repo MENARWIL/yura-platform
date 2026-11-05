@@ -96,10 +96,10 @@
                 <div class="att-summary" id="att-summary">
                     <div>
                         <div class="att-legend" aria-label="Resumen del día">
-                            <span style="--c:#1f9d55">Presentes: <b data-count="Presente">0</b></span>
-                            <span style="--c:var(--yura-red)">Faltas: <b data-count="Falta">0</b></span>
-                            <span style="--c:var(--yura-amber)">Retrasos: <b data-count="Atraso">0</b></span>
-                            <span style="--c:var(--yura-action)">Licencias: <b data-count="Licencia">0</b></span>
+                            <span style="--c:#1f9d55">Presentes: <b data-count="Presente">{{ $dayTotals['Presente'] ?? 0 }}</b></span>
+                            <span style="--c:var(--yura-red)">Faltas: <b data-count="Falta">{{ $dayTotals['Falta'] ?? 0 }}</b></span>
+                            <span style="--c:var(--yura-amber)">Retrasos: <b data-count="Atraso">{{ $dayTotals['Atraso'] ?? 0 }}</b></span>
+                            <span style="--c:var(--yura-action)">Licencias: <b data-count="Licencia">{{ $dayTotals['Licencia'] ?? 0 }}</b></span>
                         </div>
                         @if($canEdit)
                             <small class="text-muted d-block mt-1" id="att-pending-text" @if(! $pendingCount) hidden @endif>
@@ -133,7 +133,7 @@
                                 $shownStatus = $savedStatus ?? ($canEdit ? 'Presente' : null);
                             @endphp
                             <tr data-student-id="{{ $student->id }}" data-status="{{ $shownStatus }}" class="{{ $savedStatus ? '' : 'att-row-pending' }}" @if(! $savedStatus) data-pending="1" @endif>
-                                <td class="text-center align-middle">{{ $loop->iteration }}</td>
+                                <td class="text-center align-middle">{{ method_exists($students, 'firstItem') ? $students->firstItem() + $loop->index : $loop->iteration }}</td>
                                 <td class="px-4 align-middle">
                                     <div class="d-flex align-items-center">
                                         @if($student->foto_path)
@@ -175,6 +175,9 @@
                         </tbody>
                     </table>
                 </div>
+                @unless($canEdit)
+                    @include('partials.list-footer', ['paginator' => $students, 'noun' => 'estudiantes'])
+                @endunless
             @endif
         </div>
     </div>
@@ -296,6 +299,8 @@
         }
 
         function refreshSummary() {
+            // En consulta la lista va por páginas: los totales del día ya vienen calculados del servidor.
+            if (!registerButton) return;
             const counts = { Presente: 0, Falta: 0, Atraso: 0, Licencia: 0 };
             rows().forEach(row => { if (counts[row.dataset.status] !== undefined) counts[row.dataset.status]++; });
             Object.keys(counts).forEach(key => {

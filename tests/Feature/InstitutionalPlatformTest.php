@@ -56,8 +56,8 @@ class InstitutionalPlatformTest extends TestCase
 
     public function test_only_admin_can_access_audit_log(): void
     {
-        $academic = User::factory()->create(['role' => 'academic', 'status' => 'activo']);
-        $this->actingAs($academic)->get('/admin/audit')->assertRedirect('/');
+        $teacher = User::factory()->create(['role' => 'profesor', 'status' => 'activo']);
+        $this->actingAs($teacher)->get('/admin/audit')->assertRedirect('/');
 
         $admin = User::factory()->create(['role' => 'admin', 'status' => 'activo']);
         $this->actingAs($admin)->get('/admin/audit')->assertOk();

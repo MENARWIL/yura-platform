@@ -7,9 +7,12 @@
     <div class="card card-quechua border-0 shadow-sm">
         <div class="card-header card-header-quechua d-flex justify-content-between align-items-center flex-wrap">
             <h3 class="mb-0"><i class="fas fa-chalkboard-teacher mr-2"></i> Profesores</h3>
-            <a href="{{ route('teachers.create') }}" class="btn btn-primary">
-                <i class="fas fa-user-plus mr-1"></i> Nuevo profesor
-            </a>
+            @if(auth()->user()->canCreateAccounts())
+                {{-- El Panel Administrativo no agrega profesores (crea una cuenta). --}}
+                <a href="{{ route('teachers.create') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus mr-1"></i> Nuevo profesor
+                </a>
+            @endif
         </div>
         <div class="card-body bg-white">
             <div class="table-responsive">
@@ -44,6 +47,7 @@
                     </tbody>
                 </table>
             </div>
+            @include('partials.list-footer', ['paginator' => $teachers, 'noun' => 'profesores'])
         </div>
     </div>
 </div>

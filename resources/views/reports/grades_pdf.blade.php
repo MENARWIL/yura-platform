@@ -33,18 +33,6 @@
         <p>Fecha de generación: {{ date('d/m/Y H:i') }} | Generado por: {{ Auth::user()->name }}</p>
     </div>
 
-    @php
-        $dimensionPoints = ['ser' => 10, 'saber' => 45, 'hacer' => 40];
-        $scaleToDimension = function (array $scores, int $maxPoints) {
-            $numeric = array_values(array_filter($scores, fn ($v) => is_numeric($v) && $v !== ''));
-            if (empty($numeric)) {
-                return null;
-            }
-            $avg = array_sum($numeric) / count($numeric);
-            return round(($avg / 100) * $maxPoints, 2);
-        };
-    @endphp
-
     <table>
         <thead>
             <tr>
@@ -69,21 +57,14 @@
         <tbody>
             @forelse($students as $student)
                 @php
-                    $studentGrades = $gradesByStudent[$student->id] ?? null;
-                    $ser = [1 => data_get($studentGrades, 'activity.1.score', ''), 2 => data_get($studentGrades, 'activity.2.score', ''), 3 => data_get($studentGrades, 'activity.3.score', '')];
-                    $saber = [1 => data_get($studentGrades, 'exam.1.score', ''), 2 => data_get($studentGrades, 'exam.2.score', ''), 3 => data_get($studentGrades, 'exam.3.score', ''), 4 => data_get($studentGrades, 'exam.4.score', ''), 5 => data_get($studentGrades, 'exam.5.score', '')];
-                    $hacer = [1 => data_get($studentGrades, 'robot.1.score', ''), 2 => data_get($studentGrades, 'robot.2.score', ''), 3 => data_get($studentGrades, 'robot.3.score', ''), 4 => data_get($studentGrades, 'robot.4.score', ''), 5 => data_get($studentGrades, 'robot.5.score', '')];
-                    $autoeval = data_get($studentGrades, 'autoeval.1.score', '');
-
-                    $promSer = $scaleToDimension($ser, $dimensionPoints['ser']);
-                    $promSaber = $scaleToDimension($saber, $dimensionPoints['saber']);
-                    $promHacer = $scaleToDimension($hacer, $dimensionPoints['hacer']);
-
-                    $dimensionesLlenas = array_filter([$promSer, $promSaber, $promHacer], fn ($v) => $v !== null);
-                    $total = count($dimensionesLlenas) ? round(array_sum($dimensionesLlenas), 2) : null;
-                    $notaBimestral = ($total !== null || is_numeric($autoeval))
-                        ? round(($total ?? 0) + (is_numeric($autoeval) ? $autoeval : 0), 2)
-                        : null;
+                    // Mismo cálculo que el cuaderno y las notas trimestrales (App\Services\CuadernoNota).
+                    $nota = \App\Services\CuadernoNota::summarize($gradesByStudent[$student->id] ?? null);
+                    ['ser' => $ser, 'saber' => $saber, 'hacer' => $hacer, 'autoeval' => $autoeval] = $nota;
+                    $promSer = $nota['prom_ser'];
+                    $promSaber = $nota['prom_saber'];
+                    $promHacer = $nota['prom_hacer'];
+                    $total = $nota['total'];
+                    $notaBimestral = $nota['nota'];
                 @endphp
                 <tr>
                     <td>{{ $loop->iteration }}</td>

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentDocumentController;
+use App\Http\Controllers\StudentPromotionController;
 use App\Http\Controllers\StudentWithdrawalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
@@ -47,7 +49,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/lang/{locale}', [LocaleController::class, 'set'])->name('lang.set');
 
 // Protected Routes
-Route::middleware(['auth', 'set.locale'])->group(function () {
+// El panel va solo en castellano (ver PanelInSpanish); el portal público sigue bilingüe.
+Route::middleware(['auth', 'panel.es'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile Routes
@@ -55,11 +58,17 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Students CRUD & Exports (global)
+    // Promoción de un curso completo al siguiente (antes de la ruta students/{student}).
+    Route::get('/students/promote', [StudentPromotionController::class, 'create'])->middleware('rol:admin')->name('students.promote');
+    Route::post('/students/promote', [StudentPromotionController::class, 'store'])->middleware('rol:admin')->name('students.promote.store');
     Route::get('/students/export-pdf-all', [StudentController::class, 'exportPdfAll'])->middleware('rol:admin,profesor')->name('students.export.pdf.all');
     Route::get('/students/export-excel-all', [StudentController::class, 'exportExcelAll'])->middleware('rol:admin,profesor')->name('students.export.excel.all');
     // Individual student exports
     Route::get('/students/{student}/export-pdf', [StudentController::class, 'exportPdf'])->name('students.export.pdf');
     Route::get('/students/{student}/export-excel', [StudentController::class, 'exportExcel'])->name('students.export.excel');
+    // Documentos de secretaría (administrador, director y Panel Administrativo).
+    Route::get('/students/{student}/constancia', [StudentDocumentController::class, 'constancia'])->middleware('rol:admin')->name('students.constancia');
+    Route::get('/students/{student}/boletin', [StudentDocumentController::class, 'boletin'])->middleware('rol:admin')->name('students.boletin');
     Route::patch('/students/{student}/info', [StudentController::class, 'updateInfo'])->middleware('rol:admin,academic')->name('students.info');
     Route::post('/students/{student}/guardian', [StudentController::class, 'assignGuardian'])->middleware('rol:admin,academic')->name('students.guardian');
     // Baja (transferencia o retiro) y reincorporación: solo el administrador.
@@ -88,6 +97,18 @@ Route::middleware(['auth', 'set.locale'])->group(function () {
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/attendance/export-pdf', [AttendanceController::class, 'exportPdf'])->name('attendance.export.pdf');
     });
+
+    // Notas finales por trimestre (solo lectura) para el director y la Secretaría, en lugar del cuaderno.
+    // Va antes de /grades/{student} para que «trimesters» no se tome como un estudiante.
+    Route::get('/grades/trimesters', [GradeController::class, 'trimesters'])
+        ->middleware('rol:director,academic')
+        ->name('grades.trimesters');
+    Route::get('/grades/trimesters/pdf', [GradeController::class, 'trimestersPdf'])
+        ->middleware('rol:director,academic')
+        ->name('grades.trimesters.pdf');
+    Route::get('/grades/trimesters/excel', [GradeController::class, 'trimestersExcel'])
+        ->middleware('rol:director,academic')
+        ->name('grades.trimesters.excel');
 
     Route::middleware(['rol:profesor'])->group(function () {
         Route::get('/robot-activities', [RobotActivityController::class, 'index'])->name('robot-activities.index');

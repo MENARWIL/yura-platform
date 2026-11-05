@@ -16,11 +16,28 @@ use Illuminate\Support\Facades\Schema;
  */
 class UserAdminService
 {
-    /** Roles que un administrador puede asignar (el robot se crea aparte, con su seeder). */
-    public const ROLES = ['padre', 'madre', 'tutor', 'profesor', 'admin', 'estudiante', 'academic'];
+    /**
+     * Roles que un administrador puede asignar (el robot se crea aparte, con su seeder).
+     * «estudiante» ya no se ofrece en los formularios, pero sigue siendo válido para cuentas antiguas.
+     */
+    public const ROLES = ['padre', 'madre', 'tutor', 'profesor', 'admin', 'director', 'estudiante', 'academic'];
+
+    /** El director administra todo, menos las cuentas de administrador (ni crearlas ni tocarlas). */
+    public const DIRECTOR_ADMIN_MESSAGE = 'El director no puede crear, modificar, suspender ni eliminar administradores.';
+
+    /** El Panel Administrativo (rol academic) no agrega usuarios ni toca cuentas de administrador o de director. */
+    public const SECRETARY_CREATE_MESSAGE = 'El Panel Administrativo no puede agregar usuarios.';
+
+    public const SECRETARY_ACCOUNT_MESSAGE = 'El Panel Administrativo no puede crear, modificar, suspender ni eliminar cuentas de administrador o de director.';
 
     public function create(User $actor, array $attributes): User
     {
+        // Usuarios y profesores: la Secretaría no los agrega (los familiares se registran al inscribir, por otro camino).
+        if (! $actor->canCreateAccounts()) {
+            throw new UserAdminException(self::SECRETARY_CREATE_MESSAGE);
+        }
+        $this->guardRoleAssignment($actor, $attributes['rol'] ?? $attributes['role'] ?? null);
+
         return DB::transaction(function () use ($actor, $attributes) {
             $user = User::create($attributes);
             $this->audit($actor, 'user.create', $user, ['role' => $user->role]);
@@ -33,6 +50,7 @@ class UserAdminService
     public function toggleStatus(User $actor, User $target): User
     {
         $this->guardSelf($actor, $target, 'No puedes suspender tu propia cuenta.');
+        $this->guardAdminAccount($actor, $target);
 
         return DB::transaction(function () use ($actor, $target) {
             $current = strtolower(trim((string) $target->status));
@@ -63,7 +81,9 @@ class UserAdminService
      */
     public function update(User $actor, User $target, array $attributes): User
     {
+        $this->guardAdminAccount($actor, $target);
         $newRole = $attributes['rol'] ?? $attributes['role'] ?? null;
+        $this->guardRoleAssignment($actor, $newRole);
         $roleChanges = $newRole !== null && $newRole !== $target->role;
         if ($roleChanges) {
             $this->guardSelf($actor, $target, 'No puedes cambiar tu propio rol.');
@@ -98,6 +118,7 @@ class UserAdminService
     public function delete(User $actor, User $target): void
     {
         $this->guardSelf($actor, $target, 'No puedes eliminar tu propia cuenta.');
+        $this->guardAdminAccount($actor, $target);
 
         DB::transaction(function () use ($actor, $target) {
             $this->guardLastAdmin($target, 'No se puede eliminar al último administrador activo.');
@@ -109,6 +130,8 @@ class UserAdminService
 
     public function restore(User $actor, User $target): void
     {
+        $this->guardAdminAccount($actor, $target);
+
         DB::transaction(function () use ($actor, $target) {
             $target->restore();
             $this->audit($actor, 'user.restore', $target);
@@ -118,6 +141,7 @@ class UserAdminService
     public function forceDelete(User $actor, User $target): void
     {
         $this->guardSelf($actor, $target, 'No puedes eliminar tu propia cuenta.');
+        $this->guardAdminAccount($actor, $target);
 
         DB::transaction(function () use ($actor, $target) {
             $this->guardLastAdmin($target, 'No se puede eliminar al último administrador activo.');
@@ -136,6 +160,31 @@ class UserAdminService
     {
         if ($actor->is($target)) {
             throw new UserAdminException($message);
+        }
+    }
+
+    /**
+     * Cuentas protegidas: el director no toca administradores; el Panel Administrativo
+     * no toca administradores ni directores.
+     */
+    private function guardAdminAccount(User $actor, User $target): void
+    {
+        if ($actor->isDirector() && $target->role === 'admin') {
+            throw new UserAdminException(self::DIRECTOR_ADMIN_MESSAGE);
+        }
+        if ($actor->isAcademic() && in_array($target->role, ['admin', 'director'], true)) {
+            throw new UserAdminException(self::SECRETARY_ACCOUNT_MESSAGE);
+        }
+    }
+
+    /** Roles que no se pueden asignar: el director no asigna «admin»; la Secretaría, ni «admin» ni «director». */
+    private function guardRoleAssignment(User $actor, ?string $role): void
+    {
+        if ($actor->isDirector() && $role === 'admin') {
+            throw new UserAdminException(self::DIRECTOR_ADMIN_MESSAGE);
+        }
+        if ($actor->isAcademic() && in_array($role, ['admin', 'director'], true)) {
+            throw new UserAdminException(self::SECRETARY_ACCOUNT_MESSAGE);
         }
     }
 

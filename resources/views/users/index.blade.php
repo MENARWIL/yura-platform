@@ -10,9 +10,11 @@
                 <i class="fas fa-users-cog mr-2"></i> {{ __('messages.system_users') }}
             </h3>
             <div class="card-tools ml-auto">
-                <a href="{{ route('users.create') }}" class="btn btn-quechua px-4 shadow-sm">
-                    <i class="fas fa-plus-circle mr-2"></i> {{ __('messages.new_user') }}
-                </a>
+                @if($canCreate)
+                    <a href="{{ route('users.create') }}" class="btn btn-quechua px-4 shadow-sm">
+                        <i class="fas fa-plus-circle mr-2"></i> {{ __('messages.new_user') }}
+                    </a>
+                @endif
             </div>
         </div>
         <div class="card-body p-4 bg-white">
@@ -91,8 +93,11 @@
                             </td>
                             <td class="text-center">
                                     <span class="badge badge-light border px-3 py-2 text-uppercase rounded-pill" style="font-size: 0.7rem; letter-spacing: 1px;">
-                                    {{ $user->role }}
+                                    {{ $user->roleLabel() }}
                                 </span>
+                                @if($user->id === $mainAdminId)
+                                    <span class="badge badge-primary px-2 py-1 rounded-pill d-block mt-1" style="font-size: 0.65rem;">Principal</span>
+                                @endif
                             </td>
                             <td class="text-center text-muted">
                                 {{-- Asignaturas de sus asignaciones docentes activas (o la asignatura principal del profesor). --}}
@@ -116,6 +121,9 @@
                                 </span>
                             </td>
                             <td class="text-right px-4">
+                                @if(in_array($user->role, $protectedRoles, true))
+                                    <span class="text-muted small"><i class="fas fa-lock mr-1" aria-hidden="true"></i> Protegido</span>
+                                @else
                                 <div class="btn-group shadow-sm rounded-pill bg-light p-1">
                                         <a href="{{ route('users.edit', $user->id) }}" class="btn btn-white btn-sm border-0 rounded-circle mr-1" title="Editar">
                                         <i class="fas fa-edit text-primary"></i>
@@ -129,12 +137,13 @@
                                         </button>
                                     </form>
 
-                                    <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar este usuario?')">
+                                    <form action="{{ route('users.destroy', $user) }}" method="POST" class="d-inline" data-confirm="¿Estás seguro de eliminar este usuario?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
                                     </form>
                                 </div>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
@@ -181,6 +190,9 @@
                                         </td>
                                         <td>{{ $user->email }}</td>
                                         <td class="text-right">
+                                            @if(in_array($user->role, $protectedRoles, true))
+                                                <span class="text-muted small"><i class="fas fa-lock mr-1" aria-hidden="true"></i> Protegido</span>
+                                            @else
                                             <form action="{{ route('users.restore', $user) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('PATCH')
@@ -188,13 +200,14 @@
                                                     <i class="fas fa-undo mr-1"></i> Restaurar
                                                 </button>
                                             </form>
-                                            <form action="{{ route('users.forceDestroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este usuario definitivamente?')">
+                                            <form action="{{ route('users.forceDestroy', $user) }}" method="POST" class="d-inline" data-confirm="¿Eliminar este usuario definitivamente?">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                                     <i class="fas fa-skull-crossbones mr-1"></i> Eliminar definitivamente
                                                 </button>
                                             </form>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

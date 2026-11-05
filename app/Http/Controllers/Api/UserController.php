@@ -52,14 +52,18 @@ class UserController extends Controller
             ], 400);
         }
 
-        $user = app(UserAdminService::class)->create($request->user(), [
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'rol' => $request->rol,
-            'telefono' => $request->telefono,
-            'estado' => 'activo',
-        ]);
+        try {
+            $user = app(UserAdminService::class)->create($request->user(), [
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'rol' => $request->rol,
+                'telefono' => $request->telefono,
+                'estado' => 'activo',
+            ]);
+        } catch (UserAdminException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
 
         return response()->json([
             'success' => true,

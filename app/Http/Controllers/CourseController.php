@@ -7,16 +7,25 @@ use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        // Filtros para no mostrar todos los cursos y paralelos juntos.
+        $nivel = array_key_exists((string) $request->query('nivel'), Course::NIVELES) ? (string) $request->query('nivel') : null;
+        $courseId = $request->integer('course_id') ?: null;
+
         $courses = Course::withCount('parallels')
             ->with(['parallels' => function ($query) {
                 $query->withCount('students')->orderBy('name');
             }])
+            ->when($nivel, fn ($query) => $query->where('nivel_educativo', $nivel))
+            ->when($courseId, fn ($query) => $query->whereKey($courseId))
             ->orderBy('name')
             ->get();
 
-        return view('courses.index', compact('courses'));
+        $allCourses = Course::orderBy('name')->get(['id', 'name']);
+        $filtered = $nivel !== null || $courseId !== null;
+
+        return view('courses.index', compact('courses', 'allCourses', 'nivel', 'courseId', 'filtered'));
     }
 
     public function create()

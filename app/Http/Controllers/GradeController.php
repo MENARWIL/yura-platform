@@ -11,14 +11,23 @@ use App\Models\Attendance;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\TeachingAssignment;
+use App\Exports\TrimesterGradesExport;
+use App\Http\Controllers\Concerns\PaginatesLists;
+use App\Models\AcademicYear;
 use App\Services\TeacherRecords;
+use App\Services\TrimesterReport;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
 
 class GradeController extends Controller
 {
+    use PaginatesLists;
+
     public function index(Request $request)
     {
         /** @var User $user */
@@ -26,6 +35,11 @@ class GradeController extends Controller
 
         if (!$user->isAdmin() && !$user->isAcademic() && !$user->isProfesor()) {
             abort(403, __('messages.unauthorized'));
+        }
+
+        // El director y la Secretaría no usan el cuaderno: ven solo las notas finales de cada trimestre.
+        if ($user->seesTrimesterGradesOnly()) {
+            return redirect()->route('grades.trimesters', $request->only(['subject_id', 'parallel_id']));
         }
 
         $subjects = Subject::where('active', true)->orderBy('sort_order')->orderBy('name')->get();
@@ -58,7 +72,7 @@ class GradeController extends Controller
             $query->where('parallel_id', $selectedParallelId);
         }
 
-        $students = $query->orderedForList()->get();
+        $students = $query->orderedForList()->paginate($this->perPage($request, 20))->withQueryString();
         $studentIds = $students->pluck('id')->all();
 
         $gradesByStudent = Grade::whereIn('student_id', $studentIds)
@@ -78,6 +92,67 @@ class GradeController extends Controller
         return view('grades.index', compact('students', 'subjects', 'parallels', 'selectedSubjectId', 'selectedParallelId', 'selectedQuarter', 'gradesByStudent'));
     }
 
+    /**
+     * Notas trimestrales (solo lectura, director y Panel Administrativo): la nota final sobre 100 de cada trimestre
+     * por estudiante, con el mismo cálculo del Cuaderno Pedagógico, y el promedio anual.
+     */
+    public function trimesters(Request $request)
+    {
+        $subjects = Subject::where('active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $parallels = Parallel::with('course')->orderBy('course_id')->orderBy('name')->get();
+        $selectedSubjectId = $request->integer('subject_id');
+        $selectedParallelId = $request->integer('parallel_id');
+
+        $rows = ($selectedSubjectId && $selectedParallelId)
+            ? TrimesterReport::forParallel($selectedSubjectId, $selectedParallelId)
+            : collect();
+
+        return view('grades.trimesters', compact('subjects', 'parallels', 'selectedSubjectId', 'selectedParallelId', 'rows'));
+    }
+
+    /** Planilla de notas trimestrales de un paralelo en PDF (la misma tabla de la página). */
+    public function trimestersPdf(Request $request)
+    {
+        [$subject, $parallel, $rows] = $this->trimesterSheet($request);
+
+        return Pdf::loadView('reports.trimesters_pdf', [
+            'subject' => $subject,
+            'parallel' => $parallel,
+            'rows' => $rows,
+            'year' => AcademicYear::current(),
+            'orgName' => config('yura.org_name'),
+        ])->setPaper('A4', 'portrait')->download($this->trimesterFileName($subject, $parallel) . '.pdf');
+    }
+
+    /** Planilla de notas trimestrales de un paralelo en Excel. */
+    public function trimestersExcel(Request $request)
+    {
+        [$subject, $parallel, $rows] = $this->trimesterSheet($request);
+
+        return Excel::download(
+            new TrimesterGradesExport($subject, $parallel, $rows, AcademicYear::current()),
+            $this->trimesterFileName($subject, $parallel) . '.xlsx'
+        );
+    }
+
+    /** @return array{0: Subject, 1: Parallel, 2: \Illuminate\Support\Collection} */
+    private function trimesterSheet(Request $request): array
+    {
+        $data = $request->validate([
+            'subject_id' => ['required', 'integer', 'exists:subjects,id'],
+            'parallel_id' => ['required', 'integer', 'exists:parallels,id'],
+        ]);
+        $subject = Subject::findOrFail($data['subject_id']);
+        $parallel = Parallel::with('course')->findOrFail($data['parallel_id']);
+
+        return [$subject, $parallel, TrimesterReport::forParallel($subject->id, $parallel->id)];
+    }
+
+    private function trimesterFileName(Subject $subject, Parallel $parallel): string
+    {
+        return 'notas_trimestrales_' . Str::slug($subject->name . ' ' . ($parallel->course?->name ?? '') . ' ' . $parallel->name, '_');
+    }
+
     public function exportPdf(Request $request)
     {
         /** @var User $user */
@@ -85,6 +160,11 @@ class GradeController extends Controller
 
         if (!$user->isAdmin() && !$user->isAcademic() && !$user->isProfesor()) {
             abort(403, __('messages.unauthorized'));
+        }
+
+        // El PDF es el cuaderno completo: el director y la Secretaría no lo exportan.
+        if ($user->seesTrimesterGradesOnly()) {
+            return redirect()->route('grades.trimesters', $request->only(['subject_id', 'parallel_id']));
         }
 
         $selectedSubjectId = $request->integer('subject_id');
@@ -211,13 +291,13 @@ class GradeController extends Controller
         }
 
         $data = $request->validate([
-            'score' => 'required|numeric|min:0|max:100',
+            'score' => 'required|integer|min:1|max:100',
             'type' => 'nullable|string|max:50',
             'observations' => 'nullable|string|max:1000',
             'reason' => 'nullable|string|max:500',
             'attendance' => 'nullable|string|in:Presente,Falta,Atraso,Licencia',
-            'exam_score' => 'nullable|numeric|min:0|max:100',
-            'activity_score' => 'nullable|numeric|min:0|max:100',
+            'exam_score' => 'nullable|integer|min:1|max:100',
+            'activity_score' => 'nullable|integer|min:1|max:100',
         ]);
 
         $grade->update([
@@ -275,9 +355,9 @@ class GradeController extends Controller
             'attendance' => 'array',
             'attendance.*' => 'nullable|string|in:Presente,Falta,Atraso,Licencia',
             'activity_score' => 'array',
-            'activity_score.*' => 'nullable|numeric|min:0|max:100',
+            'activity_score.*' => 'nullable|integer|min:1|max:100',
             'exam_score' => 'array',
-            'exam_score.*' => 'nullable|numeric|min:0|max:100',
+            'exam_score.*' => 'nullable|integer|min:1|max:100',
         ]);
 
         $studentIds = array_unique(array_merge(
@@ -360,9 +440,9 @@ class GradeController extends Controller
         $data = $request->validate([
             'student_id' => ['required', 'integer', 'exists:students,id'],
             'subject_id' => ['required', 'integer', 'exists:subjects,id'],
-            'first_period' => ['nullable', 'required_without_all:second_period,exam', 'numeric', 'min:0', 'max:100'],
-            'second_period' => ['nullable', 'required_without_all:first_period,exam', 'numeric', 'min:0', 'max:100'],
-            'exam' => ['nullable', 'required_without_all:first_period,second_period', 'numeric', 'min:0', 'max:100'],
+            'first_period' => ['nullable', 'required_without_all:second_period,exam', 'integer', 'min:1', 'max:100'],
+            'second_period' => ['nullable', 'required_without_all:first_period,exam', 'integer', 'min:1', 'max:100'],
+            'exam' => ['nullable', 'required_without_all:first_period,second_period', 'integer', 'min:1', 'max:100'],
         ], [
             'student_id.required' => 'Student is required.',
             'student_id.exists' => 'The selected student does not exist.',

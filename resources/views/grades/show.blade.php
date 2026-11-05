@@ -21,6 +21,17 @@
                             <i class="fas fa-user-minus mr-1"></i> Dar de baja / Transferir
                         </button>
                     @endif
+                    @if(auth()->user()->isAdmin())
+                        {{-- Documentos de secretaría: constancia (solo estudiantes regulares) y boletín trimestral. --}}
+                        @unless($student->isWithdrawn())
+                            <a href="{{ route('students.constancia', $student) }}" class="btn btn-outline-light btn-sm rounded-pill px-3 ml-2 font-weight-bold">
+                                <i class="fas fa-file-signature mr-1"></i> Constancia
+                            </a>
+                        @endunless
+                        <a href="{{ route('students.boletin', $student) }}" class="btn btn-outline-light btn-sm rounded-pill px-3 ml-2 font-weight-bold">
+                            <i class="fas fa-file-pdf mr-1"></i> Boletín
+                        </a>
+                    @endif
                 </div>
                 <div class="card-body bg-white p-4">
                     @if($student->isWithdrawn())
@@ -35,7 +46,7 @@
                                 <div class="small text-muted mt-1">No aparece en listas, notas ni asistencia. Su información y un respaldo de sus datos se conservan.</div>
                             </div>
                             @if(auth()->user()->isAdmin())
-                                <form method="POST" action="{{ route('students.reinstate', $student) }}" onsubmit="return confirm('¿Reincorporar a {{ addslashes($student->name) }}? Volverá a aparecer en las listas.')">
+                                <form method="POST" action="{{ route('students.reinstate', $student) }}" data-confirm="¿Reincorporar a {{ $student->name }}? Volverá a aparecer en las listas.">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 font-weight-bold">
@@ -206,7 +217,7 @@
                 <div class="modal-body">
                     <div class="form-group mb-3">
                         <label class="font-weight-bold">{{ __('messages.new_grade') }}</label>
-                        <input type="number" name="score" class="form-control" min="0" max="100" step="0.01" value="{{ $grade->score }}" required>
+                        <input type="number" name="score" class="form-control" min="1" max="100" step="1" inputmode="numeric" value="{{ $grade->score !== null ? (int) round($grade->score) : '' }}" required>
                     </div>
                     <div class="form-group mb-3">
                         <label class="font-weight-bold">{{ __('messages.grade_type') }}</label>

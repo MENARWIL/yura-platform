@@ -29,15 +29,6 @@
 
         <!-- Right navbar links -->
         <ul class="navbar-nav ml-auto">
-            <li class="nav-item dropdown mr-2">
-                <a class="nav-link" data-toggle="dropdown" href="#">
-                    <i class="fas fa-language mr-1"></i> {{ __('messages.language') ?? 'Idioma' }}
-                </a>
-                <div class="dropdown-menu dropdown-menu-right">
-                    <a class="dropdown-item" href="{{ route('lang.set', ['locale' => 'es']) }}">{{ __('messages.spanish') ?? 'Castellano' }}</a>
-                    <a class="dropdown-item" href="{{ route('lang.set', ['locale' => 'qu']) }}">{{ __('messages.quechua') ?? 'Quechua' }}</a>
-                </div>
-            </li>
             <li class="nav-item">
                 <form action="{{ route('logout') }}" method="POST" style="display: inline-block;">
                     @csrf
@@ -69,7 +60,7 @@
                 <div class="info">
                     <a href="{{ route('profile.edit') }}" class="d-block text-white small">
                         {{ Auth::user()->name }}<br>
-                        <span class="badge yura-role-badge" style="font-size: 10px;">{{ mb_strtoupper(Auth::user()->role ?? Auth::user()->rol ?? 'PROFESOR', 'UTF-8') }}</span>
+                        <span class="badge yura-role-badge" style="font-size: 10px;">{{ mb_strtoupper(Auth::user()->roleLabel() ?: 'PROFESOR', 'UTF-8') }}</span>
                     </a>
                 </div>
             </div>
@@ -80,6 +71,10 @@
                     <li class="nav-header text-uppercase small opacity-50 text-white mb-2">{{ __('messages.main_menu') ?? 'MENÚ' }}</li>
                     @php
                         $userRole = strtolower(Auth::user()->role ?? Auth::user()->rol ?? '');
+                        // El director y el Panel Administrativo ven el mismo menú que el administrador.
+                        if (in_array($userRole, ['director', 'academic'], true)) {
+                            $userRole = 'admin';
+                        }
                     @endphp
                     <li class="nav-item">
                         <a href="{{ route('dashboard') }}" class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}">
@@ -107,12 +102,22 @@
                     @endif
 
                     @if(in_array($userRole, ['admin', 'academic', 'teacher', 'profesor']))
+                        @if(Auth::user()->seesTrimesterGradesOnly())
+                            {{-- El director y la Secretaría ven solo las notas finales de cada trimestre, no el cuaderno. --}}
+                            <li class="nav-item">
+                                <a href="{{ route('grades.trimesters') }}" class="nav-link {{ request()->is('grades*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-clipboard-list"></i>
+                                    <p>Notas trimestrales</p>
+                                </a>
+                            </li>
+                        @else
                         <li class="nav-item">
                             <a href="{{ route('grades.index') }}" class="nav-link {{ request()->is('grades*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-book"></i>
                                 <p>{{ __('messages.pedagogical_notebook') ?? 'Cuaderno Pedagógico' }}</p>
                             </a>
                         </li>
+                        @endif
                         @if($userRole === 'profesor')
                             <li class="nav-item">
                                 <a href="{{ route('robot-activities.index') }}" class="nav-link {{ request()->is('robot-activities*') ? 'active' : '' }}">
@@ -196,7 +201,7 @@
             <div class="container-fluid">
                 
                 @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                    <div class="alert alert-success alert-dismissible fade show mt-2" role="status" data-autohide>
                         <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
                         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>

@@ -106,8 +106,9 @@ class AcademicYearService
 
     private function assertAdmin(?User $actor): void
     {
-        if ($actor !== null && ! $actor->isAdmin()) {
-            throw new UserAdminException('Solo un administrador puede gestionar las gestiones escolares.');
+        // El Panel Administrativo solo consulta las gestiones.
+        if ($actor !== null && ! $actor->canManageYears()) {
+            throw new UserAdminException('Solo el administrador o el director pueden gestionar las gestiones escolares.');
         }
     }
 

@@ -218,9 +218,69 @@ class User extends Authenticatable
         }
     }
 
+    /**
+     * Administración: el administrador, el director y el Panel Administrativo (rol «academic»)
+     * comparten los permisos de administración. Lo que el director y la Secretaría no pueden hacer
+     * se controla aparte: canManageYears(), canCreateAccounts() y UserAdminService.
+     */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'director', 'academic'], true);
+    }
+
+    /** El director administra todo, salvo las cuentas de administrador. */
+    public function isDirector(): bool
+    {
+        return $this->role === 'director';
+    }
+
+    /** Crear, cerrar, reabrir o cambiar la gestión escolar: la Secretaría solo la consulta. */
+    public function canManageYears(): bool
+    {
+        return in_array($this->role, ['admin', 'director'], true);
+    }
+
+    /** Agregar usuarios y profesores: la Secretaría no puede (sí registra familiares al inscribir). */
+    public function canCreateAccounts(): bool
+    {
+        return in_array($this->role, ['admin', 'director'], true);
+    }
+
+    /** El director y la Secretaría ven las notas finales por trimestre en lugar del cuaderno. */
+    public function seesTrimesterGradesOnly(): bool
+    {
+        return in_array($this->role, ['director', 'academic'], true);
+    }
+
+    /** Nombre visible de cada rol (el valor guardado no cambia). */
+    public const ROLE_LABELS = [
+        'admin' => 'Administrador',
+        'director' => 'Director',
+        'academic' => 'Panel Administrativo',
+        'profesor' => 'Profesor',
+        'padre' => 'Padre',
+        'madre' => 'Madre',
+        'tutor' => 'Tutor',
+        'estudiante' => 'Estudiante',
+        'robot' => 'Robot',
+    ];
+
+    public function roleLabel(): string
+    {
+        return self::ROLE_LABELS[$this->role] ?? (string) $this->role;
+    }
+
+    /** Id del administrador principal: la primera cuenta de administrador que se creó. */
+    public static function mainAdminId(): ?int
+    {
+        $id = static::withTrashed()->where('role', 'admin')->min('id');
+
+        return $id === null ? null : (int) $id;
+    }
+
+    public function isMainAdmin(): bool
+    {
+        return $this->role === 'admin' && $this->id === static::mainAdminId();
     }
 
     public function isAcademic(): bool

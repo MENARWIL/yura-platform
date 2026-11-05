@@ -12,9 +12,6 @@
             </a>
         </div>
         <div class="card-body bg-white">
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead>
@@ -35,7 +32,7 @@
                                 <td>{{ $parallel->students_count }}</td>
                                 <td>
                                     <a href="{{ route('parallels.edit', $parallel) }}" class="btn btn-sm btn-primary">Editar</a>
-                                    <form action="{{ route('parallels.destroy', $parallel) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar este registro?')">
+                                    <form action="{{ route('parallels.destroy', $parallel) }}" method="POST" class="d-inline" data-confirm="¿Estás seguro de eliminar este registro?">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">

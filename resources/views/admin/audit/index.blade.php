@@ -107,7 +107,7 @@
             </div>
 
             <div class="card-footer bg-white border-0 px-4 py-3">
-                {{ $logs->links() }}
+                @include('partials.list-footer', ['paginator' => $logs, 'noun' => 'registros'])
             </div>
         </div>
     </div>

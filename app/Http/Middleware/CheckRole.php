@@ -24,7 +24,10 @@ class CheckRole
 
         $userRole = $user->role ?? $user->rol;
 
-        if (in_array($userRole, $roles, true)) {
+        // El director y el Panel Administrativo (academic) entran a todo lo que permite el rol admin;
+        // lo que no pueden hacer se bloquea en cada acción (gestiones, cuentas, crear usuarios).
+        $asAdmin = in_array($userRole, ['director', 'academic'], true) && in_array('admin', $roles, true);
+        if (in_array($userRole, $roles, true) || $asAdmin) {
             return $next($request);
         }
 

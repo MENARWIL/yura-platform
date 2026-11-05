@@ -210,7 +210,11 @@
                 <div class="card border-0 shadow-sm rounded-lg h-100">
                     <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                         <h5 class="card-title font-weight-bold mb-0 text-dark"><i class="fas fa-star mr-2 text-warning"></i>Top rendimiento</h5>
-                        <a href="{{ route('grades.index') }}" class="btn btn-sm btn-outline-primary">Cuaderno pedagógico</a>
+                        @if(auth()->user()->seesTrimesterGradesOnly())
+                            <a href="{{ route('grades.trimesters') }}" class="btn btn-sm btn-outline-primary">Notas trimestrales</a>
+                        @else
+                            <a href="{{ route('grades.index') }}" class="btn btn-sm btn-outline-primary">Cuaderno pedagógico</a>
+                        @endif
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">

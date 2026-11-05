@@ -129,7 +129,7 @@ class AppRolesApiTest extends TestCase
     {
         $student = $this->student('Ana Paz');
 
-        foreach (['padre', 'madre', 'tutor', 'estudiante', 'robot', 'academic'] as $role) {
+        foreach (['padre', 'madre', 'tutor', 'estudiante', 'robot'] as $role) {
             $user = $this->user($role);
             $this->actingAs($user, 'sanctum')->getJson('/api/v1/app/students')->assertForbidden();
             $this->actingAs($user, 'sanctum')->getJson("/api/v1/app/students/{$student->id}/summary")->assertForbidden();
@@ -170,7 +170,7 @@ class AppRolesApiTest extends TestCase
     {
         $target = $this->user('padre');
 
-        foreach (['profesor', 'padre', 'estudiante', 'academic', 'robot'] as $role) {
+        foreach (['profesor', 'padre', 'estudiante', 'robot'] as $role) {
             $user = $this->user($role);
             $this->actingAs($user, 'sanctum')->getJson('/api/v1/app/admin/overview')->assertForbidden();
             $this->actingAs($user, 'sanctum')->getJson('/api/v1/app/admin/users')->assertForbidden();

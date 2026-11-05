@@ -76,7 +76,7 @@
                             <small class="invalid-feedback"></small>
                         </div>
                     </div>
-                    <div class="form-group mb-0">
+                    <div class="form-group mb-3">
                         <label for="foto">Actualizar foto (opcional)</label>
                         <input id="foto" type="file" name="foto" class="form-control-file @error('foto') is-invalid @enderror" accept="image/jpeg,image/png,image/webp">
                         @error('foto') <span class="text-danger small d-block">{{ $message }}</span> @enderror

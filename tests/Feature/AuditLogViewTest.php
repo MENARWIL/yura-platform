@@ -195,7 +195,8 @@ class AuditLogViewTest extends TestCase
 
     public function test_only_the_admin_can_open_the_audit_log(): void
     {
-        foreach (['academic', 'profesor', 'padre'] as $role) {
+        // También la abren el director y el Panel Administrativo (ver DirectorRoleTest y SecretaryRoleTest).
+        foreach (['profesor', 'padre'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role, 'status' => 'active']))->get('/admin/audit')->assertRedirect('/');
         }
     }

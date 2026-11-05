@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\Parallel;
 use App\Models\Subject;
 use App\Models\TeachingAssignment;
@@ -11,12 +12,16 @@ use Illuminate\Validation\Rule;
 
 class TeachingAssignmentController extends Controller
 {
-    public function index()
+    use PaginatesLists;
+
+    public function index(Request $request)
     {
         $assignments = TeachingAssignment::with(['teacher', 'subject', 'parallel.course'])
             ->orderByDesc('active')
             ->orderBy('parallel_id')
-            ->get();
+            ->orderBy('id')
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         return view('teaching-assignments.index', compact('assignments'));
     }

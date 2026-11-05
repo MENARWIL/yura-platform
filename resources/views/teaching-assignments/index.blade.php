@@ -10,7 +10,6 @@
             <a href="{{ route('teaching-assignments.create') }}" class="btn btn-primary"><i class="fas fa-plus mr-1"></i> Nueva asignación</a>
         </div>
         <div class="card-body bg-white">
-            @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
             <div class="table-responsive"><table class="table table-hover align-middle mb-0">
                 <thead class="thead-light"><tr><th>Curso y paralelo</th><th>Asignatura</th><th>Profesor</th><th>Estado</th><th class="text-right">Acciones</th></tr></thead>
                 <tbody>
@@ -26,7 +25,7 @@
                                     <input type="hidden" name="active" value="{{ $assignment->active ? 0 : 1 }}">
                                     <button class="btn btn-sm btn-outline-primary" title="{{ $assignment->active ? 'Desactivar' : 'Activar' }}"><i class="fas {{ $assignment->active ? 'fa-pause' : 'fa-play' }}"></i></button>
                                 </form>
-                                <form action="{{ route('teaching-assignments.destroy', $assignment) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta asignación?')">
+                                <form action="{{ route('teaching-assignments.destroy', $assignment) }}" method="POST" class="d-inline" data-confirm="¿Eliminar esta asignación?">
                                     @csrf @method('DELETE')
                                     <button class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
                                 </form>
@@ -37,6 +36,7 @@
                     @endforelse
                 </tbody>
             </table></div>
+            @include('partials.list-footer', ['paginator' => $assignments, 'noun' => 'asignaciones'])
         </div>
     </div>
 </div>

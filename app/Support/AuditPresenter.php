@@ -31,6 +31,7 @@ class AuditPresenter
         'guardian_assigned' => ['Responsable asignado', 'normal'],
         'student_info_updated' => ['Datos completados', 'normal'],
         'students.import' => ['Estudiantes importados', 'normal'],
+        'students.promote' => ['Curso promovido', 'normal'],
         'student.create' => ['Estudiante registrado', 'normal'],
         'student.update' => ['Estudiante actualizado', 'normal'],
         'student.delete' => ['Estudiante eliminado', 'danger'],
@@ -45,7 +46,7 @@ class AuditPresenter
     ];
 
     private const ROLES = [
-        'admin' => 'Administrador', 'academic' => 'Académico', 'profesor' => 'Profesor',
+        'admin' => 'Administrador', 'director' => 'Director', 'academic' => 'Panel Administrativo', 'profesor' => 'Profesor',
         'padre' => 'Padre', 'madre' => 'Madre', 'tutor' => 'Tutor', 'estudiante' => 'Estudiante',
     ];
 
@@ -54,7 +55,13 @@ class AuditPresenter
     private const FIELDS = [
         'name' => 'el nombre', 'email' => 'el correo', 'telefono' => 'el teléfono', 'role' => 'el rol', 'password' => 'la contraseña',
         'level' => 'el nivel', 'age' => 'la edad', 'gender' => 'el género',
+        'first_name' => 'el nombre', 'last_name' => 'el apellido paterno', 'second_last_name' => 'el apellido materno',
+        'parallel_id' => 'el paralelo', 'course_id' => 'el curso', 'teacher_user_id' => 'el profesor',
+        'parent_user_id' => 'el responsable', 'foto_path' => 'la foto', 'status' => 'el estado',
     ];
+
+    /** Campos que guarda el sistema solo (fechas internas): no se muestran como cambios. */
+    private const HIDDEN_FIELDS = ['updated_at', 'created_at', 'deleted_at', 'remember_token'];
 
     /** Texto corto de la acción (si no la conoce, el código tal cual). */
     public static function action(string $code): string
@@ -112,11 +119,16 @@ class AuditPresenter
     public static function detail(AuditLog $log, array $names = []): string
     {
         $d = is_array($log->details) ? $log->details : [];
+        foreach (['fields', 'changed'] as $key) {
+            if (isset($d[$key]) && is_array($d[$key])) {
+                $d[$key] = array_values(array_diff($d[$key], self::HIDDEN_FIELDS));
+            }
+        }
         $who = fn (string $kind, ?int $id, string $fallback) => $id && isset($names[$kind][$id]) ? $names[$kind][$id] : $fallback;
         $target = $who('user', $log->entity_id ? (int) $log->entity_id : null, 'un usuario');
         $student = $who('student', $log->entity_id ? (int) $log->entity_id : null, 'un estudiante');
         $year = isset($d['year']) ? 'Gestión ' . $d['year'] : ($names['academic_year'][$log->entity_id] ?? 'Gestión escolar');
-        $fields = fn (array $list) => self::join(array_map(fn ($f) => self::FIELDS[$f] ?? $f, $list));
+        $fields = fn (array $list) => self::join(array_map(fn ($f) => self::FIELDS[$f] ?? str_replace('_', ' ', (string) $f), $list));
 
         return match ($log->action) {
             'user.create' => "Nuevo usuario: {$target}" . (! empty($d['role']) ? ' (' . (self::ROLES[$d['role']] ?? $d['role']) . ')' : '') . '.',
@@ -137,6 +149,8 @@ class AuditPresenter
                 : "Se completó {$fields($d['fields'])} de {$student}.",
             'guardian_assigned' => self::guardian($d, $names, $student),
             'students.import' => self::import($d),
+            'students.promote' => 'Se promovieron ' . ($d['count'] ?? 0) . ' estudiante(s) de ' . ($d['from'] ?? '—') . ' a ' . ($d['to'] ?? '—')
+                . (! empty($d['year']) ? " en la Gestión {$d['year']}" : '') . (! empty($d['age_plus_one']) ? ', con un año más de edad.' : '.'),
             default => self::generic($d),
         };
     }
