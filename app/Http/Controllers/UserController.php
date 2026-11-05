@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\Course;
 use App\Models\Subject;
 use App\Models\User;
@@ -16,13 +17,15 @@ use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
+    use PaginatesLists;
+
     /** Roles que se pueden filtrar en la lista de usuarios (valor guardado => nombre visible). */
     private const ROLE_FILTERS = [
         'admin' => 'Administrador',
-        'academic' => 'Académico',
+        'director' => 'Director',
+        'academic' => 'Panel Administrativo',
         'profesor' => 'Profesor',
         'familia' => 'Padre, madre o tutor',
-        'estudiante' => 'Estudiante',
         'robot' => 'Robot',
     ];
 
@@ -64,11 +67,20 @@ class UserController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('users.index', compact('users', 'deletedUsers', 'roleFilters'));
+        // Cuentas que se ven sin botones: el director no toca administradores; la Secretaría, ni administradores ni directores.
+        $mainAdminId = User::mainAdminId();
+        $protectedRoles = $this->protectedRoles();
+        $canCreate = Auth::user()->canCreateAccounts();
+
+        return view('users.index', compact('users', 'deletedUsers', 'roleFilters', 'mainAdminId', 'protectedRoles', 'canCreate'));
     }
 
     public function create()
     {
+        if (! Auth::user()->canCreateAccounts()) {
+            return redirect()->route('users.index')->with('error', UserAdminService::SECRETARY_CREATE_MESSAGE);
+        }
+
         $courses = Course::all();
 
         return view('users.create', compact('courses'));
@@ -76,12 +88,16 @@ class UserController extends Controller
 
     public function createTeacher()
     {
+        if (! Auth::user()->canCreateAccounts()) {
+            return redirect()->route('teachers.index')->with('error', UserAdminService::SECRETARY_CREATE_MESSAGE);
+        }
+
         $subjects = Subject::where('active', true)->orderBy('sort_order')->orderBy('name')->get();
 
         return view('teachers.create', compact('subjects'));
     }
 
-    public function teacherIndex()
+    public function teacherIndex(Request $request)
     {
         $teachers = User::whereIn('role', ['profesor', 'teacher'])
             ->whereIn('status', ['active', 'activo'])
@@ -89,7 +105,9 @@ class UserController extends Controller
             ->orderByRaw("CASE WHEN last_name IS NULL OR last_name = '' THEN 1 ELSE 0 END")
             ->orderBy('last_name')
             ->orderBy('name')
-            ->get();
+            ->orderBy('id')
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         return view('teachers.index', compact('teachers'));
     }
@@ -126,7 +144,11 @@ class UserController extends Controller
             $data['foto_path'] = $request->file('foto')->store('users', 'public');
         }
 
-        app(UserAdminService::class)->create(Auth::user(), $data);
+        try {
+            app(UserAdminService::class)->create(Auth::user(), $data);
+        } catch (UserAdminException $e) {
+            return redirect()->route('teachers.index')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('teachers.index')->with('success', __('messages.teacher_created'));
     }
@@ -167,7 +189,12 @@ class UserController extends Controller
             ? $validated['main_course_id']
             : null;
 
-        User::create($data);
+        // Por el servicio: aplica las reglas del director y deja la creación en la auditoría.
+        try {
+            app(UserAdminService::class)->create(Auth::user(), $data);
+        } catch (UserAdminException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('users.index')->with('success', __('messages.user_created'));
     }
@@ -178,6 +205,12 @@ class UserController extends Controller
             $subjects = Subject::where('active', true)->orderBy('sort_order')->orderBy('name')->get();
 
             return view('teachers.edit', compact('user', 'subjects'));
+        }
+
+        if (in_array($user->role, $this->protectedRoles(), true)) {
+            return redirect()->route('users.index')->with('error', Auth::user()->isDirector()
+                ? UserAdminService::DIRECTOR_ADMIN_MESSAGE
+                : UserAdminService::SECRETARY_ACCOUNT_MESSAGE);
         }
 
         $courses = Course::all();
@@ -285,7 +318,11 @@ class UserController extends Controller
             return back()->with('error', __('messages.cannot_delete_self'));
         }
 
-        app(UserAdminService::class)->delete(Auth::user(), $user);
+        try {
+            app(UserAdminService::class)->delete(Auth::user(), $user);
+        } catch (UserAdminException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('users.index')->with('success', __('messages.user_deleted'));
     }
@@ -298,7 +335,11 @@ class UserController extends Controller
             return back()->with('error', __('messages.user_already_active'));
         }
 
-        app(UserAdminService::class)->restore(Auth::user(), $user);
+        try {
+            app(UserAdminService::class)->restore(Auth::user(), $user);
+        } catch (UserAdminException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return redirect()->route('users.index')->with('success', __('messages.user_restored'));
     }
@@ -311,11 +352,16 @@ class UserController extends Controller
             return back()->with('error', __('messages.cannot_delete_self'));
         }
 
+        try {
+            app(UserAdminService::class)->forceDelete(Auth::user(), $user);
+        } catch (UserAdminException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        // La foto se borra solo si la cuenta se eliminó de verdad.
         if ($user->foto_path) {
             Storage::disk('public')->delete($user->foto_path);
         }
-
-        app(UserAdminService::class)->forceDelete(Auth::user(), $user);
 
         return redirect()->route('users.index')->with('success', __('messages.user_deleted_permanently'));
     }
@@ -329,6 +375,18 @@ class UserController extends Controller
         }
 
         return back()->with('success', __('messages.user_status_updated'));
+    }
+
+    /** Roles cuyas cuentas el usuario actual no puede tocar (las reglas reales están en UserAdminService). */
+    private function protectedRoles(): array
+    {
+        $actor = Auth::user();
+
+        return match (true) {
+            $actor->isDirector() => ['admin'],
+            $actor->isAcademic() => ['admin', 'director'],
+            default => [],
+        };
     }
 
     private function normalizeUserInput(Request $request): array

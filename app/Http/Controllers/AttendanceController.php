@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\Attendance;
 use App\Models\Parallel;
 use App\Models\Student;
@@ -18,6 +19,8 @@ use Illuminate\Validation\Rule;
 
 class AttendanceController extends Controller
 {
+    use PaginatesLists;
+
     /** Días que caben como columnas en el PDF; con más, solo va el resumen por estudiante. */
     private const PDF_MAX_DAY_COLUMNS = 31;
 
@@ -60,8 +63,11 @@ class AttendanceController extends Controller
             $query->where('parallel_id', $selectedParallelId);
         }
 
-        $students = $query->orderedForList()->get();
-        $studentIds = $students->pluck('id')->all();
+        // El profesor registra la lista completa de una vez; quien solo consulta la ve por páginas.
+        $studentIds = (clone $query)->pluck('id')->all();
+        $students = $user->isProfesor()
+            ? $query->orderedForList()->get()
+            : $query->orderedForList()->paginate($this->perPage($request, 20))->withQueryString();
 
         $attendanceForDate = Attendance::whereIn('student_id', $studentIds)
             ->when($selectedSubjectId, function ($query) use ($selectedSubjectId) {
@@ -72,6 +78,8 @@ class AttendanceController extends Controller
             ->keyBy('student_id');
 
         $attendanceStatuses = Attendance::STATUSES;
+        // Totales del día de todo el paralelo (no solo de la página que se ve).
+        $dayTotals = $attendanceForDate->countBy('status');
 
         return view('attendance.index', compact(
             'students',
@@ -81,7 +89,8 @@ class AttendanceController extends Controller
             'selectedParallelId',
             'selectedDate',
             'attendanceStatuses',
-            'attendanceForDate'
+            'attendanceForDate',
+            'dayTotals'
         ));
     }
 

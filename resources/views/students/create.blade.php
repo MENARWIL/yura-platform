@@ -15,7 +15,7 @@
         @endif
     </div>
 
-    <form action="{{ route('students.store') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('students.store') }}" method="POST" enctype="multipart/form-data" novalidate>
         @csrf
 
         <div class="row">
@@ -28,17 +28,20 @@
                         <div class="row">
                             <div class="col-md-4 form-group">
                                 <label for="last_name">Apellido paterno</label>
-                                <input type="text" name="last_name" id="last_name" class="form-control @error('last_name') is-invalid @enderror" value="{{ old('last_name') }}" required>
+                                <input type="text" name="last_name" id="last_name" data-rule="name" maxlength="100" class="form-control js-user-field @error('last_name') is-invalid @enderror" value="{{ old('last_name') }}" required>
+                                <small class="invalid-feedback"></small>
                                 @error('last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
                                 <label for="second_last_name">Apellido materno <small class="text-muted">(si tiene)</small></label>
-                                <input type="text" name="second_last_name" id="second_last_name" class="form-control @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name') }}">
+                                <input type="text" name="second_last_name" id="second_last_name" data-rule="name" maxlength="100" class="form-control js-user-field @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name') }}">
+                                <small class="invalid-feedback"></small>
                                 @error('second_last_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
                                 <label for="first_name">Nombre(s)</label>
-                                <input type="text" name="first_name" id="first_name" class="form-control @error('first_name') is-invalid @enderror" value="{{ old('first_name') }}" required>
+                                <input type="text" name="first_name" id="first_name" data-rule="name" maxlength="100" class="form-control js-user-field @error('first_name') is-invalid @enderror" value="{{ old('first_name') }}" required>
+                                <small class="invalid-feedback"></small>
                                 @error('first_name') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -46,16 +49,18 @@
                         <div class="row">
                             <div class="col-md-6 form-group">
                                 <label for="age">Edad</label>
-                                <input type="number" name="age" id="age" class="form-control @error('age') is-invalid @enderror" value="{{ old('age') }}" min="0" max="120" required>
+                                <input type="number" name="age" id="age" class="form-control js-user-field @error('age') is-invalid @enderror" value="{{ old('age') }}" min="0" max="120" required>
+                                <small class="invalid-feedback"></small>
                                 @error('age') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-6 form-group">
                                 <label for="gender">Género</label>
-                                <select name="gender" id="gender" class="form-control @error('gender') is-invalid @enderror" required>
+                                <select name="gender" id="gender" class="form-control js-user-field @error('gender') is-invalid @enderror" required>
                                     <option value="">Seleccionar</option>
                                     <option value="Masculino" {{ old('gender') === 'Masculino' ? 'selected' : '' }}>Masculino</option>
                                     <option value="Femenino" {{ old('gender') === 'Femenino' ? 'selected' : '' }}>Femenino</option>
                                 </select>
+                                <small class="invalid-feedback"></small>
                                 @error('gender') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -78,22 +83,24 @@
                         <div class="row">
                             <div class="col-md-4 form-group">
                                 <label for="course_id">Curso</label>
-                                <select name="course_id" id="course_id" class="form-control @error('course_id') is-invalid @enderror" required>
+                                <select name="course_id" id="course_id" class="form-control js-user-field @error('course_id') is-invalid @enderror" required>
                                     <option value="">Seleccionar curso</option>
                                     @foreach($courses as $course)
                                         <option value="{{ $course->id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>{{ $course->name }}</option>
                                     @endforeach
                                 </select>
+                                <small class="invalid-feedback"></small>
                                 @error('course_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
                                 <label for="parallel_id">Paralelo</label>
-                                <select name="parallel_id" id="parallel_id" class="form-control @error('parallel_id') is-invalid @enderror" required>
+                                <select name="parallel_id" id="parallel_id" class="form-control js-user-field @error('parallel_id') is-invalid @enderror" required>
                                     <option value="">Seleccionar paralelo</option>
                                     @foreach($parallels as $parallel)
                                         <option value="{{ $parallel->id }}" {{ old('parallel_id') == $parallel->id ? 'selected' : '' }}>{{ $parallel->name }}</option>
                                     @endforeach
                                 </select>
+                                <small class="invalid-feedback"></small>
                                 @error('parallel_id') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
@@ -110,12 +117,13 @@
                         <div class="row">
                             <div class="col-md-4 form-group">
                                 <label for="level">Nivel</label>
-                                <select name="level" id="level" class="form-control @error('level') is-invalid @enderror" required>
+                                <select name="level" id="level" class="form-control js-user-field @error('level') is-invalid @enderror" required>
                                     <option value="">Seleccionar nivel</option>
                                     <option value="básico" {{ old('level') === 'básico' ? 'selected' : '' }}>Básico</option>
                                     <option value="intermedio" {{ old('level') === 'intermedio' ? 'selected' : '' }}>Intermedio</option>
                                     <option value="avanzado" {{ old('level') === 'avanzado' ? 'selected' : '' }}>Avanzado</option>
                                 </select>
+                                <small class="invalid-feedback"></small>
                                 @error('level') <span class="invalid-feedback">{{ $message }}</span> @enderror
                             </div>
                             <div class="col-md-4 form-group">
@@ -162,5 +170,7 @@
         </div>
     </form>
 </div>
+@push('scripts')
+<script src="{{ asset('js/user-form-validation.js') }}"></script>
+@endpush
 @endsection
-

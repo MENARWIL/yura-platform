@@ -63,8 +63,19 @@
                                     <option value="madre" {{ old('rol', $user->role) == 'madre' ? 'selected' : '' }}>Madre</option>
                                     <option value="tutor" {{ old('rol', $user->role) == 'tutor' ? 'selected' : '' }}>Tutor</option>
                                     <option value="profesor" {{ old('rol', $user->role) == 'profesor' ? 'selected' : '' }}>Profesor</option>
-                                    <option value="admin" {{ old('rol', $user->role) == 'admin' ? 'selected' : '' }}>Administrador</option>
-                                    <option value="estudiante" {{ old('rol', $user->role) == 'estudiante' ? 'selected' : '' }}>Estudiante</option>
+                                    @unless(auth()->user()->isDirector() || auth()->user()->isAcademic())
+                                        {{-- Ni el director ni la Secretaría pueden darle el rol de administrador a nadie. --}}
+                                        <option value="admin" {{ old('rol', $user->role) == 'admin' ? 'selected' : '' }}>Administrador</option>
+                                    @endunless
+                                    @unless(auth()->user()->isAcademic())
+                                        {{-- La Secretaría no puede nombrar directores. --}}
+                                        <option value="director" {{ old('rol', $user->role) == 'director' ? 'selected' : '' }}>Director</option>
+                                    @endunless
+                                    <option value="academic" {{ old('rol', $user->role) == 'academic' ? 'selected' : '' }}>Panel Administrativo</option>
+                                    @if($user->role === 'estudiante')
+                                        {{-- Cuentas antiguas: el rol estudiante ya no se ofrece, pero se conserva al editar. --}}
+                                        <option value="estudiante" {{ old('rol', $user->role) == 'estudiante' ? 'selected' : '' }}>Estudiante</option>
+                                    @endif
                                 </select>
                             </div>
                         </div>

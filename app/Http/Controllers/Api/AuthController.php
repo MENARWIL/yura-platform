@@ -39,7 +39,7 @@ class AuthController extends Controller
         }
 
         // El robot (cerebro) no debe perder acceso solo por el paso del tiempo.
-        $expiresAt = ($user->role ?? $user->rol) === 'robot' ? null : now()->addDays(($user->role ?? $user->rol) === 'admin' ? self::ADMIN_TOKEN_DAYS : self::TOKEN_DAYS);
+        $expiresAt = ($user->role ?? $user->rol) === 'robot' ? null : now()->addDays($user->isAdmin() ? self::ADMIN_TOKEN_DAYS : self::TOKEN_DAYS);
         $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([

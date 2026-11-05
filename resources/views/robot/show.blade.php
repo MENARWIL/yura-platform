@@ -29,9 +29,6 @@
             </a>
         </div>
         <div class="card-body bg-white">
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
             @if(session('error'))
                 <div class="alert alert-warning">{{ session('error') }}</div>
             @endif
@@ -66,7 +63,7 @@
 
             @if(in_array($activity->status, ['pending', 'in_progress'], true))
                 <form method="POST" action="{{ route('robot-activities.cancel', $activity->id) }}" class="mb-4"
-                      onsubmit="return confirm('¿Cancelar esta actividad? Yura recibirá la señal y se detendrá. No se guardarán notas parciales.');">
+                      data-confirm="¿Cancelar esta actividad? Yura recibirá la señal y se detendrá. No se guardarán notas parciales.">
                     @csrf
                     <button type="submit" class="btn btn-outline-danger">
                         <i class="fas fa-times mr-1"></i> Cancelar actividad
@@ -79,7 +76,7 @@
 
             @if($activity->status === 'failed')
                 <form method="POST" action="{{ route('robot-activities.retry', $activity->id) }}" class="mb-4"
-                      onsubmit="return confirm('¿Reintentar esta actividad con los mismos participantes y la misma casilla HACER?');">
+                      data-confirm="¿Reintentar esta actividad con los mismos participantes y la misma casilla HACER?">
                     @csrf
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-redo mr-1"></i> Reintentar actividad

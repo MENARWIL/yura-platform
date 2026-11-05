@@ -23,9 +23,9 @@
                     <div class="d-flex flex-wrap">
                         <a href="{{ route('admin.years.index') }}" class="btn btn-sm btn-outline-secondary mr-2 mb-2"><i class="fas fa-arrow-left mr-1" aria-hidden="true"></i>Volver a Gestiones</a>
                         <a href="{{ route('admin.years.export', $year) }}" class="btn btn-sm btn-primary mr-2 mb-2"><i class="fas fa-file-excel mr-1" aria-hidden="true"></i>Descargar respaldo (Excel)</a>
-                        @if($year->isClosed())
+                        @if($year->isClosed() && auth()->user()->canManageYears())
                             <form method="POST" action="{{ route('admin.years.reopen', $year) }}" class="d-inline mb-2"
-                                  onsubmit="return confirm('Reabrir {{ $year->name }} vuelve a permitir cambios en datos de un año cerrado. ¿Continuar?')">
+                                  data-confirm="Reabrir {{ $year->name }} vuelve a permitir cambios en datos de un año cerrado. ¿Continuar?">
                                 @csrf
                                 <button class="btn btn-sm btn-outline-warning"><i class="fas fa-lock-open mr-1" aria-hidden="true"></i>Reabrir para editar</button>
                             </form>

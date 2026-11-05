@@ -15,7 +15,10 @@ class EnsureApiRole
     {
         $role = $request->user()?->role;
 
-        if (! in_array($role, $roles, true)) {
+        // El director y el Panel Administrativo (academic) entran a todo lo que permite el rol admin.
+        $allowed = in_array($role, $roles, true)
+            || (in_array($role, ['director', 'academic'], true) && in_array('admin', $roles, true));
+        if (! $allowed) {
             return response()->json(['message' => 'No tienes permiso para esta acción.'], 403);
         }
 

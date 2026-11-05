@@ -133,12 +133,12 @@ return [
         'intro' => 'Cada rol ve solo lo que necesita para su trabajo.',
         'roles' => [
             'admin' => [
-                'name' => 'Administración',
-                'text' => 'Ve y gestiona todos los registros: estudiantes, cuentas, notas, asistencia y auditoría. Es el único rol que puede eliminar datos de forma definitiva y cerrar o reabrir una gestión escolar.',
+                'name' => 'Administración (administrador y director)',
+                'text' => 'Ve y gestiona todos los registros: estudiantes, cuentas, notas, asistencia y auditoría. Son los únicos roles que pueden eliminar datos de forma definitiva y cerrar o reabrir una gestión escolar. El director no puede eliminar ni modificar la cuenta del administrador principal.',
             ],
             'academic' => [
-                'name' => 'Coordinación académica',
-                'text' => 'Ve estudiantes, notas y asistencia de la unidad educativa y administra a los familiares y tutores.',
+                'name' => 'Panel Administrativo',
+                'text' => 'Apoya a la Dirección: ve y gestiona estudiantes, familiares, cuentas, notas trimestrales, asistencia y auditoría. No agrega usuarios ni profesores, no modifica cuentas de administración o de dirección y solo consulta las gestiones escolares.',
             ],
             'teacher' => [
                 'name' => 'Docentes',

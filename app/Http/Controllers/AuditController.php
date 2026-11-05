@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\AuditLog;
 use App\Support\AuditPresenter;
 use Illuminate\Http\Request;
 
 class AuditController extends Controller
 {
+    use PaginatesLists;
+
     public function index(Request $request)
     {
         $entity = $request->query('entity');
@@ -19,7 +22,7 @@ class AuditController extends Controller
             ->when($action, fn ($q) => $q->where('action', $action))
             ->orderBy('created_at', 'desc')
             ->orderBy('id', 'desc')
-            ->paginate(20)
+            ->paginate($this->perPage($request, 20))
             ->withQueryString();
 
         // Los filtros muestran nombres simples; el valor que se envía sigue siendo el del registro.

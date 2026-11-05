@@ -83,18 +83,22 @@ class AppAdminController extends Controller
     {
         $data = $this->validated($request);
 
-        $user = $this->users->create($request->user(), [
-            'name' => $this->fullName($data),
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
-            'second_last_name' => $data['second_last_name'],
-            'email' => $data['email'],
-            'password' => $this->users->hashPassword($data['password']),
-            'rol' => $data['rol'],
-            'telefono' => $data['telefono'] ?? null,
-            'estado' => 'activo',
-            'main_course_id' => $data['rol'] === 'profesor' ? ($data['main_course_id'] ?? null) : null,
-        ]);
+        try {
+            $user = $this->users->create($request->user(), [
+                'name' => $this->fullName($data),
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'second_last_name' => $data['second_last_name'],
+                'email' => $data['email'],
+                'password' => $this->users->hashPassword($data['password']),
+                'rol' => $data['rol'],
+                'telefono' => $data['telefono'] ?? null,
+                'estado' => 'activo',
+                'main_course_id' => $data['rol'] === 'profesor' ? ($data['main_course_id'] ?? null) : null,
+            ]);
+        } catch (UserAdminException $e) {
+            return $this->rejected($e);
+        }
 
         return response()->json(['data' => $this->item($user, $request->user())], 201);
     }
@@ -156,7 +160,11 @@ class AppAdminController extends Controller
     public function restore(Request $request, int $id): JsonResponse
     {
         $user = User::onlyTrashed()->findOrFail($id);
-        $this->users->restore($request->user(), $user);
+        try {
+            $this->users->restore($request->user(), $user);
+        } catch (UserAdminException $e) {
+            return $this->rejected($e);
+        }
 
         return response()->json(['data' => $this->item($user->fresh(), $request->user())]);
     }

@@ -163,7 +163,91 @@
         });
     }
 
+    // ---------------------------------------------------------------- Confirmación propia de la web
+    // <form data-confirm="¿Eliminar este curso?"> abre la ventana de YURA en lugar del aviso del navegador.
+    // Si el formulario borra (_method DELETE) el botón dice «Eliminar» en rojo; si no, «Continuar».
+    function confirmModal() {
+        var modal = document.getElementById('yura-confirm');
+        if (modal) return modal;
+        modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'yura-confirm';
+        modal.tabIndex = -1;
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'yura-confirm-title');
+        modal.innerHTML =
+            '<div class="modal-dialog modal-dialog-centered" role="document"><div class="modal-content yura-confirm">' +
+            '<div class="modal-body text-center px-4 pt-4 pb-2">' +
+            '<div class="yura-confirm-icon" aria-hidden="true"><i class="fas"></i></div>' +
+            '<h5 class="modal-title mb-2" id="yura-confirm-title"></h5>' +
+            '<p class="yura-confirm-text mb-0"></p></div>' +
+            '<div class="modal-footer justify-content-center border-0 pb-4">' +
+            '<button type="button" class="btn btn-light px-4" data-dismiss="modal">Cancelar</button>' +
+            '<button type="button" class="btn px-4" data-confirm-ok></button></div></div></div>';
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    var pendingForm = null;
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!form.matches || !form.matches('form[data-confirm]') || form.dataset.confirmed === '1' || !window.jQuery) return;
+        event.preventDefault();
+        pendingForm = form;
+        var method = form.querySelector('input[name="_method"]');
+        var destructive = method && method.value.toUpperCase() === 'DELETE';
+        var modal = confirmModal();
+        modal.querySelector('.yura-confirm-icon').classList.toggle('is-danger', destructive);
+        modal.querySelector('.yura-confirm-icon i').className = 'fas ' + (destructive ? 'fa-trash-alt' : 'fa-question');
+        modal.querySelector('#yura-confirm-title').textContent = form.dataset.confirmTitle || (destructive ? 'Confirmar eliminación' : 'Confirmar acción');
+        modal.querySelector('.yura-confirm-text').textContent = form.dataset.confirm;
+        var ok = modal.querySelector('[data-confirm-ok]');
+        ok.className = 'btn px-4 ' + (destructive ? 'btn-danger' : 'btn-primary');
+        ok.textContent = form.dataset.confirmOk || (destructive ? 'Eliminar' : 'Continuar');
+        window.jQuery(modal).modal('show');
+        window.jQuery(modal).one('shown.bs.modal', function () { modal.querySelector('[data-dismiss="modal"]').focus(); });
+    }, true);
+
+    document.addEventListener('click', function (event) {
+        if (!event.target.closest('#yura-confirm [data-confirm-ok]') || !pendingForm) return;
+        var form = pendingForm;
+        pendingForm = null;
+        form.dataset.confirmed = '1';
+        window.jQuery('#yura-confirm').modal('hide');
+        if (form.requestSubmit) form.requestSubmit(); else form.submit();
+    });
+
+    // ---------------------------------------------------------------- Avisos de éxito
+    // Los avisos de éxito se van solos a los 2 segundos; los de error quedan hasta cerrarlos.
+    function initAutoHide(alert) {
+        setTimeout(function () {
+            if (window.jQuery) { window.jQuery(alert).alert('close'); } else { alert.remove(); }
+        }, 2000);
+    }
+
+    // ---------------------------------------------------------------- Tablas anchas
+    // Barra horizontal también arriba de la tabla, sincronizada con la de abajo: siempre hay una a la vista.
+    function initDualScroll(box) {
+        var top = document.createElement('div');
+        top.className = 'table-scroll-top';
+        top.setAttribute('aria-hidden', 'true');
+        var inner = document.createElement('div');
+        top.appendChild(inner);
+        box.parentNode.insertBefore(top, box);
+        function size() {
+            inner.style.width = box.scrollWidth + 'px';
+            top.hidden = box.scrollWidth <= box.clientWidth + 1;
+        }
+        top.addEventListener('scroll', function () { if (box.scrollLeft !== top.scrollLeft) box.scrollLeft = top.scrollLeft; });
+        box.addEventListener('scroll', function () { if (top.scrollLeft !== box.scrollLeft) top.scrollLeft = box.scrollLeft; });
+        window.addEventListener('resize', size);
+        size();
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.alert[data-autohide]').forEach(initAutoHide);
+        document.querySelectorAll('.table-scroll-box').forEach(initDualScroll);
         document.querySelectorAll('form[data-filter-required]').forEach(initRequiredFilters);
         document.querySelectorAll('form[data-live-search]').forEach(initLiveSearch);
         document.querySelectorAll('[data-live-pagination][id]').forEach(initLivePagination);

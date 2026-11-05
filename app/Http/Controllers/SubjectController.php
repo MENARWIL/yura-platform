@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
-    public function index()
+    use PaginatesLists;
+
+    public function index(Request $request)
     {
-        $subjects = Subject::orderBy('sort_order')->orderBy('name')->get();
+        $subjects = Subject::orderBy('sort_order')->orderBy('name')
+            ->paginate($this->perPage($request))->withQueryString();
 
         return view('subjects.index', compact('subjects'));
     }

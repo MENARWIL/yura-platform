@@ -368,7 +368,7 @@ class StudentController extends Controller
         }
 
         $student->update($changes);
-        $changed = array_keys($student->getChanges());
+        $changed = array_values(array_diff(array_keys($student->getChanges()), ['updated_at']));
 
         if ($changed) {
             AuditLog::log('student_info_updated', 'student', $student->id, ['fields' => $changed], $request);

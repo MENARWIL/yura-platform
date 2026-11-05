@@ -17,17 +17,61 @@
             </div>
         </div>
         <div class="card-body bg-white">
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="alert alert-danger">{{ session('error') }}</div>
+            <form method="GET" action="{{ route('courses.index') }}" class="filter-bar" aria-label="Filtros de cursos y paralelos">
+                <div class="fb-field">
+                    <label for="nivel"><i class="fas fa-layer-group" aria-hidden="true"></i> Nivel</label>
+                    <select name="nivel" id="nivel" onchange="this.form.submit()">
+                        <option value="">Todos los niveles</option>
+                        @foreach(\App\Models\Course::NIVELES as $value => $label)
+                            <option value="{{ $value }}" @selected($nivel === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fb-field">
+                    <label for="course_id"><i class="fas fa-book-open" aria-hidden="true"></i> Curso</label>
+                    <select name="course_id" id="course_id" onchange="this.form.submit()">
+                        <option value="">Todos los cursos</option>
+                        @foreach($allCourses as $option)
+                            <option value="{{ $option->id }}" @selected($courseId === $option->id)>{{ $option->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="fb-actions">
+                    @if($filtered)
+                        <a href="{{ route('courses.index') }}" class="fb-btn fb-btn-ghost" title="Quitar los filtros">
+                            <i class="fas fa-undo" aria-hidden="true"></i> Limpiar
+                        </a>
+                    @endif
+                    <noscript><button type="submit" class="fb-btn fb-btn-primary">Filtrar</button></noscript>
+                </div>
+            </form>
+
+            @if($courses->isNotEmpty())
+                <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                    <small class="text-muted">
+                        {{ $courses->count() }} curso(s) · {{ $courses->sum('parallels_count') }} paralelo(s).
+                        @if($courses->count() > 1) Toca un curso para ver sus paralelos. @endif
+                    </small>
+                    @if($courses->count() > 1)
+                        <div>
+                            <button type="button" class="btn btn-sm btn-link" data-courses-toggle="show">Abrir todos</button>
+                            <button type="button" class="btn btn-sm btn-link" data-courses-toggle="hide">Cerrar todos</button>
+                        </div>
+                    @endif
+                </div>
             @endif
 
             @forelse($courses as $course)
+                @php $open = $courses->count() === 1; @endphp
                 <div class="card mb-3 border-0 shadow-sm">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
                         <div>
+                            <button type="button" class="btn btn-link p-0 mr-2 text-reset course-toggle {{ $open ? '' : 'collapsed' }}"
+                                    data-toggle="collapse" data-target="#course-body-{{ $course->id }}"
+                                    aria-expanded="{{ $open ? 'true' : 'false' }}" aria-controls="course-body-{{ $course->id }}"
+                                    title="Ver u ocultar los paralelos">
+                                <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                            </button>
                             <span class="font-weight-bold h5 mb-0">{{ $course->name }}</span>
                             <span class="badge {{ $course->nivel_educativo === \App\Models\Course::NIVEL_SECUNDARIA ? 'badge-info' : 'badge-quechua-gold' }} ml-2">
                                 {{ $course->nivelLabel() }}
@@ -44,7 +88,7 @@
                                 <i class="fas fa-edit"></i> Editar
                             </a>
                             <form action="{{ route('courses.destroy', $course) }}" method="POST" class="d-inline"
-                                  onsubmit="return confirm('¿Eliminar este curso? También se eliminarán sus paralelos.')">
+                                  data-confirm="¿Eliminar este curso? También se eliminarán sus paralelos.">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar curso">
@@ -53,7 +97,7 @@
                             </form>
                         </div>
                     </div>
-                    <div class="card-body p-0">
+                    <div class="card-body p-0 collapse {{ $open ? 'show' : '' }}" id="course-body-{{ $course->id }}">
                         @if($course->parallels->isEmpty())
                             <div class="text-center text-muted py-3">
                                 Este curso todavía no tiene paralelos.
@@ -88,7 +132,7 @@
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <form action="{{ route('parallels.destroy', $parallel) }}" method="POST" class="d-inline"
-                                                          onsubmit="return confirm('¿Eliminar este paralelo?')">
+                                                          data-confirm="¿Eliminar este paralelo?">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar paralelo">
@@ -106,7 +150,11 @@
                 </div>
             @empty
                 <div class="text-center text-muted py-5">
-                    No hay cursos registrados. Crea el primero con el botón "Nuevo curso".
+                    @if($filtered)
+                        Ningún curso coincide con el filtro. <a href="{{ route('courses.index') }}">Ver todos</a>.
+                    @else
+                        No hay cursos registrados. Crea el primero con el botón "Nuevo curso".
+                    @endif
                 </div>
             @endforelse
         </div>
@@ -193,6 +241,13 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Abrir o cerrar los paralelos de todos los cursos a la vez.
+        document.querySelectorAll('[data-courses-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                $('.collapse[id^="course-body-"]').collapse(this.dataset.coursesToggle);
+            });
+        });
+
         // Preselecciona el curso en el modal de paralelo cuando se abre desde el botón "+ Paralelo" de un curso específico.
         document.querySelectorAll('.add-parallel-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {

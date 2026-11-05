@@ -99,7 +99,8 @@ class AcademicYearArchiveTest extends TestCase
     {
         [$y2026] = $this->closedYearWithData();
 
-        foreach (['academic', 'profesor', 'padre', 'madre', 'tutor', 'estudiante'] as $role) {
+        // El Panel Administrativo (academic) sí consulta: ver SecretaryRoleTest.
+        foreach (['profesor', 'padre', 'madre', 'tutor', 'estudiante'] as $role) {
             $this->actingAs($this->user($role))->get("/admin/years/{$y2026->id}")->assertRedirect('/')->assertSessionHas('error');
             $this->actingAs($this->user($role))->get("/admin/years/{$y2026->id}/export")->assertRedirect('/')->assertSessionHas('error');
         }

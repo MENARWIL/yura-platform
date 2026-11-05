@@ -12,8 +12,11 @@
 
 return [
 
-    // Nombre oficial de la unidad educativa o del equipo (pie y privacidad).
+    // Nombre oficial de la unidad educativa o del equipo (pie, privacidad, constancias y boletines).
     'org_name' => env('YURA_ORG_NAME'),
+
+    // Ciudad para la fecha de las constancias («Cochabamba, 4 de noviembre de 2026»).
+    'org_city' => env('YURA_ORG_CITY'),
 
     'contact' => [
         // Solo dígitos, con código de país. Ej.: 59171234567

@@ -711,6 +711,7 @@ a:focus {
 .list-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
 .list-footer .pagination { margin: 0; }
 .list-footer .list-count { font-size: .875rem; color: var(--yura-muted); }
+.list-size-select { border: 1px solid var(--yura-border); border-radius: 8px; padding: 2px 6px; font-size: .85rem; color: inherit; background: #fff; }
 
 /* Asistencia de un clic: P (presente), F (falta), A (atraso), L (licencia). */
 .att-group { display: inline-flex; gap: 6px; }
@@ -731,8 +732,21 @@ a:focus {
 }
 
 /* Tablas anchas: la caja tiene alto máximo para que la barra horizontal quede siempre visible. */
-.table-scroll-box { max-height: 70vh; overflow: auto; border: 1px solid var(--yura-border); border-radius: 10px; }
+.table-scroll-box { max-height: calc(100vh - 170px); overflow: auto; border: 1px solid var(--yura-border); border-radius: 10px; }
 .table-scroll-box > .table { margin-bottom: 0; }
+/* Copia de la barra horizontal arriba de la tabla (la crea yura-ui.js). */
+.table-scroll-top { overflow-x: auto; overflow-y: hidden; height: 14px; margin-bottom: 4px; }
+.table-scroll-top > div { height: 1px; }
+
+/* Ventana de confirmación propia (reemplaza el aviso del navegador). */
+.yura-confirm { border: 0; border-radius: 16px; box-shadow: 0 20px 50px rgba(8, 44, 108, .25); }
+.yura-confirm-icon { width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: #e8eefb; color: var(--yura-action, #0B3D91); }
+.yura-confirm-icon.is-danger { background: #fdecef; color: var(--yura-red, #C8102E); }
+.yura-confirm-text { color: var(--yura-muted); }
+
+/* Cursos plegables: la flecha gira cuando el curso está cerrado. */
+.course-toggle i { transition: transform .2s ease; }
+.course-toggle.collapsed i { transform: rotate(-90deg); }
 
 /* Versión de la plataforma fija al fondo del menú lateral. */
 /* El menú ocupa el alto disponible y se desplaza; la versión queda debajo, sin tapar opciones. */
@@ -743,3 +757,7 @@ a:focus {
 /* Menú recogido: solo el número, centrado. */
 .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .sidebar-version { padding: 12px 0; text-align: center; font-size: .7rem; }
 .sidebar-mini.sidebar-collapse .main-sidebar:not(:hover) .sidebar-version .sv-label { display: none; }
+
+/* Campo de archivo (fotos): solo el botón y el nombre del archivo son clicables, no toda la fila.
+   Antes ocupaba todo el ancho y un clic cerca de «Guardar» abría el selector de archivos. */
+.form-control-file { display: inline-block; width: auto; max-width: 100%; }

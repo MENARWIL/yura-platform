@@ -11,7 +11,7 @@
                     <i class="fas fa-user-edit mr-2"></i> {{ __('messages.update_profile') }} {{ $student->name }}
                 </h3>
             </div>
-            <form action="{{ route('students.update', $student->id) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('students.update', $student->id) }}" method="POST" enctype="multipart/form-data" novalidate>
                 @csrf
                 @method('PUT')
                 <div class="card-body p-5 bg-white">
@@ -29,22 +29,25 @@
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">Apellido paterno</label>
-                                        <input type="text" name="last_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('last_name') is-invalid @enderror" value="{{ old('last_name', $student->last_name) }}" required style="font-size: 1rem;">
-                                        @error('last_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                        <input type="text" name="last_name" data-rule="name" maxlength="100" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('last_name') is-invalid @enderror" value="{{ old('last_name', $student->last_name) }}" required style="font-size: 1rem;">
+                                        <small class="invalid-feedback"></small>
+                                @error('last_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">Apellido materno <span class="text-lowercase font-weight-normal">(si tiene)</span></label>
-                                        <input type="text" name="second_last_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name', $student->second_last_name) }}" style="font-size: 1rem;">
-                                        @error('second_last_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                        <input type="text" name="second_last_name" data-rule="name" maxlength="100" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('second_last_name') is-invalid @enderror" value="{{ old('second_last_name', $student->second_last_name) }}" style="font-size: 1rem;">
+                                        <small class="invalid-feedback"></small>
+                                @error('second_last_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">Nombre(s)</label>
-                                        <input type="text" name="first_name" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('first_name') is-invalid @enderror" value="{{ old('first_name', $student->first_name) }}" required style="font-size: 1rem;">
-                                        @error('first_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                        <input type="text" name="first_name" data-rule="name" maxlength="100" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('first_name') is-invalid @enderror" value="{{ old('first_name', $student->first_name) }}" required style="font-size: 1rem;">
+                                        <small class="invalid-feedback"></small>
+                                @error('first_name') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -56,29 +59,32 @@
                                 <div class="col-md-6">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.age') }}</label>
-                                        <input type="number" name="age" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('age') is-invalid @enderror" value="{{ old('age', $student->age) }}" min="0" max="120" required style="font-size: 1rem;">
-                                        @error('age') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                        <input type="number" name="age" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('age') is-invalid @enderror" value="{{ old('age', $student->age) }}" min="0" max="120" required style="font-size: 1rem;">
+                                        <small class="invalid-feedback"></small>
+                                @error('age') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group mb-4">
                                         <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.gender') }}</label>
-                                        <select name="gender" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('gender') is-invalid @enderror" required style="font-size: 1rem; appearance: none;">
+                                        <select name="gender" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('gender') is-invalid @enderror" required style="font-size: 1rem; appearance: none;">
                                             <option value="Masculino" {{ old('gender', $student->gender) == 'Masculino' ? 'selected' : '' }}>Masculino</option>
                                             <option value="Femenino" {{ old('gender', $student->gender) == 'Femenino' ? 'selected' : '' }}>Femenino</option>
                                         </select>
-                                        @error('gender') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
+                                        <small class="invalid-feedback"></small>
+                                @error('gender') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-group mb-4">
                                 <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.educational_level') }}</label>
-                                <select name="level" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('level') is-invalid @enderror" required style="font-size: 1rem; appearance: none;">
+                                <select name="level" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('level') is-invalid @enderror" required style="font-size: 1rem; appearance: none;">
                                     <option value="básico" {{ old('level', $student->level) == 'básico' ? 'selected' : '' }}>QALLARIY (Básico)</option>
                                     <option value="intermedio" {{ old('level', $student->level) == 'intermedio' ? 'selected' : '' }}>CHAWPI (Intermedio)</option>
                                     <option value="avanzado" {{ old('level', $student->level) == 'avanzado' ? 'selected' : '' }}>SUMAQ (Avanzado)</option>
                                 </select>
+                                <small class="invalid-feedback"></small>
                                 @error('level') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
 
                                 <label class="text-muted small text-uppercase font-weight-bold">Fecha de registro</label>
@@ -106,10 +112,11 @@
 
                             <div class="form-group mb-0">
                                 <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.status') }}</label>
-                                <select name="status" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('status') is-invalid @enderror" required style="font-size: 1rem; appearance: none;">
+                                <select name="status" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('status') is-invalid @enderror" required style="font-size: 1rem; appearance: none;">
                                     <option value="activo" {{ old('status', $student->status) == 'activo' ? 'selected' : '' }}>{{ __('messages.status_active') }}</option>
                                     <option value="inactivo" {{ old('status', $student->status) == 'inactivo' ? 'selected' : '' }}>{{ __('messages.status_inactive') }}</option>
                                 </select>
+                                <small class="invalid-feedback"></small>
                                 @error('status') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -138,7 +145,7 @@
 
                             <div class="form-group mb-4">
                                 <label class="text-muted small text-uppercase font-weight-bold">{{ __('messages.parallel') }}</label>
-                                <select name="parallel_id" class="form-control form-control-lg border-0 bg-light rounded-pill px-4 @error('parallel_id') is-invalid @enderror" required style="font-size: 1rem;">
+                                <select name="parallel_id" class="form-control js-user-field form-control-lg border-0 bg-light rounded-pill px-4 @error('parallel_id') is-invalid @enderror" required style="font-size: 1rem;">
                                     <option value="">Seleccione un paralelo</option>
                                     @foreach($parallels as $parallel)
                                         <option value="{{ $parallel->id }}" {{ old('parallel_id', $student->parallel_id) == $parallel->id ? 'selected' : '' }}>
@@ -146,6 +153,7 @@
                                         </option>
                                     @endforeach
                                 </select>
+                                <small class="invalid-feedback"></small>
                                 @error('parallel_id') <span class="invalid-feedback ml-3">{{ $message }}</span> @enderror
                             </div>
 
@@ -208,4 +216,7 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script src="{{ asset('js/user-form-validation.js') }}"></script>
+@endpush
 @endsection

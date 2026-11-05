@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\AcademicYearExport;
+use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\AcademicYear;
 use App\Models\Attendance;
 use App\Models\AuditLog;
@@ -19,22 +20,29 @@ use Maatwebsite\Excel\Facades\Excel;
 /** Pantalla «Gestiones» del administrador (director y administrador). La ruta ya exige el rol admin. */
 class AcademicYearController extends Controller
 {
+    use PaginatesLists;
+
     public function __construct(private readonly AcademicYearService $years)
     {
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $counts = fn (string $table) => DB::table($table)->selectRaw('academic_year_id, count(*) as n')->groupBy('academic_year_id')->pluck('n', 'academic_year_id');
         $enrollments = $counts('enrollments');
         $grades = $counts('grades');
         $attendance = $counts('attendance');
 
-        $years = AcademicYear::with('closedBy')->orderByDesc('year')->get()->each(function (AcademicYear $y) use ($enrollments, $grades, $attendance) {
+        $years = AcademicYear::with('closedBy')->orderByDesc('year')->paginate($this->perPage($request))->withQueryString();
+        $years->getCollection()->each(function (AcademicYear $y) use ($enrollments, $grades, $attendance) {
             $y->counts = ['enrollments' => $enrollments[$y->id] ?? 0, 'grades' => $grades[$y->id] ?? 0, 'attendance' => $attendance[$y->id] ?? 0];
         });
+        // Para elegir la nueva gestión actual al cerrar: todas las abiertas, no solo las de esta página.
+        $openYears = AcademicYear::whereNull('closed_at')->orderByDesc('year')->get();
 
-        return view('admin.years.index', compact('years'));
+        $maxYear = AcademicYear::max('year');
+
+        return view('admin.years.index', compact('years', 'openYears', 'maxYear'));
     }
 
     /**

@@ -10,9 +10,6 @@
             <a href="{{ route('subjects.create') }}" class="btn btn-primary"><i class="fas fa-plus mr-1"></i> Nueva asignatura</a>
         </div>
         <div class="card-body bg-white">
-            @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
 
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -31,6 +28,7 @@
                     </tbody>
                 </table>
             </div>
+            @include('partials.list-footer', ['paginator' => $subjects, 'noun' => 'asignaturas'])
         </div>
     </div>
 </div>

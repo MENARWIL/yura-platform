@@ -215,7 +215,9 @@ class AcademicYearManagementTest extends TestCase
     public function test_only_admin_manages_years_on_the_api(): void
     {
         $y2026 = AcademicYear::current();
-        foreach (['academic', 'profesor', 'padre', 'estudiante', 'robot'] as $role) {
+        // El Panel Administrativo entra a la API de administración, pero el servicio le rechaza
+        // cambiar gestiones: ver SecretaryRoleTest.
+        foreach (['profesor', 'padre', 'estudiante', 'robot'] as $role) {
             $user = $this->user($role);
             $this->actingAs($user, 'sanctum')->postJson('/api/v1/app/admin/years', ['year' => 2027])->assertForbidden();
             $this->actingAs($user, 'sanctum')->postJson("/api/v1/app/admin/years/{$y2026->id}/reopen")->assertForbidden();
@@ -247,9 +249,11 @@ class AcademicYearManagementTest extends TestCase
     public function test_only_admin_reaches_the_web_screen(): void
     {
         $this->actingAs($this->user('admin'))->get('/admin/years')->assertOk()->assertSee('Gestión 2026');
-        foreach (['academic', 'profesor', 'padre'] as $role) {
+        foreach (['profesor', 'padre'] as $role) {
             $this->actingAs($this->user($role))->get('/admin/years')->assertRedirect('/');
         }
+        // El Panel Administrativo consulta, pero no cambia nada.
+        $this->actingAs($this->user('academic'))->get('/admin/years')->assertOk()->assertDontSee('Crear una gestión');
         $y = AcademicYear::current();
         $this->actingAs($this->user('academic'))->post("/admin/years/{$y->id}/reopen");
         $this->assertNull($y->fresh()->closed_at);

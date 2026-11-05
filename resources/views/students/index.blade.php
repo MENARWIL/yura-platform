@@ -18,6 +18,11 @@
                         <a href="{{ route('tutors.create') }}" class="btn btn-outline-primary btn-sm px-3 rounded-pill shadow-sm mr-2">
                             <i class="fas fa-user-shield mr-1"></i> Registrar Tutor
                         </a>
+                        @if(auth()->user()->canManageYears())
+                            <a href="{{ route('students.promote') }}" class="btn btn-outline-success btn-sm px-3 rounded-pill shadow-sm mr-2" title="Pasar un curso completo al siguiente">
+                                <i class="fas fa-level-up-alt mr-1"></i> Promover curso
+                            </a>
+                        @endif
                     @endif
                     @if(auth()->user()->isAdmin() || auth()->user()->isProfesor())
                         <button type="button" class="btn btn-outline-danger btn-sm px-3 rounded-pill shadow-sm" data-toggle="modal" data-target="#exportStudentsModal">

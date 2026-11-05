@@ -118,8 +118,8 @@ class StudentWithdrawalTest extends TestCase
 
     public function test_only_the_admin_can_withdraw_and_a_transfer_needs_a_destination(): void
     {
-        $academic = User::factory()->create(['rol' => 'academic', 'estado' => 'activo']);
-        foreach ([$this->teacher, $academic] as $user) {
+        // El Panel Administrativo (academic) sí da de baja: ver SecretaryRoleTest.
+        foreach ([$this->teacher] as $user) {
             $this->actingAs($user)->post(route('students.withdraw', $this->ana), ['motive' => 'abandono', 'withdrawn_on' => now()->toDateString()])->assertRedirect();
             $this->assertSame('activo', $this->ana->fresh()->status);
         }
