@@ -266,7 +266,8 @@ class AcademicYearManagementTest extends TestCase
 
         $this->actingAs($admin)->post('/admin/years', ['year' => 2027])->assertRedirect('/admin/years');
         $y2027 = AcademicYear::where('year', 2027)->firstOrFail();
-        $this->actingAs($admin)->post("/admin/years/{$y2026->id}/close", ['next_year_id' => $y2027->id])->assertRedirect('/admin/years');
+        $this->actingAs($admin)->post("/admin/years/{$y2026->id}/close", ['next_year_id' => $y2027->id])
+            ->assertRedirect(route('students.promote')); // empieza la nueva gestión: toca promover
         $this->assertNotNull($y2026->fresh()->closed_at);
         $this->assertTrue($y2027->fresh()->is_current);
 

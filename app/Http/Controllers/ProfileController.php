@@ -31,6 +31,8 @@ class ProfileController extends Controller
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
+            // Una contraseña elegida por el usuario reemplaza a la temporal.
+            $user->forceFill(['password_must_change' => false, 'temporary_password_expires_at' => null]);
         }
 
         $user->save();

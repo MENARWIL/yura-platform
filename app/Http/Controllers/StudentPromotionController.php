@@ -12,10 +12,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
-/** Pasar un curso completo al siguiente al empezar una gestión (ver CoursePromotion). */
+/**
+ * Pasar un curso completo al siguiente al empezar una gestión (ver CoursePromotion).
+ * Los estudiantes vienen marcados según su nota final de la gestión anterior (51 o más: aprueba);
+ * los del último curso se registran como egresados eligiendo «Egresan» como destino.
+ */
 class StudentPromotionController extends Controller
 {
-    public function create(Request $request): View
+    /** Valor del destino que significa «terminaron el colegio». */
+    public const GRADUATE = 'egreso';
+
+    public function create(Request $request, CoursePromotion $promotion): View
     {
         abort_unless(Auth::user()?->canManageYears(), 403);
 
@@ -25,12 +32,16 @@ class StudentPromotionController extends Controller
         $students = $from
             ? Student::active()->where('parallel_id', $from->id)->orderedForList()->get()
             : collect();
+        $previous = $promotion->previousYear();
 
         return view('students.promote', [
             'parallels' => $parallels,
             'from' => $from,
             'students' => $students,
             'year' => AcademicYear::current(),
+            'previousYear' => $previous,
+            'averages' => $previous ? $promotion->finalAverages($previous, $students->pluck('id')->all()) : [],
+            'passing' => CoursePromotion::PASSING_SCORE,
         ]);
     }
 
@@ -38,9 +49,10 @@ class StudentPromotionController extends Controller
     {
         abort_unless(Auth::user()?->canManageYears(), 403);
 
+        $graduate = $request->input('to_parallel_id') === self::GRADUATE;
         $data = $request->validate([
             'from_parallel_id' => ['required', 'integer', 'exists:parallels,id'],
-            'to_parallel_id' => ['required', 'integer', 'exists:parallels,id'],
+            'to_parallel_id' => $graduate ? ['required'] : ['required', 'integer', 'exists:parallels,id'],
             'student_ids' => ['required', 'array', 'min:1'],
             'student_ids.*' => ['integer', 'distinct'],
             'add_year' => ['nullable', 'boolean'],
@@ -50,9 +62,17 @@ class StudentPromotionController extends Controller
         ]);
 
         $from = Parallel::findOrFail($data['from_parallel_id']);
-        $to = Parallel::with('course')->findOrFail($data['to_parallel_id']);
 
         try {
+            if ($graduate) {
+                $count = $promotion->graduate(Auth::user(), $from, $data['student_ids']);
+
+                return redirect()
+                    ->route('students.promote')
+                    ->with('success', "{$count} estudiante(s) quedaron como egresados. Su información se conserva en «Dados de baja».");
+            }
+
+            $to = Parallel::with('course')->findOrFail($data['to_parallel_id']);
             $count = $promotion->promote(Auth::user(), $from, $to, $data['student_ids'], $request->boolean('add_year'));
         } catch (UserAdminException $e) {
             return back()->withInput()->with('error', $e->getMessage());

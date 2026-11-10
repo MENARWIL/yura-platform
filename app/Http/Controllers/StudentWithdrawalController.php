@@ -52,7 +52,7 @@ class StudentWithdrawalController extends Controller
             StudentWithdrawal::create($data + [
                 'student_id' => $student->id,
                 'user_id' => Auth::id(),
-                'snapshot' => $this->snapshot($student),
+                'snapshot' => StudentWithdrawal::snapshotOf($student),
             ]);
             $student->update(['status' => Student::STATUS_WITHDRAWN]);
 
@@ -82,35 +82,5 @@ class StudentWithdrawalController extends Controller
         });
 
         return redirect()->route('grades.show', $student)->with('success', "{$student->name} fue reincorporado.");
-    }
-
-    /** Copia de lo que tenía el estudiante al darse de baja: curso, responsables, notas y asistencia. */
-    private function snapshot(Student $student): array
-    {
-        $student->load(['course', 'parallel', 'grades.subject', 'attendances', 'familiares']);
-
-        return [
-            'student' => StudentReport::identity($student) + [
-                'last_name' => $student->last_name,
-                'second_last_name' => $student->second_last_name,
-                'first_name' => $student->first_name,
-                'age' => $student->age,
-                'gender' => $student->gender,
-                'level' => $student->level,
-            ],
-            'guardians' => $student->familiares->map(fn ($u) => [
-                'name' => $u->name, 'email' => $u->email, 'phone' => $u->phone,
-                'relation' => $u->pivot->relation_type, 'primary' => (bool) $u->pivot->is_primary,
-            ])->values()->all(),
-            'report' => StudentReport::for($student),
-            'grades' => $student->grades->map(fn ($g) => [
-                'subject' => $g->subject?->name, 'type' => $g->type, 'number' => $g->activity_number,
-                'quarter' => $g->quarter, 'score' => $g->score,
-            ])->values()->all(),
-            'attendance' => $student->attendances->map(fn ($a) => [
-                'date' => $a->date?->toDateString(), 'status' => $a->status, 'subject_id' => $a->subject_id,
-            ])->values()->all(),
-            'saved_at' => now()->toIso8601String(),
-        ];
     }
 }

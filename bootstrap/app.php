@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.role' => \App\Http\Middleware\EnsureApiRole::class,
             'set.locale' => \App\Http\Middleware\SetLocale::class,
             'panel.es' => \App\Http\Middleware\PanelInSpanish::class,
+            'password.changed' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         ]);
 

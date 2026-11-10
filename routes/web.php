@@ -24,6 +24,8 @@ use App\Http\Controllers\TeachingAssignmentController;
 use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\PasswordChangeController;
+use App\Http\Controllers\TemporaryPasswordController;
 
 // Public Portal Routes
 Route::get('/', [PublicPortalController::class, 'home'])->name('public.home');
@@ -50,7 +52,11 @@ Route::get('/lang/{locale}', [LocaleController::class, 'set'])->name('lang.set')
 
 // Protected Routes
 // El panel va solo en castellano (ver PanelInSpanish); el portal público sigue bilingüe.
-Route::middleware(['auth', 'panel.es'])->group(function () {
+// password.changed: quien entró con una contraseña temporal solo puede cambiarla o salir.
+Route::middleware(['auth', 'panel.es', 'password.changed'])->group(function () {
+    Route::get('/password/change', [PasswordChangeController::class, 'edit'])->name('password.change');
+    Route::put('/password/change', [PasswordChangeController::class, 'update'])->name('password.change.update');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile Routes
@@ -176,6 +182,10 @@ Route::middleware(['auth', 'panel.es'])->group(function () {
         Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.status');
         Route::patch('/users/{user}/restore', [UserController::class, 'restore'])->name('users.restore');
         Route::delete('/users/{user}/force', [UserController::class, 'forceDestroy'])->name('users.forceDestroy');
+        // Contraseña temporal por WhatsApp: el servicio deja solo a la Dirección, al administrador principal y a la Secretaría.
+        Route::post('/users/{user}/temporary-password', [TemporaryPasswordController::class, 'store'])
+            ->middleware('throttle:20,1')
+            ->name('users.temporary-password');
 
         Route::get('/admin/audit', [AuditController::class, 'index'])->name('admin.audit.index');
 

@@ -39,7 +39,7 @@
                         <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between mb-4" role="status">
                             <div class="mr-3">
                                 <strong><i class="fas fa-user-minus mr-1"></i>
-                                    {{ $baja?->type === 'transferencia' ? 'Transferido' : 'Dado de baja' }}
+                                    {{ $baja ? ($baja->type === 'retiro' ? 'Dado de baja' : $baja->shortLabel()) : 'Dado de baja' }}
                                     {{ $baja?->withdrawn_on ? 'el ' . $baja->withdrawn_on->format('d/m/Y') : '' }}</strong>
                                 @if($baja?->destination)<span> · a {{ $baja->destination }}</span>@endif
                                 @if($baja?->reason)<div class="small mt-1">Motivo: {{ $baja->reason }}</div>@endif

@@ -133,7 +133,7 @@
                                 <td colspan="3">
                                     <span class="font-weight-bold text-dark">{{ $student->name }}</span>
                                     <small class="d-block">
-                                        <span class="badge badge-danger-soft border px-2">{{ $baja->type === 'transferencia' ? 'Transferido' : 'Retirado' }}</span>
+                                        <span class="badge badge-danger-soft border px-2">{{ $baja->shortLabel() }}</span>
                                         {{ $baja->withdrawn_on?->format('d/m/Y') }}{{ $baja->destination ? ' · a ' . $baja->destination : '' }}
                                     </small>
                                 </td>

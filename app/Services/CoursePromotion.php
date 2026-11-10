@@ -8,7 +8,9 @@ use App\Models\AuditLog;
 use App\Models\Grade;
 use App\Models\Parallel;
 use App\Models\Student;
+use App\Models\StudentWithdrawal;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,6 +23,102 @@ use Illuminate\Support\Facades\DB;
  */
 class CoursePromotion
 {
+    /** Nota mínima de aprobación (escala de 1 a 100). */
+    public const PASSING_SCORE = 51;
+
+    /** La gestión anterior a la actual: de ella sale la nota final que decide quién pasa. */
+    public function previousYear(): ?AcademicYear
+    {
+        $current = AcademicYear::current();
+
+        return $current
+            ? AcademicYear::where('year', '<', $current->year)->orderByDesc('year')->first()
+            : null;
+    }
+
+    /**
+     * Nota final de cada estudiante en una gestión: promedio de sus notas académicas completadas
+     * (sin los retos del robot), igual que el «Promedio general» de su ficha.
+     *
+     * @param  array<int>  $studentIds
+     * @return array<int, float> id del estudiante => promedio (solo los que tienen notas)
+     */
+    public function finalAverages(AcademicYear $year, array $studentIds): array
+    {
+        if (! $studentIds) {
+            return [];
+        }
+
+        return Grade::withoutGlobalScope('academic_year')
+            ->where('academic_year_id', $year->id)
+            ->whereIn('student_id', $studentIds)
+            ->where('status', 'completed')
+            ->where('is_robot_activity', false)
+            ->whereNotNull('score')
+            ->groupBy('student_id')
+            ->selectRaw('student_id, AVG(score) as average')
+            ->pluck('average', 'student_id')
+            ->map(fn ($avg) => round((float) $avg, 2))
+            ->all();
+    }
+
+    /**
+     * Egreso: los estudiantes marcados terminaron el colegio. No se borran: quedan dados de baja como
+     * «Egresado», con el respaldo de sus notas de la gestión que terminaron.
+     *
+     * @param  array<int>  $studentIds
+     * @return int cantidad de egresados
+     */
+    public function graduate(?User $actor, Parallel $from, array $studentIds): int
+    {
+        if (! $actor || ! $actor->canManageYears()) {
+            throw new UserAdminException('Solo la dirección o el administrador pueden registrar egresos.');
+        }
+
+        $studentIds = array_values(array_unique(array_map('intval', $studentIds)));
+        if (! $studentIds) {
+            throw new UserAdminException('Marca al menos un estudiante que egresa.');
+        }
+
+        $year = AcademicYear::current();
+        if (! $year || $year->isClosed()) {
+            throw new UserAdminException('No hay una gestión actual abierta donde registrar el egreso.');
+        }
+        $finished = $this->previousYear();
+
+        return DB::transaction(function () use ($from, $studentIds, $finished) {
+            $students = Student::active()
+                ->where('parallel_id', $from->id)
+                ->whereIn('id', $studentIds)
+                ->lockForUpdate()
+                ->get();
+
+            if ($students->count() !== count($studentIds)) {
+                throw new UserAdminException('Algunos estudiantes marcados ya no están activos en el paralelo de origen. Recarga la página.');
+            }
+
+            foreach ($students as $student) {
+                StudentWithdrawal::create([
+                    'student_id' => $student->id,
+                    'type' => 'egreso',
+                    'reason' => StudentWithdrawal::TYPES['egreso'] . ($finished ? " ({$finished->name})" : ''),
+                    'withdrawn_on' => now()->toDateString(),
+                    'user_id' => Auth::id(),
+                    'snapshot' => StudentWithdrawal::snapshotOf($student, $finished?->id),
+                ]);
+                $student->update(['status' => Student::STATUS_WITHDRAWN]);
+            }
+
+            AuditLog::log('students.graduate', 'student', null, [
+                'from' => $from->loadMissing('course')->course?->name . ' ' . $from->name,
+                'count' => $students->count(),
+                'year' => $finished?->year,
+            ]);
+
+            return $students->count();
+        });
+    }
+
     /**
      * @param  array<int>  $studentIds  estudiantes marcados del paralelo de origen
      * @return int cantidad de estudiantes promovidos

@@ -41,7 +41,7 @@ return [
     'help_title' => '¿Necesitas ayuda?',
     'no_access' => 'Si aún no tienes acceso, pídelo en tu unidad educativa.',
     'forgot_link' => '¿Olvidaste tu contraseña?',
-    'forgot_text' => 'Si olvidaste tu contraseña, pide a tu docente o administrador que la restablezca.',
+    'forgot_text' => 'Si olvidaste tu contraseña, pide a la Dirección o a la Secretaría una contraseña temporal: te llegará por WhatsApp.',
     'whatsapp_button' => 'Escribir por WhatsApp',
     'whatsapp_message' => 'Hola, necesito ayuda para ingresar a YURA Platform.',
     'whatsapp_new_tab' => '(se abre en una pestaña nueva)',

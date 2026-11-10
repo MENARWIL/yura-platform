@@ -129,6 +129,18 @@
                                         <i class="fas fa-edit text-primary"></i>
                                     </a>
 
+                                    @if(auth()->user()->canIssueTemporaryPasswords() && ! auth()->user()->is($user) && $user->role !== 'robot' && $user->estado == 'activo')
+                                        <form action="{{ route('users.temporary-password', $user) }}" method="POST" class="d-inline"
+                                              data-confirm="¿Generar una contraseña temporal para {{ $user->name }} y enviarla por WhatsApp? Su contraseña actual dejará de funcionar.">
+                                            @csrf
+                                            <button type="submit" class="btn btn-white btn-sm border-0 rounded-circle mr-1"
+                                                    title="{{ $user->phone ? 'Contraseña temporal por WhatsApp' : 'Contraseña temporal por WhatsApp (falta su número)' }}"
+                                                    aria-label="Contraseña temporal por WhatsApp para {{ $user->name }}">
+                                                <i class="fas fa-key {{ $user->phone ? 'text-success' : 'text-muted' }}" aria-hidden="true"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+
                                         <form action="{{ route('users.status', $user->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('PATCH')

@@ -118,14 +118,26 @@
                     </div>
                 </div>
             @else
+                @php
+                    // HACER: se ven 2 casillas; aparecen más si alguna ya tiene nota o si se agregan con «+».
+                    $hacerMax = 5;
+                    $hacerVisible = 2;
+                    foreach ($students as $st) {
+                        foreach (\App\Services\CuadernoNota::summarize($gradesByStudent[$st->id] ?? null)['hacer'] as $hn => $hv) {
+                            if ($hv !== null && $hv !== '') {
+                                $hacerVisible = max($hacerVisible, (int) $hn);
+                            }
+                        }
+                    }
+                @endphp
                 <div class="table-responsive table-scroll-box">
-                    <table class="table table-hover align-middle table-bordered cuaderno-ser-saber-hacer" id="gradesTable">
+                    <table class="table table-hover align-middle table-bordered cuaderno-ser-saber-hacer" id="gradesTable" data-hacer-visible="{{ $hacerVisible }}" data-hacer-max="{{ $hacerMax }}"
                     <thead>
                         <tr>
                             <th rowspan="3" class="px-3 text-center align-middle" title="Número en la lista del curso y paralelo">Nro</th>
                             <th rowspan="3" class="px-4 align-middle">{{ __('messages.student_name') }}</th>
                             <th rowspan="3" class="align-middle">{{ __('messages.level') }}</th>
-                            <th colspan="16" class="text-center banner-evaluacion">EVALUACIÓN MAESTRO(A)</th>
+                            <th colspan="{{ 11 + $hacerVisible }}" class="text-center banner-evaluacion" id="banner-evaluacion">EVALUACIÓN MAESTRO(A)</th>
                             <th rowspan="3" class="text-center align-middle col-total">TOTAL<br>(90 PTS)</th>
                             <th rowspan="3" class="text-center align-middle col-autoeval">AUTOEVALUACIÓN<br>TOTAL (5 PTS)</th>
                             <th rowspan="3" class="text-center align-middle col-nota">NOTA<br>BIMESTRAL<br>(100 PTS)</th>
@@ -135,7 +147,10 @@
                             <th rowspan="2" class="text-center align-middle vertical-text prom-ser">PROMEDIO<br>DIMENSIÓN<br>(10 PTS)</th>
                             <th colspan="5" class="text-center grupo-saber">SABER</th>
                             <th rowspan="2" class="text-center align-middle vertical-text prom-saber">PROMEDIO<br>DIMENSIÓN<br>(45 PTS)</th>
-                            <th colspan="5" class="text-center grupo-hacer">HACER</th>
+                            <th colspan="{{ $hacerVisible }}" class="text-center grupo-hacer" id="grupo-hacer">
+                                HACER
+                                <button type="button" class="btn btn-sm btn-light border rounded-circle ml-2 py-0 px-2 {{ $hacerVisible >= $hacerMax ? 'd-none' : '' }}" id="add-hacer" title="Agregar otra casilla HACER" aria-label="Agregar otra casilla HACER"><i class="fas fa-plus" aria-hidden="true"></i></button>
+                            </th>
                             <th rowspan="2" class="text-center align-middle vertical-text prom-hacer">PROMEDIO<br>DIMENSIÓN<br>(40 PTS)</th>
                         </tr>
                         <tr>
@@ -147,11 +162,11 @@
                             <th class="text-center">Saber 3</th>
                             <th class="text-center">Saber 4</th>
                             <th class="text-center">Saber 5</th>
-                            <th class="text-center">Hacer 1 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center">Hacer 2 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center">Hacer 3 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center">Hacer 4 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center">Hacer 5 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center hacer-col {{ 1 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="1">Hacer 1 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center hacer-col {{ 2 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="2">Hacer 2 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center hacer-col {{ 3 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="3">Hacer 3 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center hacer-col {{ 4 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="4">Hacer 4 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            <th class="text-center hacer-col {{ 5 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="5">Hacer 5 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -200,7 +215,7 @@
                             <td class="text-center font-weight-bold align-middle dim-cell dim-saber">{{ $promSaber ?? '-' }}</td>
                             {{-- HACER (5) - se completa normalmente con el resultado de la actividad del robot --}}
                             @foreach($hacer as $n => $value)
-                            <td class="text-center align-middle">
+                            <td class="text-center align-middle hacer-col {{ $n > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="{{ $n }}">
                                 <input type="number" step="1" min="1" max="100" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="robot" data-number="{{ $n }}" data-dimension="hacer" value="{{ $value }}" placeholder="🤖" disabled title="Se completa automáticamente con el resultado de una actividad Yura.">
                             </td>
                             @endforeach
@@ -213,7 +228,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="22" class="text-center py-5">
+                            <td colspan="{{ 17 + $hacerVisible }}" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="fas fa-inbox fa-3x mb-2 opacity-25"></i>
                                     <p>{{ __('messages.no_students') }}</p>
@@ -243,6 +258,32 @@
             .grade-input.grade-save-error { border-color: #C8102E !important; box-shadow: 0 0 0 0.2rem rgba(200, 16, 46, 0.25) !important; }
         `;
         document.head.appendChild(styleTag);
+
+        // HACER: «+» muestra la siguiente casilla (hasta 5). Se recuerda por asignatura, paralelo y trimestre.
+        (function () {
+            const table = document.getElementById('gradesTable');
+            const button = document.getElementById('add-hacer');
+            if (!table || !button) return;
+            const max = parseInt(table.dataset.hacerMax, 10) || 5;
+            let visible = parseInt(table.dataset.hacerVisible, 10) || 2;
+            const key = 'yura.hacer.' + location.search;
+            function show(count) {
+                visible = Math.min(max, Math.max(visible, count));
+                table.querySelectorAll('.hacer-col').forEach(cell => {
+                    cell.classList.toggle('d-none', parseInt(cell.dataset.hacerCol, 10) > visible);
+                });
+                const group = document.getElementById('grupo-hacer');
+                const banner = document.getElementById('banner-evaluacion');
+                if (group) group.colSpan = visible;
+                if (banner) banner.colSpan = 11 + visible;
+                button.classList.toggle('d-none', visible >= max);
+            }
+            try { const saved = parseInt(localStorage.getItem(key), 10); if (saved) show(saved); } catch (e) {}
+            button.addEventListener('click', function () {
+                show(visible + 1);
+                try { localStorage.setItem(key, String(visible)); } catch (e) {}
+            });
+        })();
 
         function parseGradeValue(value) {
             const parsed = parseFloat(value);
