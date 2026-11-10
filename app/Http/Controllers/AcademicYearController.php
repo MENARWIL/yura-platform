@@ -128,7 +128,19 @@ class AcademicYearController extends Controller
         $data = $request->validate(['next_year_id' => ['nullable', 'integer', 'exists:academic_years,id']]);
         $next = isset($data['next_year_id']) ? AcademicYear::find($data['next_year_id']) : null;
 
-        return $this->perform(fn () => $this->years->close($request->user(), $year, $next), "{$year->name} cerrada.");
+        $wasCurrent = $year->is_current;
+        $response = $this->perform(fn () => $this->years->close($request->user(), $year, $next), "{$year->name} cerrada.");
+
+        // Al cerrar la gestión actual empieza la nueva: el paso siguiente es promover a los estudiantes.
+        if ($wasCurrent && $year->fresh()->isClosed() && $request->user()->canManageYears()) {
+            return redirect()->route('students.promote')->with(
+                'success',
+                "{$year->name} cerrada. La gestión actual ahora es {$next->name}. "
+                . 'Ahora promueve a los estudiantes curso por curso: vienen marcados quienes aprobaron.'
+            );
+        }
+
+        return $response;
     }
 
     public function reopen(Request $request, AcademicYear $year): RedirectResponse

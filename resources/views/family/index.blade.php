@@ -99,14 +99,14 @@
                                 </td>
                                 <td><span class="badge badge-light border text-uppercase">{{ $familyMember->relation_type }}</span></td>
                                 @if((auth()->user()->isAdmin() || auth()->user()->isAcademic()))
-                                    <td class="text-right">
-                                        <a href="{{ route('students.edit', $familyMember->student) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit mr-1"></i> Editar</a>
-                                        <a href="{{ route('tutors.edit', $familyMember->user) }}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-user-edit mr-1"></i> Tutor</a>
-                                        <button type="button" class="btn btn-sm btn-outline-dark" data-toggle="modal" data-target="#editFamilyMember{{ $familyMember->id }}"><i class="fas fa-people-arrows mr-1"></i> Cambiar tutor</button>
+                                    <td class="text-right text-nowrap">
+                                        <a href="{{ route('students.edit', $familyMember->student) }}" class="btn btn-sm btn-outline-primary" title="Editar estudiante" aria-label="Editar estudiante"><i class="fas fa-edit" aria-hidden="true"></i></a>
+                                        <a href="{{ route('tutors.edit', $familyMember->user) }}" class="btn btn-sm btn-outline-secondary" title="Editar tutor" aria-label="Editar tutor"><i class="fas fa-user-edit" aria-hidden="true"></i></a>
+                                        <button type="button" class="btn btn-sm btn-outline-dark" data-toggle="modal" data-target="#editFamilyMember{{ $familyMember->id }}" title="Cambiar tutor" aria-label="Cambiar tutor"><i class="fas fa-people-arrows" aria-hidden="true"></i></button>
                                         <form action="{{ route('family-members.destroy', $familyMember) }}" method="POST" class="d-inline" data-confirm="¿Quieres eliminar esta relación?">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash mr-1"></i> Eliminar</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar relación" aria-label="Eliminar relación"><i class="fas fa-trash" aria-hidden="true"></i></button>
                                         </form>
                                     </td>
                                 @endif
