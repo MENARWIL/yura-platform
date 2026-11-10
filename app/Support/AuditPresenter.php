@@ -23,6 +23,8 @@ class AuditPresenter
         'user.delete' => ['Usuario eliminado', 'danger'],
         'user.restore' => ['Usuario restaurado', 'normal'],
         'user.force_delete' => ['Eliminado definitivamente', 'danger'],
+        'user.temporary_password' => ['Contraseña temporal enviada', 'normal'],
+        'user.password_changed' => ['Contraseña cambiada', 'normal'],
         'year.create' => ['Gestión creada', 'normal'],
         'year.current' => ['Gestión actual cambiada', 'normal'],
         'year.close' => ['Gestión cerrada', 'danger'],
@@ -138,6 +140,11 @@ class AuditPresenter
             'user.status' => "{$target}: de " . self::status($d['from'] ?? null) . ' a ' . self::status($d['to'] ?? null) . '.',
             'user.delete' => "Se eliminó a {$target}. Se puede restaurar.",
             'user.restore' => "Se restauró a {$target}.",
+            'user.temporary_password' => "Contraseña temporal para {$target} (número " . ($d['phone'] ?? '—') . '): '
+                . (($d['channel'] ?? null) === 'api' ? 'enviada automáticamente por WhatsApp' : 'para enviar a mano por WhatsApp')
+                . (! empty($d['send_error']) ? ' (falló el envío automático: ' . $d['send_error'] . ')' : '')
+                . (! empty($d['expires_at']) ? '; vence el ' . \Illuminate\Support\Carbon::parse($d['expires_at'])->format('d/m/Y H:i') : '') . '.',
+            'user.password_changed' => "{$target} cambió su contraseña temporal por una propia.",
             'user.force_delete' => "Se eliminó definitivamente a {$target}" . (! empty($d['email']) ? " ({$d['email']})" : '') . '.',
             'year.create' => "Se creó la {$year}.",
             'year.current' => "La {$year} ahora es la gestión actual.",

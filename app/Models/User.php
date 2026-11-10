@@ -288,6 +288,26 @@ class User extends Authenticatable
         return $this->role === 'academic';
     }
 
+    /** Contraseñas temporales por WhatsApp: solo la Dirección, el administrador principal y la Secretaría. */
+    public function canIssueTemporaryPasswords(): bool
+    {
+        return $this->isDirector() || $this->isAcademic() || $this->isMainAdmin();
+    }
+
+    /** Entró (o va a entrar) con una contraseña temporal y todavía no la cambió. */
+    public function mustChangePassword(): bool
+    {
+        return (bool) $this->password_must_change;
+    }
+
+    /** La contraseña temporal ya venció: no sirve para entrar, hay que pedir otra. */
+    public function temporaryPasswordExpired(): bool
+    {
+        return $this->mustChangePassword()
+            && $this->temporary_password_expires_at !== null
+            && $this->temporary_password_expires_at->isPast();
+    }
+
     public function isProfesor(): bool
     {
         return $this->role === 'profesor';
@@ -431,6 +451,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_must_change' => 'boolean',
+            'temporary_password_expires_at' => 'datetime',
         ];
     }
 }

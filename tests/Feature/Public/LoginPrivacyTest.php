@@ -90,7 +90,7 @@ class LoginPrivacyTest extends TestCase
 
         $response = $this->get('/login')->assertOk();
 
-        $response->assertSee('Si olvidaste tu contraseña, pide a tu docente o administrador que la restablezca.');
+        $response->assertSee('Si olvidaste tu contraseña, pide a la Dirección o a la Secretaría una contraseña temporal: te llegará por WhatsApp.');
         $response->assertSee('Si aún no tienes acceso, pídelo en tu unidad educativa.');
         $response->assertDontSee('¿Olvidaste tu contraseña?');
         $response->assertDontSee('href="#"', false);

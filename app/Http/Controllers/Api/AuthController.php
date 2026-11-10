@@ -38,6 +38,20 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Contraseña temporal: la app no tiene pantalla para cambiarla, se cambia primero en la web.
+        if ($user->temporaryPasswordExpired()) {
+            return response()->json([
+                'message' => 'Tu contraseña temporal venció. Pide una nueva a la Dirección o a la Secretaría.',
+                'code' => 'temporary_password_expired',
+            ], 403);
+        }
+        if ($user->mustChangePassword()) {
+            return response()->json([
+                'message' => 'Entraste con una contraseña temporal. Cámbiala primero en la página web: ' . route('login'),
+                'code' => 'password_change_required',
+            ], 403);
+        }
+
         // El robot (cerebro) no debe perder acceso solo por el paso del tiempo.
         $expiresAt = ($user->role ?? $user->rol) === 'robot' ? null : now()->addDays($user->isAdmin() ? self::ADMIN_TOKEN_DAYS : self::TOKEN_DAYS);
         $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;

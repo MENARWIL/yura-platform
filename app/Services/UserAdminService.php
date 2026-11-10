@@ -104,6 +104,8 @@ class UserAdminService
             ));
             if ($passwordChanges) {
                 $changed[] = 'password';
+                // Una contraseña puesta a mano en «Editar» reemplaza a una temporal pendiente.
+                $target->forceFill(['password_must_change' => false, 'temporary_password_expires_at' => null])->save();
             }
 
             if ($roleChanges || $passwordChanges) {

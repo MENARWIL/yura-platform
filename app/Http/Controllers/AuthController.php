@@ -40,6 +40,20 @@ class AuthController extends Controller
                 ])->onlyInput('email');
             }
 
+            // Contraseña temporal (enviada por WhatsApp): vencida no sirve; vigente obliga a cambiarla.
+            if ($authenticatedUser->temporaryPasswordExpired()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Tu contraseña temporal venció. Pide una nueva a la Dirección o a la Secretaría.',
+                ])->onlyInput('email');
+            }
+            if ($authenticatedUser->mustChangePassword()) {
+                return redirect()->route('password.change');
+            }
+
             return redirect()->intended('dashboard');
         }
 
