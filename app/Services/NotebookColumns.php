@@ -49,15 +49,26 @@ class NotebookColumns
         return $counts;
     }
 
-    /** El profesor puede cambiar las casillas solo de la materia y el paralelo que tiene asignados. */
+    /**
+     * El profesor cambia las casillas de los paralelos que ve en su cuaderno: los de su asignación docente
+     * de esa materia, o donde tiene estudiantes asignados directamente (si dicta esa materia).
+     */
     public function canEdit(?User $user, ?int $subjectId, ?int $parallelId): bool
     {
-        return $user && $user->isProfesor() && $subjectId && $parallelId
-            && TeachingAssignment::where('teacher_user_id', $user->id)
-                ->where('subject_id', $subjectId)
-                ->where('parallel_id', $parallelId)
-                ->where('active', true)
-                ->exists();
+        if (! $user || ! $user->isProfesor() || ! $subjectId || ! $parallelId) {
+            return false;
+        }
+
+        $assignments = TeachingAssignment::where('teacher_user_id', $user->id)
+            ->where('subject_id', $subjectId)
+            ->where('active', true);
+
+        if ((clone $assignments)->where('parallel_id', $parallelId)->exists()) {
+            return true;
+        }
+
+        return $assignments->exists()
+            && Student::where('teacher_user_id', $user->id)->where('parallel_id', $parallelId)->exists();
     }
 
     /**

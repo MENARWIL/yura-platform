@@ -149,6 +149,32 @@ class NotebookColumnsTest extends TestCase
         $this->assertSame(0, NotebookColumn::count());
     }
 
+    public function test_teacher_with_a_student_assigned_directly_in_another_parallel_can_change_boxes(): void
+    {
+        $other = Parallel::firstOrCreate(['name' => 'C', 'course_id' => $this->parallel->course_id], ['max_students' => 30]);
+        Student::create([
+            'name' => 'Victor Aduviri', 'course' => 'Sexto de Primaria', 'course_id' => $this->parallel->course_id,
+            'parallel_id' => $other->id, 'teacher_user_id' => $this->teacher->id,
+        ]);
+
+        $this->actingAs($this->teacher)
+            ->get("/grades?subject_id={$this->subject->id}&parallel_id={$other->id}&quarter=1")
+            ->assertOk()
+            ->assertSee('Agregar otra casilla SER');
+
+        $this->actingAs($this->teacher)->postJson(route('grades.columns'), [
+            'subject_id' => $this->subject->id, 'parallel_id' => $other->id,
+            'quarter' => 1, 'dimension' => 'ser', 'action' => 'add',
+        ])->assertOk()->assertJson(['count' => 3]);
+
+        // Sin estudiantes suyos ni asignación en ese paralelo, no puede.
+        $empty = Parallel::firstOrCreate(['name' => 'D', 'course_id' => $this->parallel->course_id], ['max_students' => 30]);
+        $this->actingAs($this->teacher)->postJson(route('grades.columns'), [
+            'subject_id' => $this->subject->id, 'parallel_id' => $empty->id,
+            'quarter' => 1, 'dimension' => 'ser', 'action' => 'add',
+        ])->assertStatus(422);
+    }
+
     public function test_pdf_uses_the_same_boxes(): void
     {
         $this->change($this->teacher, 'saber', 'add');
