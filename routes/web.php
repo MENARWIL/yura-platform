@@ -130,6 +130,7 @@ Route::middleware(['auth', 'panel.es', 'password.changed'])->group(function () {
             ->name('robot-activities.retry');
         Route::post('/robot-activities', [RobotActivityController::class, 'store'])->name('robot-activities.store');
         Route::post('/grades/save', [GradeController::class, 'save'])->name('grades.save');
+        Route::post('/grades/columns', [GradeController::class, 'columns'])->name('grades.columns');
         Route::post('/grades/update-score', [GradeController::class, 'updateScore'])->name('grades.updateScore');
         Route::post('/attendance/save', [AttendanceController::class, 'save'])->name('attendance.save');
         Route::post('/attendance/save-list', [AttendanceController::class, 'saveList'])->name('attendance.saveList');

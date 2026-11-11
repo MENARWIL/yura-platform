@@ -38,20 +38,20 @@
             <tr>
                 <th rowspan="2">Nro</th>
                 <th rowspan="2">Estudiante</th>
-                <th colspan="3" class="grupo-ser">SER</th>
+                <th colspan="{{ $columns['ser'] }}" class="grupo-ser">SER</th>
                 <th rowspan="2" class="banner">Prom. SER<br>(10)</th>
-                <th colspan="5" class="grupo-saber">SABER</th>
+                <th colspan="{{ $columns['saber'] }}" class="grupo-saber">SABER</th>
                 <th rowspan="2" class="banner">Prom. SABER<br>(45)</th>
-                <th colspan="5" class="grupo-hacer">HACER</th>
+                <th colspan="{{ $columns['hacer'] }}" class="grupo-hacer">HACER</th>
                 <th rowspan="2" class="banner">Prom. HACER<br>(40)</th>
                 <th rowspan="2" class="col-total">TOTAL<br>(90)</th>
                 <th rowspan="2" class="col-autoeval">AUTOEVAL.<br>(5)</th>
                 <th rowspan="2" class="col-nota">NOTA<br>BIMESTRAL<br>(100)</th>
             </tr>
             <tr>
-                <th>1</th><th>2</th><th>3</th>
-                <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
-                <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                @foreach(['ser', 'saber', 'hacer'] as $dim)
+                    @for($i = 1; $i <= $columns[$dim]; $i++)<th>{{ $i }}</th>@endfor
+                @endforeach
             </tr>
         </thead>
         <tbody>
@@ -69,18 +69,18 @@
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td class="name">{{ $student->name }}</td>
-                    @foreach($ser as $v)<td>{{ $v !== '' ? $v : '-' }}</td>@endforeach
+                    @foreach(array_slice($ser, 0, $columns['ser'], true) as $v)<td>{{ $v !== '' ? $v : '-' }}</td>@endforeach
                     <td class="banner">{{ $promSer ?? '-' }}</td>
-                    @foreach($saber as $v)<td>{{ $v !== '' ? $v : '-' }}</td>@endforeach
+                    @foreach(array_slice($saber, 0, $columns['saber'], true) as $v)<td>{{ $v !== '' ? $v : '-' }}</td>@endforeach
                     <td class="banner">{{ $promSaber ?? '-' }}</td>
-                    @foreach($hacer as $v)<td>{{ $v !== '' ? $v : '-' }}</td>@endforeach
+                    @foreach(array_slice($hacer, 0, $columns['hacer'], true) as $v)<td>{{ $v !== '' ? $v : '-' }}</td>@endforeach
                     <td class="banner">{{ $promHacer ?? '-' }}</td>
                     <td class="col-total">{{ $total ?? '-' }}</td>
                     <td class="col-autoeval">{{ $autoeval !== '' ? $autoeval : '-' }}</td>
                     <td class="col-nota">{{ $notaBimestral ?? '-' }}</td>
                 </tr>
             @empty
-                <tr><td colspan="19">No hay estudiantes para mostrar.</td></tr>
+                <tr><td colspan="{{ 9 + array_sum($columns) }}">No hay estudiantes para mostrar.</td></tr>
             @endforelse
         </tbody>
     </table>
