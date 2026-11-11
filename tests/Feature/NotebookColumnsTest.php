@@ -101,13 +101,34 @@ class NotebookColumnsTest extends TestCase
         $this->change($this->teacher, 'hacer', 'remove')->assertStatus(422);
     }
 
-    public function test_a_box_with_grades_cannot_be_discarded_and_always_shows(): void
+    public function test_discarding_a_box_with_grades_asks_first_then_deletes_them_with_audit_copy(): void
     {
-        $this->grade('exam', 2);
-        $this->change($this->teacher, 'saber', 'remove')
-            ->assertStatus(422)
-            ->assertJsonPath('message', 'La casilla SABER 2 tiene notas; bórralas antes de descartarla.');
+        $this->grade('exam', 1, 70);
+        $this->grade('exam', 2, 64);
 
+        // Sin confirmar: pide confirmación y no borra nada.
+        $this->change($this->teacher, 'saber', 'remove')
+            ->assertStatus(409)
+            ->assertJson(['needs_confirm' => true, 'count' => 1])
+            ->assertJsonPath('message', 'La casilla SABER 2 tiene 1 nota(s). Si la descartas, esas notas se borran (quedan copiadas en la Auditoría).');
+        $this->assertSame(2, Grade::count());
+        $this->assertSame(2, $this->visible()['saber']);
+
+        // Confirmado: se borra solo la casilla 2 y queda la copia en la auditoría.
+        $this->actingAs($this->teacher)->postJson(route('grades.columns'), [
+            'subject_id' => $this->subject->id, 'parallel_id' => $this->parallel->id,
+            'quarter' => 1, 'dimension' => 'saber', 'action' => 'remove', 'confirm' => true,
+        ])->assertOk()->assertJson(['count' => 1]);
+
+        $this->assertSame([1], Grade::pluck('activity_number')->all());
+        $this->assertSame(1, $this->visible()['saber']);
+        $audit = \App\Models\AuditLog::where('action', 'notebook.column_discarded')->firstOrFail();
+        $this->assertSame('SABER 2', $audit->details['column']);
+        $this->assertEquals(64, $audit->details['grades'][0]['score']);
+    }
+
+    public function test_a_box_with_grades_always_shows(): void
+    {
         // El robot llenó la casilla HACER 4: se ve aunque el profesor tenga 2.
         $this->grade('robot', 4);
         $this->assertSame(4, $this->visible()['hacer']);

@@ -272,32 +272,65 @@
                 if (banner) banner.colSpan = 3 + total;
             }
 
-            table.querySelectorAll('.col-btn').forEach(button => {
-                button.addEventListener('click', async function () {
-                    const dim = button.dataset.dim;
-                    button.disabled = true;
-                    try {
-                        const response = await fetch(table.dataset.columnsUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
-                            body: JSON.stringify({
-                                subject_id: table.dataset.subject, parallel_id: table.dataset.parallel,
-                                quarter: table.dataset.quarter, dimension: dim, action: button.dataset.action,
-                            }),
-                        });
-                        const data = await response.json().catch(() => null);
-                        if (!response.ok || !data?.success) {
-                            showSaveToast(data?.message || 'No se pudo cambiar las casillas.', 'error');
-                            apply(dim, parseInt(document.getElementById('grupo-' + dim).dataset.count, 10));
-                            return;
-                        }
-                        apply(dim, data.count);
-                        showSaveToast(button.dataset.action === 'add' ? '✓ Casilla agregada' : '✓ Casilla descartada');
-                    } catch (error) {
-                        showSaveToast('Error de conexión: no se cambiaron las casillas.', 'error');
-                        apply(dim, parseInt(document.getElementById('grupo-' + dim).dataset.count, 10));
+            // Ventana de confirmación de YURA (public/js/yura-ui.js) mediante un formulario oculto.
+            const confirmForm = document.createElement('form');
+            confirmForm.className = 'd-none';
+            confirmForm.dataset.confirmTitle = '¿Descartar la casilla?';
+            confirmForm.dataset.confirmOk = 'Descartar y borrar notas';
+            confirmForm.innerHTML = '<input type="hidden" name="_method" value="DELETE">';
+            document.body.appendChild(confirmForm);
+            let onConfirmed = null;
+            confirmForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                confirmForm.dataset.confirmed = '';
+                if (onConfirmed) { const run = onConfirmed; onConfirmed = null; run(); }
+            });
+            function askConfirm(message, run) {
+                if (!window.jQuery) { if (window.confirm(message)) run(); return; }
+                confirmForm.dataset.confirm = message;
+                onConfirmed = run;
+                confirmForm.requestSubmit ? confirmForm.requestSubmit() : confirmForm.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+
+            async function send(button, confirmed) {
+                const dim = button.dataset.dim;
+                const restore = () => apply(dim, parseInt(document.getElementById('grupo-' + dim).dataset.count, 10));
+                button.disabled = true;
+                try {
+                    const response = await fetch(table.dataset.columnsUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({
+                            subject_id: table.dataset.subject, parallel_id: table.dataset.parallel,
+                            quarter: table.dataset.quarter, dimension: dim, action: button.dataset.action, confirm: confirmed,
+                        }),
+                    });
+                    const data = await response.json().catch(() => null);
+                    if (response.status === 409 && data?.needs_confirm) {
+                        restore();
+                        askConfirm(data.message, () => send(button, true));
+                        return;
                     }
-                });
+                    if (!response.ok || !data?.success) {
+                        showSaveToast(data?.message || 'No se pudo cambiar las casillas.', 'error');
+                        restore();
+                        return;
+                    }
+                    if (confirmed) {
+                        // Se borraron notas: recargar para ver los promedios recalculados.
+                        location.reload();
+                        return;
+                    }
+                    apply(dim, data.count);
+                    showSaveToast(button.dataset.action === 'add' ? '✓ Casilla agregada' : '✓ Casilla descartada');
+                } catch (error) {
+                    showSaveToast('Error de conexión: no se cambiaron las casillas.', 'error');
+                    restore();
+                }
+            }
+
+            table.querySelectorAll('.col-btn').forEach(button => {
+                button.addEventListener('click', () => send(button, false));
             });
         })();
 
