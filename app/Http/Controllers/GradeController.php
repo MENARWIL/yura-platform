@@ -15,6 +15,7 @@ use App\Exports\TrimesterGradesExport;
 use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\AcademicYear;
 use App\Services\ClosedAcademicYearException;
+use App\Services\NotebookColumnHasGrades;
 use App\Services\NotebookColumns;
 use App\Services\TeacherRecords;
 use App\Services\UserAdminException;
@@ -108,13 +109,17 @@ class GradeController extends Controller
             'quarter' => ['required', 'integer', 'between:1,3'],
             'dimension' => ['required', 'in:ser,saber,hacer'],
             'action' => ['required', 'in:add,remove'],
+            'confirm' => ['nullable', 'boolean'],
         ]);
 
         try {
             $count = $notebook->change(
                 Auth::user(), (int) $data['subject_id'], (int) $data['parallel_id'], (int) $data['quarter'],
-                $data['dimension'], $data['action'] === 'add' ? 1 : -1,
+                $data['dimension'], $data['action'] === 'add' ? 1 : -1, $request->boolean('confirm'),
             );
+        } catch (NotebookColumnHasGrades $e) {
+            // La pantalla pide confirmación y vuelve a enviar con confirm=1.
+            return response()->json(['success' => false, 'needs_confirm' => true, 'count' => $e->count, 'message' => $e->getMessage()], 409);
         } catch (UserAdminException|ClosedAcademicYearException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }

@@ -34,6 +34,8 @@ class AuditPresenter
         'student_info_updated' => ['Datos completados', 'normal'],
         'students.import' => ['Estudiantes importados', 'normal'],
         'students.promote' => ['Curso promovido', 'normal'],
+        'students.graduate' => ['Egreso registrado', 'normal'],
+        'notebook.column_discarded' => ['Casilla del cuaderno descartada', 'danger'],
         'student.create' => ['Estudiante registrado', 'normal'],
         'student.update' => ['Estudiante actualizado', 'normal'],
         'student.delete' => ['Estudiante eliminado', 'danger'],
@@ -158,6 +160,11 @@ class AuditPresenter
             'students.import' => self::import($d),
             'students.promote' => 'Se promovieron ' . ($d['count'] ?? 0) . ' estudiante(s) de ' . ($d['from'] ?? '—') . ' a ' . ($d['to'] ?? '—')
                 . (! empty($d['year']) ? " en la Gestión {$d['year']}" : '') . (! empty($d['age_plus_one']) ? ', con un año más de edad.' : '.'),
+            'students.graduate' => ($d['count'] ?? 0) . ' estudiante(s) de ' . ($d['from'] ?? '—') . ' quedaron como egresados'
+                . (! empty($d['year']) ? " (Gestión {$d['year']})" : '') . '.',
+            'notebook.column_discarded' => 'Se descartó la casilla ' . ($d['column'] ?? '—') . ' del trimestre ' . ($d['quarter'] ?? '—')
+                . ' y se borraron ' . count($d['grades'] ?? []) . ' nota(s): '
+                . collect($d['grades'] ?? [])->map(fn ($g) => 'estudiante ' . ($g['student_id'] ?? '?') . ' = ' . ($g['score'] ?? '—'))->implode(', ') . '.',
             default => self::generic($d),
         };
     }

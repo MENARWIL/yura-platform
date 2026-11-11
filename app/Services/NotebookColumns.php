@@ -2,16 +2,19 @@
 
 namespace App\Services;
 
+use App\Models\AcademicYear;
+use App\Models\AuditLog;
 use App\Models\Grade;
 use App\Models\NotebookColumn;
 use App\Models\Student;
 use App\Models\TeachingAssignment;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Casillas visibles del cuaderno pedagógico. Cada dimensión empieza con 2 casillas; el profesor de la
- * materia y el paralelo agrega (hasta el máximo) o descarta la última (mínimo 1, y solo si nadie tiene
- * nota en ella). Una casilla con nota siempre se ve, aunque la haya llenado el robot.
+ * materia y el paralelo agrega (hasta el máximo) o descarta la última (mínimo 1; si tiene notas, se borran
+ * tras confirmar). Una casilla con nota siempre se ve, aunque la haya llenado el robot.
  */
 class NotebookColumns
 {
@@ -60,9 +63,13 @@ class NotebookColumns
     /**
      * Agrega (+1) o descarta (-1) una casilla. Devuelve la nueva cantidad visible.
      *
+     * Si la casilla que se descarta tiene notas, hace falta $confirmed: esas notas se borran y quedan
+     * copiadas en la auditoría (notebook.column_discarded) para poder recuperarlas.
+     *
      * @throws UserAdminException si no se puede
+     * @throws NotebookColumnHasGrades si hay notas y falta confirmar
      */
-    public function change(User $user, int $subjectId, int $parallelId, int $quarter, string $dimension, int $delta): int
+    public function change(User $user, int $subjectId, int $parallelId, int $quarter, string $dimension, int $delta, bool $confirmed = false): int
     {
         if (! isset(self::MAX[$dimension]) || ! in_array($delta, [1, -1], true)) {
             throw new UserAdminException('Cambio de casillas no válido.');
@@ -81,17 +88,43 @@ class NotebookColumns
         if ($next < 1) {
             throw new UserAdminException("{$label} necesita al menos una casilla.");
         }
-        if ($delta < 0 && $this->highestUsed($subjectId, $parallelId, $quarter, $dimension) >= $current) {
-            throw new UserAdminException("La casilla {$label} {$current} tiene notas; bórralas antes de descartarla.");
-        }
+        return DB::transaction(function () use ($user, $subjectId, $parallelId, $quarter, $dimension, $delta, $current, $next, $label, $confirmed) {
+            if ($delta < 0) {
+                $grades = $this->columnGrades($subjectId, $parallelId, $quarter, $dimension, $current)->lockForUpdate()->get();
+                if ($grades->isNotEmpty()) {
+                    if (! $confirmed) {
+                        throw new NotebookColumnHasGrades($label, $current, $grades->whereNotNull('score')->count());
+                    }
+                    AuditLog::log('notebook.column_discarded', 'grade', null, [
+                        'subject_id' => $subjectId, 'parallel_id' => $parallelId, 'quarter' => $quarter,
+                        'column' => "{$label} {$current}",
+                        'grades' => $grades->map(fn (Grade $g) => [
+                            'student_id' => $g->student_id, 'score' => $g->score, 'status' => $g->status,
+                        ])->values()->all(),
+                    ]);
+                    // Uno por uno: así se respeta la protección de las gestiones cerradas.
+                    $grades->each->delete();
+                }
+            }
 
-        NotebookColumn::updateOrCreate(
-            ['subject_id' => $subjectId, 'parallel_id' => $parallelId, 'quarter' => $quarter, 'dimension' => $dimension,
-                'academic_year_id' => \App\Models\AcademicYear::currentId()],
-            ['count' => $next, 'user_id' => $user->id],
-        );
+            NotebookColumn::updateOrCreate(
+                ['subject_id' => $subjectId, 'parallel_id' => $parallelId, 'quarter' => $quarter, 'dimension' => $dimension,
+                    'academic_year_id' => AcademicYear::currentId()],
+                ['count' => $next, 'user_id' => $user->id],
+            );
 
-        return $next;
+            return $next;
+        });
+    }
+
+    /** Notas de una casilla en el paralelo (cualquier estado). */
+    private function columnGrades(int $subjectId, int $parallelId, int $quarter, string $dimension, int $column)
+    {
+        return Grade::where('subject_id', $subjectId)
+            ->where('quarter', $quarter)
+            ->where('type', self::TYPES[$dimension])
+            ->where('activity_number', $column)
+            ->whereIn('student_id', Student::where('parallel_id', $parallelId)->select('id'));
     }
 
     /** Número de la casilla más alta con nota en el paralelo (0 si ninguna). */
