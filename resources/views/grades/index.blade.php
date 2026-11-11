@@ -119,54 +119,45 @@
                 </div>
             @else
                 @php
-                    // HACER: se ven 2 casillas; aparecen más si alguna ya tiene nota o si se agregan con «+».
-                    $hacerMax = 5;
-                    $hacerVisible = 2;
-                    foreach ($students as $st) {
-                        foreach (\App\Services\CuadernoNota::summarize($gradesByStudent[$st->id] ?? null)['hacer'] as $hn => $hv) {
-                            if ($hv !== null && $hv !== '') {
-                                $hacerVisible = max($hacerVisible, (int) $hn);
-                            }
-                        }
-                    }
+                    // Casillas visibles por dimensión (App\Services\NotebookColumns): el profesor agrega o descarta.
+                    $dimLabels = ['ser' => 'Ser', 'saber' => 'Saber', 'hacer' => 'Hacer'];
+                    $dimMax = \App\Services\NotebookColumns::MAX;
+                    $colsTotal = $columns['ser'] + $columns['saber'] + $columns['hacer'];
                 @endphp
                 <div class="table-responsive table-scroll-box">
-                    <table class="table table-hover align-middle table-bordered cuaderno-ser-saber-hacer" id="gradesTable" data-hacer-visible="{{ $hacerVisible }}" data-hacer-max="{{ $hacerMax }}"
+                    <table class="table table-hover align-middle table-bordered cuaderno-ser-saber-hacer" id="gradesTable"
+                           data-columns-url="{{ $canEditColumns ? route('grades.columns') : '' }}"
+                           data-subject="{{ $selectedSubjectId }}" data-parallel="{{ $selectedParallelId }}" data-quarter="{{ $selectedQuarter }}">
                     <thead>
                         <tr>
                             <th rowspan="3" class="px-3 text-center align-middle" title="Número en la lista del curso y paralelo">Nro</th>
                             <th rowspan="3" class="px-4 align-middle">{{ __('messages.student_name') }}</th>
                             <th rowspan="3" class="align-middle">{{ __('messages.level') }}</th>
-                            <th colspan="{{ 11 + $hacerVisible }}" class="text-center banner-evaluacion" id="banner-evaluacion">EVALUACIÓN MAESTRO(A)</th>
+                            <th colspan="{{ 3 + $colsTotal }}" class="text-center banner-evaluacion" id="banner-evaluacion">EVALUACIÓN MAESTRO(A)</th>
                             <th rowspan="3" class="text-center align-middle col-total">TOTAL<br>(90 PTS)</th>
                             <th rowspan="3" class="text-center align-middle col-autoeval">AUTOEVALUACIÓN<br>TOTAL (5 PTS)</th>
                             <th rowspan="3" class="text-center align-middle col-nota">NOTA<br>BIMESTRAL<br>(100 PTS)</th>
                         </tr>
                         <tr>
-                            <th colspan="3" class="text-center grupo-ser">SER</th>
-                            <th rowspan="2" class="text-center align-middle vertical-text prom-ser">PROMEDIO<br>DIMENSIÓN<br>(10 PTS)</th>
-                            <th colspan="5" class="text-center grupo-saber">SABER</th>
-                            <th rowspan="2" class="text-center align-middle vertical-text prom-saber">PROMEDIO<br>DIMENSIÓN<br>(45 PTS)</th>
-                            <th colspan="{{ $hacerVisible }}" class="text-center grupo-hacer" id="grupo-hacer">
-                                HACER
-                                <button type="button" class="btn btn-sm btn-light border rounded-circle ml-2 py-0 px-2 {{ $hacerVisible >= $hacerMax ? 'd-none' : '' }}" id="add-hacer" title="Agregar otra casilla HACER" aria-label="Agregar otra casilla HACER"><i class="fas fa-plus" aria-hidden="true"></i></button>
+                            @foreach(['ser' => '10', 'saber' => '45', 'hacer' => '40'] as $dim => $pts)
+                            <th colspan="{{ $columns[$dim] }}" class="text-center grupo-{{ $dim }} text-nowrap" id="grupo-{{ $dim }}" data-dim="{{ $dim }}" data-count="{{ $columns[$dim] }}" data-max="{{ $dimMax[$dim] }}">
+                                {{ strtoupper($dim) }}
+                                @if($canEditColumns)
+                                    <span class="ml-2 d-inline-flex" role="group" aria-label="Casillas {{ strtoupper($dim) }}">
+                                        <button type="button" class="btn btn-sm btn-light border rounded-circle py-0 px-2 mr-1 col-btn" data-dim="{{ $dim }}" data-action="remove" title="Descartar la última casilla {{ strtoupper($dim) }}" aria-label="Descartar la última casilla {{ strtoupper($dim) }}" @disabled($columns[$dim] <= 1)><i class="fas fa-minus" aria-hidden="true"></i></button>
+                                        <button type="button" class="btn btn-sm btn-light border rounded-circle py-0 px-2 col-btn" data-dim="{{ $dim }}" data-action="add" title="Agregar otra casilla {{ strtoupper($dim) }}" aria-label="Agregar otra casilla {{ strtoupper($dim) }}" @disabled($columns[$dim] >= $dimMax[$dim])><i class="fas fa-plus" aria-hidden="true"></i></button>
+                                    </span>
+                                @endif
                             </th>
-                            <th rowspan="2" class="text-center align-middle vertical-text prom-hacer">PROMEDIO<br>DIMENSIÓN<br>(40 PTS)</th>
+                            <th rowspan="2" class="text-center align-middle vertical-text prom-{{ $dim }}">PROMEDIO<br>DIMENSIÓN<br>({{ $pts }} PTS)</th>
+                            @endforeach
                         </tr>
                         <tr>
-                            <th class="text-center">Ser 1</th>
-                            <th class="text-center">Ser 2</th>
-                            <th class="text-center">Ser 3</th>
-                            <th class="text-center">Saber 1</th>
-                            <th class="text-center">Saber 2</th>
-                            <th class="text-center">Saber 3</th>
-                            <th class="text-center">Saber 4</th>
-                            <th class="text-center">Saber 5</th>
-                            <th class="text-center hacer-col {{ 1 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="1">Hacer 1 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center hacer-col {{ 2 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="2">Hacer 2 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center hacer-col {{ 3 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="3">Hacer 3 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center hacer-col {{ 4 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="4">Hacer 4 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
-                            <th class="text-center hacer-col {{ 5 > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="5">Hacer 5 <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span></th>
+                            @foreach($dimMax as $dim => $max)
+                                @for($i = 1; $i <= $max; $i++)
+                                <th class="text-center dim-col {{ $i > $columns[$dim] ? 'd-none' : '' }}" data-dim="{{ $dim }}" data-col="{{ $i }}">{{ $dimLabels[$dim] }} {{ $i }}@if($dim === 'hacer') <span class="robot-hint" title="Se completa con la actividad del robot YURA"><i class="fas fa-robot"></i></span>@endif</th>
+                                @endfor
+                            @endforeach
                         </tr>
                     </thead>
                     <tbody>
@@ -201,21 +192,21 @@
                             </td>
                             {{-- SER (3) --}}
                             @foreach($ser as $n => $value)
-                            <td class="text-center align-middle">
+                            <td class="text-center align-middle dim-col {{ $n > $columns['ser'] ? 'd-none' : '' }}" data-dim="ser" data-col="{{ $n }}">
                                 <input type="number" step="1" min="1" max="100" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="activity" data-number="{{ $n }}" data-dimension="ser" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
                             @endforeach
                             <td class="text-center font-weight-bold align-middle dim-cell dim-ser">{{ $promSer ?? '-' }}</td>
                             {{-- SABER (5) --}}
                             @foreach($saber as $n => $value)
-                            <td class="text-center align-middle">
+                            <td class="text-center align-middle dim-col {{ $n > $columns['saber'] ? 'd-none' : '' }}" data-dim="saber" data-col="{{ $n }}">
                                 <input type="number" step="1" min="1" max="100" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="exam" data-number="{{ $n }}" data-dimension="saber" value="{{ $value }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
                             @endforeach
                             <td class="text-center font-weight-bold align-middle dim-cell dim-saber">{{ $promSaber ?? '-' }}</td>
                             {{-- HACER (5) - se completa normalmente con el resultado de la actividad del robot --}}
                             @foreach($hacer as $n => $value)
-                            <td class="text-center align-middle hacer-col {{ $n > $hacerVisible ? 'd-none' : '' }}" data-hacer-col="{{ $n }}">
+                            <td class="text-center align-middle dim-col {{ $n > $columns['hacer'] ? 'd-none' : '' }}" data-dim="hacer" data-col="{{ $n }}">
                                 <input type="number" step="1" min="1" max="100" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="robot" data-number="{{ $n }}" data-dimension="hacer" value="{{ $value }}" placeholder="🤖" disabled title="Se completa automáticamente con el resultado de una actividad Yura.">
                             </td>
                             @endforeach
@@ -228,7 +219,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ 17 + $hacerVisible }}" class="text-center py-5">
+                            <td colspan="{{ 9 + $colsTotal }}" class="text-center py-5">
                                 <div class="text-muted">
                                     <i class="fas fa-inbox fa-3x mb-2 opacity-25"></i>
                                     <p>{{ __('messages.no_students') }}</p>
@@ -259,29 +250,54 @@
         `;
         document.head.appendChild(styleTag);
 
-        // HACER: «+» muestra la siguiente casilla (hasta 5). Se recuerda por asignatura, paralelo y trimestre.
+        // Casillas SER / SABER / HACER: «+» agrega y «−» descarta la última (solo el profesor; se guarda en el servidor).
         (function () {
             const table = document.getElementById('gradesTable');
-            const button = document.getElementById('add-hacer');
-            if (!table || !button) return;
-            const max = parseInt(table.dataset.hacerMax, 10) || 5;
-            let visible = parseInt(table.dataset.hacerVisible, 10) || 2;
-            const key = 'yura.hacer.' + location.search;
-            function show(count) {
-                visible = Math.min(max, Math.max(visible, count));
-                table.querySelectorAll('.hacer-col').forEach(cell => {
-                    cell.classList.toggle('d-none', parseInt(cell.dataset.hacerCol, 10) > visible);
+            if (!table || !table.dataset.columnsUrl) return;
+
+            function apply(dim, count) {
+                const group = document.getElementById('grupo-' + dim);
+                if (!group) return;
+                const max = parseInt(group.dataset.max, 10);
+                group.dataset.count = count;
+                group.colSpan = count;
+                table.querySelectorAll('.dim-col[data-dim="' + dim + '"]').forEach(cell => {
+                    cell.classList.toggle('d-none', parseInt(cell.dataset.col, 10) > count);
                 });
-                const group = document.getElementById('grupo-hacer');
+                group.querySelector('[data-action="remove"]').disabled = count <= 1;
+                group.querySelector('[data-action="add"]').disabled = count >= max;
+                const total = ['ser', 'saber', 'hacer']
+                    .reduce((sum, d) => sum + (parseInt(document.getElementById('grupo-' + d)?.dataset.count, 10) || 0), 0);
                 const banner = document.getElementById('banner-evaluacion');
-                if (group) group.colSpan = visible;
-                if (banner) banner.colSpan = 11 + visible;
-                button.classList.toggle('d-none', visible >= max);
+                if (banner) banner.colSpan = 3 + total;
             }
-            try { const saved = parseInt(localStorage.getItem(key), 10); if (saved) show(saved); } catch (e) {}
-            button.addEventListener('click', function () {
-                show(visible + 1);
-                try { localStorage.setItem(key, String(visible)); } catch (e) {}
+
+            table.querySelectorAll('.col-btn').forEach(button => {
+                button.addEventListener('click', async function () {
+                    const dim = button.dataset.dim;
+                    button.disabled = true;
+                    try {
+                        const response = await fetch(table.dataset.columnsUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                            body: JSON.stringify({
+                                subject_id: table.dataset.subject, parallel_id: table.dataset.parallel,
+                                quarter: table.dataset.quarter, dimension: dim, action: button.dataset.action,
+                            }),
+                        });
+                        const data = await response.json().catch(() => null);
+                        if (!response.ok || !data?.success) {
+                            showSaveToast(data?.message || 'No se pudo cambiar las casillas.', 'error');
+                            apply(dim, parseInt(document.getElementById('grupo-' + dim).dataset.count, 10));
+                            return;
+                        }
+                        apply(dim, data.count);
+                        showSaveToast(button.dataset.action === 'add' ? '✓ Casilla agregada' : '✓ Casilla descartada');
+                    } catch (error) {
+                        showSaveToast('Error de conexión: no se cambiaron las casillas.', 'error');
+                        apply(dim, parseInt(document.getElementById('grupo-' + dim).dataset.count, 10));
+                    }
+                });
             });
         })();
 

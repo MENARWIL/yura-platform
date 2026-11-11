@@ -14,7 +14,10 @@ use App\Models\TeachingAssignment;
 use App\Exports\TrimesterGradesExport;
 use App\Http\Controllers\Concerns\PaginatesLists;
 use App\Models\AcademicYear;
+use App\Services\ClosedAcademicYearException;
+use App\Services\NotebookColumns;
 use App\Services\TeacherRecords;
+use App\Services\UserAdminException;
 use App\Services\TrimesterReport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -89,7 +92,39 @@ class GradeController extends Controller
                 })];
             });
 
-        return view('grades.index', compact('students', 'subjects', 'parallels', 'selectedSubjectId', 'selectedParallelId', 'selectedQuarter', 'gradesByStudent'));
+        $notebook = app(NotebookColumns::class);
+        $columns = $notebook->visible($selectedSubjectId ?: null, $selectedParallelId ?: null, (int) $selectedQuarter);
+        $canEditColumns = $notebook->canEdit($user, $selectedSubjectId ?: null, $selectedParallelId ?: null);
+
+        return view('grades.index', compact('students', 'subjects', 'parallels', 'selectedSubjectId', 'selectedParallelId', 'selectedQuarter', 'gradesByStudent', 'columns', 'canEditColumns'));
+    }
+
+    /** Agregar o descartar una casilla SER, SABER o HACER del cuaderno (solo el profesor de la materia y el paralelo). */
+    public function columns(Request $request, NotebookColumns $notebook)
+    {
+        $data = $request->validate([
+            'subject_id' => ['required', 'integer', 'exists:subjects,id'],
+            'parallel_id' => ['required', 'integer', 'exists:parallels,id'],
+            'quarter' => ['required', 'integer', 'between:1,3'],
+            'dimension' => ['required', 'in:ser,saber,hacer'],
+            'action' => ['required', 'in:add,remove'],
+        ]);
+
+        try {
+            $count = $notebook->change(
+                Auth::user(), (int) $data['subject_id'], (int) $data['parallel_id'], (int) $data['quarter'],
+                $data['dimension'], $data['action'] === 'add' ? 1 : -1,
+            );
+        } catch (UserAdminException|ClosedAcademicYearException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'dimension' => $data['dimension'],
+            'count' => $count,
+            'max' => NotebookColumns::MAX[$data['dimension']],
+        ]);
     }
 
     /**
@@ -202,7 +237,11 @@ class GradeController extends Controller
                 })];
             });
 
+        // Mismas casillas que se ven en pantalla.
+        $columns = app(NotebookColumns::class)->visible($selectedSubjectId ?: null, $selectedParallelId ?: null, (int) $selectedQuarter);
+
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.grades_pdf', compact(
+            'columns',
             'students',
             'gradesByStudent',
             'subject',
