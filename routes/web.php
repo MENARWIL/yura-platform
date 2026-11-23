@@ -24,6 +24,7 @@ use App\Http\Controllers\TeachingAssignmentController;
 use App\Http\Controllers\PublicPortalController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\RobotDeviceController;
 use App\Http\Controllers\PasswordChangeController;
 use App\Http\Controllers\TemporaryPasswordController;
 
@@ -189,6 +190,12 @@ Route::middleware(['auth', 'panel.es', 'password.changed'])->group(function () {
             ->name('users.temporary-password');
 
         Route::get('/admin/audit', [AuditController::class, 'index'])->name('admin.audit.index');
+
+        // Robot YURA (contrato v1.3): registrar el robot y generar, renovar o revocar su llave.
+        Route::get('/admin/robot', [RobotDeviceController::class, 'index'])->name('admin.robot.index');
+        Route::post('/admin/robot', [RobotDeviceController::class, 'store'])->name('admin.robot.store');
+        Route::post('/admin/robot/{device}/rotate', [RobotDeviceController::class, 'rotate'])->whereNumber('device')->name('admin.robot.rotate');
+        Route::post('/admin/robot/{device}/revoke', [RobotDeviceController::class, 'revoke'])->whereNumber('device')->name('admin.robot.revoke');
 
         Route::get('/admin/years', [AcademicYearController::class, 'index'])->name('admin.years.index');
         Route::post('/admin/years', [AcademicYearController::class, 'store'])->name('admin.years.store');

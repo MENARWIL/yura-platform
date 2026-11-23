@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\AppStaffController;
 use App\Http\Controllers\Api\AppTeacherController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\RobotActivityController;
 use App\Http\Controllers\Api\RobotActivityQueueController;
 use App\Http\Controllers\TutorController;
 
@@ -83,11 +82,18 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::patch('/users/{user}/status', [UserController::class, 'toggleStatus']);
-    Route::post('/v1/robot/activity', [RobotActivityController::class, 'store']);
-    Route::get('/v1/robot/activities/next', [RobotActivityQueueController::class, 'next']);
-    Route::get('/v1/robot/activities/{activityId}/attempts/{attemptId}/status', [RobotActivityQueueController::class, 'status'])
+});
+
+// Robot YURA (contrato v1.3). Entra con su propia llave (yura_rbt_…), sin correo ni contraseña, con los permisos
+// actividades:recibir y notas:enviar y solo para la materia con la que fue registrado en la web.
+// GET /activities/next es el reclamo del contrato v1.2: solo lo acepta el usuario antiguo con rol «robot».
+Route::middleware(['robot.key', 'auth:sanctum', 'active.user'])->prefix('v1/robot')->group(function () {
+    Route::get('/me', [RobotActivityQueueController::class, 'me']);
+    Route::post('/claims', [RobotActivityQueueController::class, 'claim']);
+    Route::get('/activities/next', [RobotActivityQueueController::class, 'next']);
+    Route::get('/activities/{activityId}/attempts/{attemptId}/status', [RobotActivityQueueController::class, 'status'])
         ->whereUuid('activityId')
         ->whereUuid('attemptId');
-    Route::post('/v1/robot/activities/{activityId}/results', [RobotActivityQueueController::class, 'results'])
+    Route::post('/activities/{activityId}/results', [RobotActivityQueueController::class, 'results'])
         ->whereUuid('activityId');
 });

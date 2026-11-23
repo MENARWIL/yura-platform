@@ -176,6 +176,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="{{ route('admin.robot.index') }}" class="nav-link {{ request()->is('admin/robot*') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-robot"></i>
+                            <p>Robot YURA</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="{{ route('admin.audit.index') }}" class="nav-link {{ request()->is('admin/audit*') ? 'active' : '' }}">
                             <i class="nav-icon fas fa-shield-alt"></i>
                             <p>{{ __('messages.system_audit') }}</p>

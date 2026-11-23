@@ -141,30 +141,36 @@ class ApiHardeningTest extends TestCase
         $this->withToken($token)->getJson('/api/user')->assertOk();
     }
 
-    public function test_robot_token_issued_by_login_does_not_expire(): void
+    public function test_robot_role_cannot_log_in_it_uses_its_own_key(): void
     {
         User::factory()->create([
             'email' => 'robot@yura.bo', 'role' => 'robot', 'status' => 'active',
             'password' => bcrypt('Correcta#2026'),
         ]);
 
-        $token = $this->postJson('/api/login', ['email' => 'robot@yura.bo', 'password' => 'Correcta#2026'])
-            ->assertOk()->json('access_token');
-
-        $this->assertNull(PersonalAccessToken::findToken($token)->expires_at);
+        $this->postJson('/api/login', ['email' => 'robot@yura.bo', 'password' => 'Correcta#2026'])
+            ->assertUnauthorized();
     }
 
     // ---------------------------------------------------------------- F4
 
-    public function test_only_robot_role_can_post_to_legacy_robot_activity_endpoint(): void
+    public function test_legacy_robot_activity_endpoint_was_retired(): void
+    {
+        $robot = User::factory()->create(['role' => 'robot', 'status' => 'active']);
+
+        $this->actingAs($robot, 'sanctum')
+            ->postJson('/api/v1/robot/activity', [])
+            ->assertStatus(404);
+    }
+
+    public function test_robot_routes_reject_people_even_with_a_valid_login(): void
     {
         $teacher = User::factory()->create(['role' => 'profesor', 'status' => 'active']);
         $parent = $this->family('padre');
 
         foreach ([$teacher, $parent] as $user) {
-            $this->actingAs($user, 'sanctum')
-                ->postJson('/api/v1/robot/activity', [])
-                ->assertForbidden();
+            $this->actingAs($user, 'sanctum')->postJson('/api/v1/robot/claims')->assertForbidden();
+            $this->actingAs($user, 'sanctum')->getJson('/api/v1/robot/me')->assertForbidden();
         }
     }
 
