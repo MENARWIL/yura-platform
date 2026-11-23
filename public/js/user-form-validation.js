@@ -1,15 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const forms = document.querySelectorAll('form');
     const messages = {
-        required: document.documentElement.lang === 'qu' ? 'Kayqa huntachinapaqmi.' : 'Este campo es obligatorio.',
-        name: document.documentElement.lang === 'qu' ? 'Sutipi qillqakunalla, tupanachisqa espacioswan.' : 'Usa solo letras y espacios simples.',
-        email: document.documentElement.lang === 'qu' ? 'Emailqa allin formatopi kanman.' : 'Ingresa un correo válido.',
-        phone: document.documentElement.lang === 'qu' ? 'Telefonoqa yupaykunallawan kanman.' : 'El teléfono solo acepta números y símbolos permitidos.',
-        ci: document.documentElement.lang === 'qu' ? 'CIqa yupaykunawan, qillqakunawan utaq guionwan kanman.' : 'La C.I. solo acepta letras, números y guiones.',
-        password: document.documentElement.lang === 'qu' ? 'Contraseñaqa 8 qillqayuq, hatun qillqayuq, yupayuq chaymanta simboloyuq kanman.' : 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
-        confirm: document.documentElement.lang === 'qu' ? 'Contraseñakunaqa mana kikinchu. Iskaynimpipi kikinta qillqay.' : 'Las contraseñas no coinciden. Escríbelas igual en ambos campos.',
-        confirmRequired: document.documentElement.lang === 'qu' ? 'Contraseñata yapamanta qillqay, takyachinaykipaq.' : 'Repite la contraseña para confirmarla.',
-        // Solo en el panel interno, que funciona en castellano. Los mismos que da el servidor.
+        required: 'Este campo es obligatorio.',
+        name: 'Usa solo letras y espacios simples.',
+        email: 'Ingresa un correo válido.',
+        phone: 'El teléfono solo acepta números y símbolos permitidos.',
+        ci: 'La C.I. solo acepta letras, números y guiones.',
+        password: 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
+        confirm: 'Las contraseñas no coinciden. Escríbelas igual en ambos campos.',
+        confirmRequired: 'Repite la contraseña para confirmarla.',
+        // Los mismos que da el servidor para el año de una gestión.
         integer: 'Este campo debe ser un número entero.',
         year: 'Escribe un año entre :min y :max.'
     };

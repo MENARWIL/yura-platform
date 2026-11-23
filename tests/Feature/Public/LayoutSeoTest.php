@@ -116,33 +116,22 @@ class LayoutSeoTest extends TestCase
         $this->assertStringNotContainsString('og:image:width', $html);
     }
 
-    public function test_los_valores_por_defecto_estan_en_espanol_y_cambian_con_el_idioma(): void
+    public function test_la_web_esta_en_espanol_aunque_la_sesion_guarde_otro_idioma(): void
     {
-        $this->get('/')->assertSee(__('layout.meta_description', [], 'es'), false);
-
+        // Sesiones de antes de la 0.7.3 pueden guardar 'qu': ya no cambia nada.
         $this->withSession(['locale' => 'qu'])->get('/')
             ->assertOk()
-            ->assertSee('<html lang="qu"', false)
-            ->assertSee('<meta property="og:locale" content="qu_PE"', false)
-            ->assertSee(__('layout.login', [], 'qu'), false);
+            ->assertSee('<html lang="es"', false)
+            ->assertSee('<meta property="og:locale" content="es_LA"', false)
+            ->assertSee(__('layout.meta_description', [], 'es'), false);
     }
 
-    public function test_el_idioma_activo_se_marca_en_la_barra_superior(): void
+    public function test_no_hay_selector_de_idioma_ni_ruta_para_cambiarlo(): void
     {
-        $this->get('/')->assertSee('lang="es" class="is-active" aria-current="true"', false);
-
-        $this->withSession(['locale' => 'qu'])->get('/')
-            ->assertSee('lang="qu" class="is-active" aria-current="true"', false);
-    }
-
-    public function test_los_idiomas_es_y_qu_tienen_las_mismas_claves_de_layout(): void
-    {
-        $es = array_keys(require resource_path('lang/es/layout.php'));
-        $qu = array_keys(require resource_path('lang/qu/layout.php'));
-
-        $this->assertSame([], array_diff($es, $qu), 'Faltan claves en qu/layout.php');
-        $this->assertSame([], array_diff($qu, $es), 'Sobran claves en qu/layout.php');
-        $this->assertStringContainsString('REVISAR', file_get_contents(resource_path('lang/qu/layout.php')));
+        foreach (['/', '/login'] as $page) {
+            $this->get($page)->assertOk()->assertDontSee('/lang/', false)->assertDontSee('lang="qu"', false);
+        }
+        $this->get('/lang/qu')->assertNotFound();
     }
 
     // ---- Pie y cabecera ----

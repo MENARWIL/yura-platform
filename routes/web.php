@@ -12,7 +12,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FamilyMemberController;
 use App\Http\Controllers\ParallelController;
-use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\RobotActivityController;
@@ -49,10 +48,8 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/lang/{locale}', [LocaleController::class, 'set'])->name('lang.set');
-
 // Protected Routes
-// El panel va solo en castellano (ver PanelInSpanish); el portal público sigue bilingüe.
+// Toda la web va en castellano (APP_LOCALE=es); PanelInSpanish lo asegura en el panel.
 // password.changed: quien entró con una contraseña temporal solo puede cambiarla o salir.
 Route::middleware(['auth', 'panel.es', 'password.changed'])->group(function () {
     Route::get('/password/change', [PasswordChangeController::class, 'edit'])->name('password.change');

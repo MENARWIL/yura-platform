@@ -25,8 +25,6 @@
     }
     $ogImageIsDefault = $ogImageCustom === '';
 
-    $ogLocale = app()->getLocale() === 'qu' ? 'qu_PE' : 'es_LA';
-
     /*
      * Datos de contacto configurados (config/yura.php, desde .env).
      * Lo que no esté configurado simplemente no se muestra.
@@ -76,7 +74,7 @@
     <meta property="og:title" content="{{ $pageTitle }}">
     <meta property="og:description" content="{{ $metaDescription }}">
     <meta property="og:url" content="{{ $canonicalUrl }}">
-    <meta property="og:locale" content="{{ $ogLocale }}">
+    <meta property="og:locale" content="es_LA">
     <meta property="og:image" content="{{ $ogImage }}">
     @if($ogImageIsDefault)
         <meta property="og:image:width" content="1200">
@@ -194,13 +192,6 @@
         }
         .top-bar a:hover { color: #FFFFFF; background: rgba(255, 255, 255, 0.12); }
         .top-bar a:focus-visible { outline-color: var(--white); outline-offset: 0; }
-        .top-bar a.is-active {
-            color: #FFFFFF;
-            font-weight: 700;
-            text-decoration: underline;
-            text-underline-offset: 4px;
-            text-decoration-thickness: 2px;
-        }
 
         /* Cabecera principal */
         .main-header {
@@ -590,14 +581,11 @@
 <body>
     <a href="#main-content" class="skip-to-content">{{ __('layout.skip_link') }}</a>
 
-    <!-- Barra superior: idioma -->
+    <!-- Barra superior: lema y contacto -->
     <div class="top-bar">
         <div class="top-bar-container">
             <span class="top-bar-tagline"><i class="fas fa-robot" aria-hidden="true"></i>{{ __('layout.topbar_tagline') }}</span>
-            <div class="top-bar-links" role="group" aria-label="{{ __('layout.language') }}">
-                @foreach(['es' => 'lang_es', 'qu' => 'lang_qu'] as $langCode => $langKey)
-                    <a href="{{ route('lang.set', ['locale' => $langCode]) }}" lang="{{ $langCode }}"@if(app()->getLocale() === $langCode) class="is-active" aria-current="true"@endif>@if($langCode === 'es')<i class="fas fa-globe" aria-hidden="true"></i>@endif{{ __('layout.'.$langKey) }}</a>
-                @endforeach
+            <div class="top-bar-links">
                 {{-- PENDIENTE: el enlace a Contacto solo aparece si hay datos de contacto en config/yura.php (.env: YURA_WHATSAPP, YURA_EMAIL, YURA_ADDRESS, YURA_HOURS, YURA_FACEBOOK...) --}}
                 @if($yuraHasContact)
                     <a href="#contacto"><i class="fas fa-headset" aria-hidden="true"></i>{{ __('layout.topbar_contact') }}</a>

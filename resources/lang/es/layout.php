@@ -11,12 +11,9 @@ return [
     'skip_link' => 'Saltar al contenido principal',
     'nav_aria' => 'Navegación principal',
     'menu' => 'Menú',
-    'language' => 'Idioma',
 
     // Barra superior
     'topbar_tagline' => 'Robot que practica quechua · Cuaderno pedagógico digital',
-    'lang_es' => 'Castellano',
-    'lang_qu' => 'Quechua',
     'topbar_contact' => 'Contacto',
 
     // Cabecera

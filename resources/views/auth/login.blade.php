@@ -116,7 +116,7 @@
             background: linear-gradient(90deg, var(--accent) 0 33.33%, var(--white) 33.33% 66.66%, var(--primary) 66.66% 100%);
         }
 
-        /* Barra superior: volver al inicio + idioma */
+        /* Barra superior: volver al inicio */
         .topbar {
             width: 100%;
             max-width: 1100px;
@@ -141,12 +141,6 @@
             color: var(--primary);
         }
         .topbar a:hover { background: var(--primary-light); color: var(--primary-dark); }
-        .lang { display: flex; align-items: center; gap: 4px; }
-        .lang a[aria-current="true"] {
-            background: var(--primary-light);
-            color: var(--primary-dark);
-            box-shadow: inset 0 -3px 0 var(--accent);
-        }
 
         /* Contenido */
         .login-main {
@@ -383,10 +377,6 @@
 
     <header class="topbar">
         <a href="{{ route('public.home') }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> {{ __('auth_public.back_home') }}</a>
-        <nav class="lang" aria-label="{{ __('auth_public.language') }}">
-            <a href="{{ route('lang.set', ['locale' => 'es']) }}" lang="es" @if ($locale === 'es') aria-current="true" @endif>{{ __('auth_public.language_es') }}</a>
-            <a href="{{ route('lang.set', ['locale' => 'qu']) }}" lang="qu" @if ($locale === 'qu') aria-current="true" @endif>{{ __('auth_public.language_qu') }}</a>
-        </nav>
     </header>
 
     <main class="login-main">

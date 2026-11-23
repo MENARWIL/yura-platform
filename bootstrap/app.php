@@ -16,7 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'rol' => \App\Http\Middleware\CheckRole::class,
             'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
             'api.role' => \App\Http\Middleware\EnsureApiRole::class,
-            'set.locale' => \App\Http\Middleware\SetLocale::class,
             'panel.es' => \App\Http\Middleware\PanelInSpanish::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
@@ -29,7 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
             prepend: \App\Http\Middleware\RobotKeyHeader::class,
         );
 
-        $middleware->web(append: [\App\Http\Middleware\SetLocale::class, 'throttle:global']);
+        $middleware->web(append: ['throttle:global']);
         $middleware->api(append: ['throttle:global']);
         
         $middleware->prependToGroup('api', \App\Http\Middleware\ForceJsonResponse::class);

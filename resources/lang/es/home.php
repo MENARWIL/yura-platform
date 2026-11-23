@@ -1,7 +1,6 @@
 <?php
 
 // Textos de la portada pública (resources/views/public/home.blade.php).
-// Las mismas claves existen en resources/lang/qu/home.php.
 
 return [
     // SEO

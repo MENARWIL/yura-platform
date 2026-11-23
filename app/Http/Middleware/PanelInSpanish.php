@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * El panel interno (después de iniciar sesión) funciona solo en castellano: la mayoría de sus
- * pantallas no tienen traducción al quechua y la interfaz salía mezclada. El portal público y el
- * inicio de sesión siguen en castellano y quechua; la elección se conserva en la sesión.
+ * El panel interno (después de iniciar sesión) funciona en castellano. Toda la web ya va en
+ * castellano (APP_LOCALE=es, sin selector de idioma desde la 0.7.3); esto lo asegura en el panel
+ * aunque el .env de un equipo diga otro idioma.
  */
 class PanelInSpanish
 {

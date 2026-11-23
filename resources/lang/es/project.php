@@ -3,8 +3,7 @@
 /*
  | Textos de la página pública «Proyecto YURA» (ruta /feria, vista resources/views/home.blade.php).
  | Cada afirmación de esta página debe poder comprobarse en el código o en docs/ (no se inventan
- | cifras, resultados, testimonios ni datos de contacto). El archivo qu/project.php debe tener
- | exactamente las mismas claves.
+ | cifras, resultados, testimonios ni datos de contacto).
  */
 
 return [
@@ -70,7 +69,6 @@ return [
                 'items' => [
                     'Consultan notas por trimestre, asistencia y actividades del robot desde la web o la app.',
                     'Ven solo a sus hijas e hijos: el acceso depende de un vínculo autorizado por el colegio.',
-                    'El portal se puede leer en castellano y en quechua.',
                 ],
             ],
             [
@@ -109,7 +107,6 @@ return [
             ['icon' => 'fa-mobile-screen-button', 'title' => 'App móvil', 'text' => 'Consulta de notas y asistencia para las familias, con vistas también para docentes y administración.'],
             ['icon' => 'fa-layer-group', 'title' => 'Gestión por año escolar', 'text' => 'Cada gestión guarda sus propias notas, asistencia y actividades; la administración puede cerrarla y reabrirla.'],
             ['icon' => 'fa-user-shield', 'title' => 'Cuentas por rol y auditoría', 'text' => 'Administración, docentes y familias ven solo lo que les corresponde; las acciones de administración quedan registradas.'],
-            ['icon' => 'fa-language', 'title' => 'Castellano y quechua', 'text' => 'El portal ofrece un selector de idioma entre castellano y quechua.'],
         ],
         'app_link' => 'Descargar la app',
     ],
