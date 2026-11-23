@@ -5,7 +5,6 @@
 | Textos de la pantalla de ingreso (login)
 |--------------------------------------------------------------------------
 | Vista: resources/views/auth/login.blade.php
-| Mismas claves que resources/lang/qu/auth_public.php.
 */
 
 return [
@@ -15,10 +14,6 @@ return [
     'brand_name' => 'YURA Platform',
     'brand_tagline' => 'Cuaderno pedagógico digital',
     'back_home' => 'Volver al inicio',
-
-    'language' => 'Idioma',
-    'language_es' => 'Castellano',
-    'language_qu' => 'Quechua',
 
     'title' => 'Ingresar a YURA',
     'subtitle' => 'Ingresa para ver las notas, la asistencia y el cuaderno pedagógico.',

@@ -19,7 +19,7 @@ class SeoController extends Controller
      */
     public const DISALLOWED_PATHS = [
         '/admin', '/api/', '/attendance', '/courses', '/dashboard', '/family-members',
-        '/grades', '/lang/', '/login', '/logout', '/parallels', '/profile',
+        '/grades', '/login', '/logout', '/parallels', '/profile',
         '/robot-activities', '/sanctum', '/search', '/students', '/subjects',
         '/teachers', '/teaching-assignments', '/tutor', '/users',
         '/storage/students/', '/storage/users/',

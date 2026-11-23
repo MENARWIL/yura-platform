@@ -212,39 +212,6 @@ class HomeTest extends TestCase
             ->assertDontSee('robot-yura.jpg');
     }
 
-    public function test_home_works_in_quechua(): void
-    {
-        $this->withSession(['locale' => 'qu'])
-            ->get(route('public.home'))
-            ->assertOk()
-            ->assertSee('lang="qu"', false)
-            ->assertSee('YURA, wawakunawan qhichwa simipi parlaq robot')
-            ->assertSee('Yaykuy')
-            ->assertSee('Proyectota riqsiy')
-            ->assertDontSee('home.hero_title_1');
-
-        $html = $this->withSession(['locale' => 'qu'])->get(route('public.home'))->getContent();
-        $this->assertSame(1, preg_match_all('/<h1[\s>]/i', $html));
-    }
-
-    public function test_spanish_and_quechua_files_have_the_same_keys(): void
-    {
-        $es = require resource_path('lang/es/home.php');
-        $qu = require resource_path('lang/qu/home.php');
-
-        $this->assertSame(array_keys($es), array_keys($qu), 'es y qu deben tener las mismas claves, en el mismo orden');
-        $this->assertNotEmpty($es);
-
-        foreach ($qu as $key => $text) {
-            $this->assertNotSame('', trim($text), "la clave qu '{$key}' está vacía");
-        }
-
-        $this->assertStringContainsString(
-            '// REVISAR: traducción pendiente de revisión por hablante nativo',
-            file_get_contents(resource_path('lang/qu/home.php'))
-        );
-    }
-
     public function test_every_home_key_used_by_the_view_exists(): void
     {
         $es = require resource_path('lang/es/home.php');

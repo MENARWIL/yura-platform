@@ -5,7 +5,6 @@
 | Página de Privacidad (BORRADOR pendiente de revisión)
 |--------------------------------------------------------------------------
 | Vista: resources/views/public/privacy.blade.php
-| Mismas claves que resources/lang/qu/privacy.php.
 |
 | Todo lo que aquí se afirma consta en el código o en la documentación del
 | proyecto (modelos, controladores, docs/yura-activity-contract-v1.md y

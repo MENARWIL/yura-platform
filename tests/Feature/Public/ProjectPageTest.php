@@ -249,35 +249,6 @@ class ProjectPageTest extends TestCase
             ->assertSee('href="https://descargas.example.org/yura.apk"', false);
     }
 
-    public function test_page_responds_in_quechua(): void
-    {
-        $this->withSession(['locale' => 'qu'])
-            ->get('/feria')
-            ->assertOk()
-            ->assertSee('lang="qu"', false)
-            ->assertSee('Runasimiqa rimaspa yachakun')
-            ->assertSee('Sapa runapaq ima allin')
-            ->assertDontSee('El quechua se aprende hablándolo');
-    }
-
-    public function test_spanish_and_quechua_files_have_the_same_keys(): void
-    {
-        $es = $this->flatKeys(require lang_path('es/project.php'));
-        $qu = $this->flatKeys(require lang_path('qu/project.php'));
-
-        $this->assertNotEmpty($es);
-        $this->assertSame([], array_values(array_diff($es, $qu)), 'Faltan claves en qu/project.php');
-        $this->assertSame([], array_values(array_diff($qu, $es)), 'Sobran claves en qu/project.php');
-    }
-
-    public function test_quechua_file_carries_the_review_comment(): void
-    {
-        $this->assertStringContainsString(
-            'REVISAR: traducción pendiente de revisión por hablante nativo',
-            file_get_contents(lang_path('qu/project.php'))
-        );
-    }
-
     /** @return array<int, string> */
     private function flatKeys(array $array, string $prefix = ''): array
     {

@@ -8,7 +8,6 @@ Disallow: /courses
 Disallow: /dashboard
 Disallow: /family-members
 Disallow: /grades
-Disallow: /lang/
 Disallow: /login
 Disallow: /logout
 Disallow: /parallels

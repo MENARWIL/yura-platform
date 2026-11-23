@@ -191,27 +191,6 @@ class LoginPrivacyTest extends TestCase
         $response->assertDontSee('field is required');
     }
 
-    public function test_login_page_works_in_quechua(): void
-    {
-        $response = $this->withSession(['locale' => 'qu'])->get('/login')->assertOk();
-
-        $response->assertSee('<html lang="qu">', false);
-        $response->assertSee('YURAman yaykuy');
-        $response->assertSee('Qallariyman kutiy');
-        $response->assertDontSee('Volver al inicio');
-        $this->assertSame(1, $this->h1Count($response->getContent()));
-    }
-
-    public function test_login_language_links_switch_the_locale(): void
-    {
-        $this->get('/login')->assertOk()
-            ->assertSee(route('lang.set', ['locale' => 'es']), false)
-            ->assertSee(route('lang.set', ['locale' => 'qu']), false);
-
-        $this->from('/login')->get(route('lang.set', ['locale' => 'qu']))->assertRedirect();
-        $this->get('/login')->assertSee('YURAman yaykuy');
-    }
-
     // ------------------------------------------------------------ Privacidad
 
     public function test_privacy_page_responds_with_one_h1_and_the_draft_notice(): void
@@ -276,31 +255,5 @@ class LoginPrivacyTest extends TestCase
             ->assertSee('Calle Falsa 123')
             ->assertSee('Lunes a viernes 8:00 a 12:00')
             ->assertDontSee('Nombre oficial de la unidad educativa y del equipo responsable.<');
-    }
-
-    public function test_privacy_page_works_in_quechua(): void
-    {
-        $response = $this->withSession(['locale' => 'qu'])->get(route('public.privacy'))->assertOk();
-
-        $response->assertSee('lang="qu"', false);
-        $response->assertSee('Imaynatam willakuykunata waqaychanchik YURApi');
-        $response->assertSee('Borrador:');
-        $response->assertSee('25 p\'unchaw octubre killapi, 2026');
-        $response->assertDontSee('Cómo cuidamos los datos en YURA');
-        $this->assertSame(1, $this->h1Count($response->getContent()));
-    }
-
-    public function test_spanish_and_quechua_files_have_the_same_keys(): void
-    {
-        foreach (['auth_public', 'privacy'] as $file) {
-            $es = array_keys(Arr::dot(require resource_path("lang/es/{$file}.php")));
-            $qu = array_keys(Arr::dot(require resource_path("lang/qu/{$file}.php")));
-
-            $this->assertEqualsCanonicalizing($es, $qu, "Las claves de {$file}.php difieren entre es y qu.");
-            $this->assertStringContainsString(
-                'REVISAR: traducción pendiente de revisión por hablante nativo',
-                file_get_contents(resource_path("lang/qu/{$file}.php"))
-            );
-        }
     }
 }

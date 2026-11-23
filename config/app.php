@@ -26,7 +26,7 @@ return [
     |
     */
 
-    'version' => env('APP_VERSION', '0.7.2'),
+    'version' => env('APP_VERSION', '0.7.3'),
 
     /*
     |--------------------------------------------------------------------------
@@ -91,7 +91,7 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'es'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

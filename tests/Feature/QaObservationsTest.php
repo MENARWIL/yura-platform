@@ -227,7 +227,7 @@ class QaObservationsTest extends TestCase
         $admin = $this->user('admin');
 
         $html = $this->actingAs($admin)->withSession(['locale' => 'qu'])->get('/dashboard')->assertOk()->getContent();
-        $this->assertStringNotContainsString(route('lang.set', ['locale' => 'qu']), $html);
+        $this->assertStringNotContainsString('/lang/', $html);
         $this->assertStringContainsString('<html lang="es"', $html);
     }
 }
