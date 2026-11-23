@@ -304,7 +304,7 @@ class DirectorRoleTest extends TestCase
                 return $rows->count() === 1
                     && $row['student']->is($student)
                     && $row['quarters'] === [1 => 81.0, 2 => 45.0, 3 => null]
-                    && $row['annual'] === 63.0;
+                    && $row['annual'] === 42.0; // (81 + 45 + 0) / 3: el 3.er trimestre sin notas cuenta como 0
             });
     }
 

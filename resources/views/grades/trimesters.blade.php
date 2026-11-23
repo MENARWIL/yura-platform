@@ -105,7 +105,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="text-muted small mb-0"><i class="fas fa-info-circle mr-1" aria-hidden="true"></i> «-» significa que el trimestre todavía no tiene notas. El promedio anual considera solo los trimestres con nota.</p>
+                <p class="text-muted small mb-0"><i class="fas fa-info-circle mr-1" aria-hidden="true"></i> «-» significa que el trimestre todavía no tiene notas. El promedio anual suma los 3 trimestres y divide entre 3: el trimestre sin notas cuenta como 0.</p>
             @endif
         </div>
     </div>

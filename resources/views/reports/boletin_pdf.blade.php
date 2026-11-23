@@ -76,7 +76,8 @@
     </table>
     <p class="nota">
         Cada trimestre es la nota final sobre 100 del Cuaderno Pedagógico: SER (10), SABER (45), HACER (40) y autoevaluación (5).
-        «-» indica que el trimestre aún no tiene notas; los promedios consideran solo los trimestres y asignaturas con nota.
+        «-» indica que el trimestre aún no tiene notas. El promedio anual suma los 3 trimestres y divide entre 3: el trimestre sin notas cuenta como 0.
+        El promedio general considera las asignaturas con nota.
     </p>
 
     <p style="text-align:right; margin-top:18px">{{ $placeAndDate }}</p>

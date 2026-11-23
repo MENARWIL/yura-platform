@@ -50,12 +50,18 @@ class CuadernoNota
         ];
     }
 
-    /** Promedio anual: el de los trimestres que tienen nota (null si ninguno la tiene). */
+    /** Trimestres de una gestión: el promedio anual siempre divide entre ellos. */
+    public const QUARTERS_PER_YEAR = 3;
+
+    /**
+     * Promedio anual: la suma de los 3 trimestres entre 3; el trimestre que aún no tiene notas
+     * cuenta como 0 (ej. solo el 1.º con 30.38 → 10.13). Null si ningún trimestre tiene nota.
+     */
     public static function annual(array $quarterNotes): ?float
     {
-        $filled = array_values(array_filter($quarterNotes, fn ($v) => $v !== null));
+        $filled = array_filter($quarterNotes, fn ($v) => $v !== null);
 
-        return $filled ? round(array_sum($filled) / count($filled), 2) : null;
+        return $filled ? round(array_sum($filled) / self::QUARTERS_PER_YEAR, 2) : null;
     }
 
     private static function scaleToDimension(array $scores, int $maxPoints): ?float
