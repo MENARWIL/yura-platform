@@ -761,3 +761,22 @@ a:focus {
 /* Campo de archivo (fotos): solo el botón y el nombre del archivo son clicables, no toda la fila.
    Antes ocupaba todo el ancho y un clic cerca de «Guardar» abría el selector de archivos. */
 .form-control-file { display: inline-block; width: auto; max-width: 100%; }
+
+/* Ver contraseña (yura-ui.js): ojito dentro del campo, a la derecha. Deja lugar para el ojito
+   y, si el campo tiene error, corre el ícono rojo de Bootstrap a su izquierda. */
+.form-control.yura-pw-input,
+.fb-field input.yura-pw-input { padding-right: 2.75rem; }
+.form-control.yura-pw-input.is-invalid,
+.form-control.yura-pw-input.is-valid,
+.was-validated .form-control.yura-pw-input:invalid,
+.was-validated .form-control.yura-pw-input:valid { padding-right: 4.75rem; background-position: right 2.9rem center; }
+.yura-pw-input::-ms-reveal,
+.yura-pw-input::-ms-clear { display: none; }
+.yura-pw-toggle { position: relative; z-index: 4; display: flex; align-items: center; justify-content: center; width: 2.75rem; height: calc(2.25rem + 2px); margin: calc(-2.25rem - 2px) 0 0 auto; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--yura-muted); font-size: 1rem; line-height: 1; cursor: pointer; }
+/* Alturas de partida; yura-ui.js las ajusta al campo real al verse. */
+.form-control-lg + .yura-pw-toggle { height: calc(2.875rem + 2px); margin-top: calc(-2.875rem - 2px); }
+.form-control-sm + .yura-pw-toggle { height: calc(1.8125rem + 2px); margin-top: calc(-1.8125rem - 2px); }
+.fb-field .yura-pw-toggle { height: 46px; margin-top: -46px; }
+.yura-pw-toggle:hover { color: var(--yura-blue); }
+.yura-pw-toggle:focus { outline: 0; }
+.yura-pw-toggle:focus-visible { color: var(--yura-blue); box-shadow: 0 0 0 3px var(--yura-action-ring); }

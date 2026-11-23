@@ -7,6 +7,7 @@
  *  - <form data-live-search="#contenedor">: búsqueda en vivo. Al escribir (con espera de
  *    350 ms) o cambiar un filtro, trae la página por fetch y reemplaza solo el contenedor.
  *    Al vaciar el buscador, la lista vuelve completa de inmediato.
+ *  - Campos de contraseña: llevan un botón con un ojito para mostrar u ocultar lo escrito.
  */
 (function () {
     'use strict';
@@ -245,7 +246,74 @@
         size();
     }
 
+    // ---------------------------------------------------------------- Ver contraseña
+    // Botón con un ojito dentro del campo, a la derecha. Va después del campo sin envolverlo:
+    // los mensajes de error («Debe tener al menos 8 caracteres») lo siguen encontrando.
+    var passwordCount = 0;
+    var passwordToggles = [];
+    function placePasswordToggles() {
+        passwordToggles.forEach(function (place) { place(); });
+    }
+    function initPasswordToggle(input) {
+        if (input.dataset.passwordToggle) return;
+        input.dataset.passwordToggle = '1';
+        if (!input.id) input.id = 'yura-password-' + (++passwordCount);
+        input.classList.add('yura-pw-input');
+
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'yura-pw-toggle';
+        button.setAttribute('aria-controls', input.id);
+        var icon = document.createElement('i');
+        icon.setAttribute('aria-hidden', 'true');
+        button.appendChild(icon);
+
+        function render(show) {
+            var label = show ? 'Ocultar contraseña' : 'Mostrar contraseña';
+            icon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+            button.title = label;
+            button.setAttribute('aria-label', label);
+            button.setAttribute('aria-pressed', show ? 'true' : 'false');
+        }
+        // Se sube sobre el campo con su misma altura (también si estaba oculto, como en un modal).
+        function place() {
+            var height = input.offsetHeight;
+            if (!height) return;
+            var below = parseFloat(window.getComputedStyle(input).marginBottom) || 0;
+            button.style.height = height + 'px';
+            button.style.marginTop = -(height + below) + 'px';
+            button.style.marginBottom = below + 'px';
+        }
+
+        button.addEventListener('click', function () {
+            var show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            render(show);
+            input.focus();
+        });
+        // Al enviar se vuelve a ocultar: el navegador no la guarda como texto.
+        if (input.form) {
+            input.form.addEventListener('submit', function () {
+                input.type = 'password';
+                render(false);
+            });
+        }
+
+        render(false);
+        input.parentNode.insertBefore(button, input.nextSibling);
+        place();
+        passwordToggles.push(place);
+        input.addEventListener('focus', place);
+        if (window.ResizeObserver) new ResizeObserver(place).observe(input);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('input[type="password"]').forEach(initPasswordToggle);
+        // Campos que estaban ocultos (modal, pestaña o sección plegable) o ventana que cambia de tamaño.
+        window.addEventListener('resize', placePasswordToggles);
+        if (window.jQuery) {
+            window.jQuery(document).on('shown.bs.modal shown.bs.tab shown.bs.collapse', placePasswordToggles);
+        }
         document.querySelectorAll('.alert[data-autohide]').forEach(initAutoHide);
         document.querySelectorAll('.table-scroll-box').forEach(initDualScroll);
         document.querySelectorAll('form[data-filter-required]').forEach(initRequiredFilters);
