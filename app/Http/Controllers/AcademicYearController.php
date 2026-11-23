@@ -41,8 +41,12 @@ class AcademicYearController extends Controller
         $openYears = AcademicYear::whereNull('closed_at')->orderByDesc('year')->get();
 
         $maxYear = AcademicYear::max('year');
+        // Al crear otra gestión con la actual abierta, la web avisa que la nueva no será la actual.
+        $current = AcademicYear::current();
+        $openCurrent = $current && ! $current->isClosed() ? $current : null;
+        $existingYears = AcademicYear::orderBy('year')->pluck('year')->all();
 
-        return view('admin.years.index', compact('years', 'openYears', 'maxYear'));
+        return view('admin.years.index', compact('years', 'openYears', 'maxYear', 'openCurrent', 'existingYears'));
     }
 
     /**

@@ -91,10 +91,11 @@
             <div class="card-body px-4">
                 <h6 class="font-weight-bold">Crear una gestión</h6>
                 {{-- novalidate: avisa la web (texto rojo debajo del campo), no el globo del navegador. --}}
-                <form method="POST" action="{{ route('admin.years.store') }}" class="form-inline" novalidate>
+                <form method="POST" action="{{ route('admin.years.store') }}" id="year-create-form" class="form-inline" novalidate
+                      @if($openCurrent) data-current-year="{{ $openCurrent->year }}" data-existing-years="{{ implode(',', $existingYears) }}" @endif>
                     @csrf
                     <input type="number" name="year" min="2000" max="2100" value="{{ old('year') }}" placeholder="Año, por ejemplo {{ ($maxYear ?? 2026) + 1 }}"
-                           class="form-control mr-2 js-user-field @error('year') is-invalid @enderror" data-rule="year"
+                           class="form-control mr-2 js-user-field @error('year') is-invalid @enderror" data-rule="year" style="min-width: 15rem"
                            aria-label="Año de la gestión" aria-describedby="year-feedback" required>
                     <button class="btn btn-primary"><i class="fas fa-plus mr-1"></i>Crear</button>
                     <small id="year-feedback" class="invalid-feedback w-100">@error('year'){{ $message }}@enderror</small>
@@ -107,5 +108,41 @@
         @endif
     </div>
 </div>
+@if(auth()->user()->canManageYears())
 <script src="{{ asset('js/user-form-validation.js') }}?v={{ @filemtime(public_path('js/user-form-validation.js')) }}"></script>
+<script>
+// Crear una gestión con la actual abierta: la ventana de YURA (data-confirm, yura-ui.js) explica que la
+// nueva no será la actual. Se arma solo con un año válido que aún no existe: si no, avisa el campo
+// (user-form-validation.js) o el servidor («La gestión 2026 ya existe.»).
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('year-create-form');
+    if (!form || !form.dataset.currentYear) return;
+    var input = form.querySelector('input[name="year"]');
+    var current = form.dataset.currentYear;
+    var existing = form.dataset.existingYears.split(',');
+
+    function update() {
+        var year = input.value.trim();
+        var valid = !(input.validity && input.validity.badInput) && /^\d+$/.test(year)
+            && +year >= +input.min && +year <= +input.max && existing.indexOf(String(+year)) === -1;
+        if (!valid) {
+            delete form.dataset.confirm;
+            return;
+        }
+        year = String(+year);
+        var text = 'La Gestión ' + current + ' es la actual y sigue abierta. La Gestión ' + year + ' se creará abierta, '
+            + 'pero no será la actual: las notas, la asistencia y las actividades nuevas se seguirán guardando en la ' + current + '.';
+        if (+year > +current) {
+            text += ' Al terminar el año escolar, cierra la ' + current + ' y elige la ' + year + ' como nueva gestión actual.';
+        }
+        form.dataset.confirmTitle = '¿Crear la Gestión ' + year + '?';
+        form.dataset.confirmOk = 'Crear de todos modos';
+        form.dataset.confirm = text;
+    }
+
+    input.addEventListener('input', update);
+    update();
+});
+</script>
+@endif
 @endsection
