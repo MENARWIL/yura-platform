@@ -8,7 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ci: document.documentElement.lang === 'qu' ? 'CIqa yupaykunawan, qillqakunawan utaq guionwan kanman.' : 'La C.I. solo acepta letras, números y guiones.',
         password: document.documentElement.lang === 'qu' ? 'Contraseñaqa 8 qillqayuq, hatun qillqayuq, yupayuq chaymanta simboloyuq kanman.' : 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
         confirm: document.documentElement.lang === 'qu' ? 'Contraseñakunaqa mana kikinchu. Iskaynimpipi kikinta qillqay.' : 'Las contraseñas no coinciden. Escríbelas igual en ambos campos.',
-        confirmRequired: document.documentElement.lang === 'qu' ? 'Contraseñata yapamanta qillqay, takyachinaykipaq.' : 'Repite la contraseña para confirmarla.'
+        confirmRequired: document.documentElement.lang === 'qu' ? 'Contraseñata yapamanta qillqay, takyachinaykipaq.' : 'Repite la contraseña para confirmarla.',
+        // Solo en el panel interno, que funciona en castellano. Los mismos que da el servidor.
+        integer: 'Este campo debe ser un número entero.',
+        year: 'Escribe un año entre :min y :max.'
     };
 
     function validateField(field) {
@@ -16,8 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const rule = field.dataset.rule;
         let message = '';
 
-        if (field.required && !value) {
+        if (rule === 'year' && field.validity && field.validity.badInput) {
+            // En un campo numérico lo mal escrito («20e») llega vacío: no falta, está mal escrito.
+            message = messages.integer;
+        } else if (field.required && !value) {
             message = messages.required;
+        } else if (value && rule === 'year' && !/^-?\d+$/.test(value)) {
+            message = messages.integer;
+        } else if (value && rule === 'year'
+            && ((field.min !== '' && Number(value) < Number(field.min)) || (field.max !== '' && Number(value) > Number(field.max)))) {
+            message = messages.year.replace(':min', field.min).replace(':max', field.max);
         } else if (value && rule === 'name' && !/^[\p{L}]+(?:[ \t]+[\p{L}]+)*$/u.test(value)) {
             message = messages.name;
         } else if (value && rule === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
@@ -54,6 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             field.addEventListener('input', () => {
+                // El año se revisa al salir del campo o al enviar: con «2», «20»... no se avisa a medio
+                // escribir. Si ya tenía aviso, sí se revisa, para quitarlo apenas quede bien.
+                if (field.dataset.rule === 'year' && !field.classList.contains('is-invalid')) return;
                 validateField(field);
                 // Si cambia la contraseña y ya hay algo en la confirmación, se vuelve a comparar.
                 if (field.id) {
