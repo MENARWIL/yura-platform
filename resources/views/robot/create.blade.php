@@ -50,7 +50,13 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="text-muted small text-uppercase font-weight-bold">Participantes</label>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                        <label class="text-muted small text-uppercase font-weight-bold mb-0">Participantes</label>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Selección de participantes">
+                            <button type="button" id="robotSelectAll" class="btn btn-outline-secondary"><i class="fas fa-check-square mr-1"></i> Marcar todos</button>
+                            <button type="button" id="robotSelectNone" class="btn btn-outline-secondary"><i class="far fa-square mr-1"></i> Desmarcar todos</button>
+                        </div>
+                    </div>
                     <div id="robotParticipants" class="border rounded p-3" style="max-height: 220px; overflow-y: auto;"></div>
                     @error('participant_ids') <span class="text-danger small">{{ $message }}</span> @enderror
                     <div id="robotGroupSummary" class="form-text text-muted" aria-live="polite"></div>
@@ -186,6 +192,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function setAllParticipants(checked) {
+        container.querySelectorAll('input[name="participant_ids[]"]').forEach(function (checkbox) {
+            checkbox.checked = checked;
+        });
+        updateGroupSummary();
+    }
+
+    document.getElementById('robotSelectAll').addEventListener('click', function () { setAllParticipants(true); });
+    document.getElementById('robotSelectNone').addEventListener('click', function () { setAllParticipants(false); });
     parallelSelect.addEventListener('change', renderParticipants);
     parallelSelect.addEventListener('change', renderSubjects);
     groupSize.addEventListener('input', updateGroupSummary);
