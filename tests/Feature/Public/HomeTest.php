@@ -133,8 +133,8 @@ class HomeTest extends TestCase
 
         $this->get(route('public.home'))
             ->assertOk()
-            ->assertDontSee('Estudiante 1')
-            ->assertDontSee('Estudiante 11');
+            ->assertDontSee('ESTUDIANTE 1')
+            ->assertDontSee('ESTUDIANTE 11');
     }
 
     public function test_the_stats_block_follows_the_configured_minimum(): void

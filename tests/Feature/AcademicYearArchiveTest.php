@@ -121,14 +121,14 @@ class AcademicYearArchiveTest extends TestCase
             ->assertSee('nadie puede modificarlos')
             ->assertSee('Descargar respaldo')
             ->assertSee('Reabrir para editar')
-            ->assertSee('Alanes Cruz Raul')
-            ->assertSee('Quispe Lima Juan')
-            ->assertSee('Zeta Paz Ana')
-            ->assertDontSee('Nuevo Solo 2027');             // es de la gestión 2027
+            ->assertSee('ALANES CRUZ RAUL')
+            ->assertSee('QUISPE LIMA JUAN')
+            ->assertSee('ZETA PAZ ANA')
+            ->assertDontSee('NUEVO SOLO 2027');             // es de la gestión 2027
 
         // Lista alfabética por paralelo: Alanes antes que Quispe.
         $html = $response->getContent();
-        $this->assertLessThan(strpos($html, 'Quispe Lima Juan'), strpos($html, 'Alanes Cruz Raul'));
+        $this->assertLessThan(strpos($html, 'QUISPE LIMA JUAN'), strpos($html, 'ALANES CRUZ RAUL'));
     }
 
     public function test_the_consult_does_not_reopen_the_year_and_writes_stay_blocked(): void
@@ -157,7 +157,7 @@ class AcademicYearArchiveTest extends TestCase
         $enrollments = array_slice($sheets['Matrículas'], 1);
         $this->assertCount(3, $enrollments, 'solo los 3 estudiantes de 2026');
         $this->assertSame(
-            [['Sexto de Primaria', 'A', 1, 'Alanes Cruz Raul'], ['Sexto de Primaria', 'A', 2, 'Quispe Lima Juan'], ['Sexto de Primaria', 'B', 1, 'Zeta Paz Ana']],
+            [['Sexto de Primaria', 'A', 1, 'ALANES CRUZ RAUL'], ['Sexto de Primaria', 'A', 2, 'QUISPE LIMA JUAN'], ['Sexto de Primaria', 'B', 1, 'ZETA PAZ ANA']],
             array_map(fn ($r) => [$r[0], $r[1], (int) $r[2], $r[3]], $enrollments)
         );
 
@@ -173,7 +173,7 @@ class AcademicYearArchiveTest extends TestCase
         $attendance = array_slice($sheets['Asistencia'], 1);
         $this->assertCount(1, $attendance);
         $this->assertSame('10/03/2026', $attendance[0][0]);
-        $this->assertSame('Alanes Cruz Raul', $attendance[0][3]);
+        $this->assertSame('ALANES CRUZ RAUL', $attendance[0][3]);
     }
 
     public function test_the_export_download_is_audited_and_named_by_year(): void
@@ -207,21 +207,21 @@ class AcademicYearArchiveTest extends TestCase
 
         // Por paralelo: solo Zeta (paralelo B de Sexto).
         $this->actingAs($admin)->get("/admin/years/{$y2026->id}?parallel_id={$parallelB->id}")->assertOk()
-            ->assertSee('Zeta Paz Ana')
-            ->assertDontSee('Alanes Cruz Raul')
-            ->assertDontSee('Lopez Vega Eva')
+            ->assertSee('ZETA PAZ ANA')
+            ->assertDontSee('ALANES CRUZ RAUL')
+            ->assertDontSee('LOPEZ VEGA EVA')
             ->assertSee('Mostrando 1 de 4 estudiantes');
 
         // Por curso: solo Quinto.
         $this->actingAs($admin)->get("/admin/years/{$y2026->id}?course_id={$quinto->id}")->assertOk()
-            ->assertSee('Lopez Vega Eva')
+            ->assertSee('LOPEZ VEGA EVA')
             ->assertSee('Quinto de Primaria · Paralelo C')
-            ->assertDontSee('Alanes Cruz Raul')
-            ->assertDontSee('Zeta Paz Ana');
+            ->assertDontSee('ALANES CRUZ RAUL')
+            ->assertDontSee('ZETA PAZ ANA');
 
         // Sin filtros: todos, y sin el aviso «Mostrando».
         $this->actingAs($admin)->get("/admin/years/{$y2026->id}")->assertOk()
-            ->assertSee('Alanes Cruz Raul')->assertSee('Lopez Vega Eva')->assertSee('Zeta Paz Ana')
+            ->assertSee('ALANES CRUZ RAUL')->assertSee('LOPEZ VEGA EVA')->assertSee('ZETA PAZ ANA')
             ->assertDontSee('Mostrando');
     }
 

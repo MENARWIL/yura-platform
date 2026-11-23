@@ -76,7 +76,7 @@ class AppApiV1Test extends TestCase
 
         $response = $this->actingAs($parent, 'sanctum')->getJson('/api/v1/app/children')->assertOk();
 
-        $this->assertSame(['Ana Paz'], collect($response->json('data'))->pluck('name')->all());
+        $this->assertSame(['ANA PAZ'], collect($response->json('data'))->pluck('name')->all());
         $child = $response->json('data.0');
         $this->assertEquals(70, $child['average']);
         $this->assertSame(1, $child['robot_completed']);
@@ -161,7 +161,7 @@ class AppApiV1Test extends TestCase
         $parent = $this->user('padre', ['name' => 'Juan Quispe']);
 
         $this->actingAs($parent, 'sanctum')->getJson('/api/v1/app/me')->assertOk()
-            ->assertJsonPath('data.name', 'Juan Quispe')
+            ->assertJsonPath('data.name', 'JUAN QUISPE')
             ->assertJsonPath('data.role', 'padre')
             ->assertJsonMissingPath('data.password');
     }

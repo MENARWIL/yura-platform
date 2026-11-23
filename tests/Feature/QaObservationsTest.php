@@ -90,7 +90,7 @@ class QaObservationsTest extends TestCase
         $repite = $this->student($from, 'Rosa Choque', 9);
 
         $this->actingAs($director)->get(route('students.promote', ['from' => $from->id]))->assertOk()
-            ->assertSee('Ana Quispe')->assertSee('Rosa Choque');
+            ->assertSee('ANA QUISPE')->assertSee('ROSA CHOQUE');
 
         $this->actingAs($director)->post(route('students.promote.store'), [
             'from_parallel_id' => $from->id, 'to_parallel_id' => $to->id,

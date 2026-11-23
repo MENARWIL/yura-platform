@@ -232,7 +232,7 @@ class TemporaryPasswordTest extends TestCase
             $texts = array_column($request['template']['components'][0]['parameters'], 'text');
 
             return count($request['template']['components']) === 1
-                && $texts[0] === 'Mario' && $texts[1] === $password && $texts[3] === $padre->email;
+                && $texts[0] === 'MARIO' && $texts[1] === $password && $texts[3] === $padre->email;
         });
     }
 

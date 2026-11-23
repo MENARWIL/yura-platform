@@ -102,7 +102,7 @@ class StudentGuardianTest extends TestCase
         $guardian = User::where('email', 'rosa.mamani@example.com')->firstOrFail();
         $this->assertSame('madre', $guardian->role);
         $this->assertSame('active', $guardian->status);
-        $this->assertSame('Mamani Choque Rosa', $guardian->name);
+        $this->assertSame('MAMANI CHOQUE ROSA', $guardian->name);
         $this->assertTrue(Hash::check(self::STRONG, $guardian->password));
         $this->assertSame($guardian->id, (int) $student->fresh()->parent_user_id);
         $this->assertDatabaseHas('student_family_members', ['student_id' => $student->id, 'user_id' => $guardian->id, 'is_primary' => true]);

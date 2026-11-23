@@ -296,7 +296,7 @@ class DirectorRoleTest extends TestCase
         $this->actingAs($this->user('director'))
             ->get(route('grades.trimesters', ['subject_id' => $subject->id, 'parallel_id' => $parallel->id]))
             ->assertOk()
-            ->assertSee('Ana Paz')
+            ->assertSee('ANA PAZ')
             ->assertDontSee('Ser 1')
             ->assertViewHas('rows', function ($rows) use ($student) {
                 $row = $rows->first();

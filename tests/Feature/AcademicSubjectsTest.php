@@ -136,7 +136,7 @@ class AcademicSubjectsTest extends TestCase
         $this->actingAs($teacher)
             ->get('/grades?subject_id=' . $subject->id . '&parallel_id=' . $parallel->id)
             ->assertOk()
-            ->assertSee('Alumno del cuaderno');
+            ->assertSee('ALUMNO DEL CUADERNO');
 
         $this->actingAs($teacher)
             ->postJson('/grades/save', [

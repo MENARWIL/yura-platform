@@ -139,9 +139,9 @@ class AcademicYearTest extends TestCase
 
         $names = fn ($qs) => collect($this->actingAs($admin, 'sanctum')->getJson("/api/v1/app/students?$qs")->json('data'))->pluck('name')->sort()->values()->all();
 
-        $this->assertSame(['Ana Uno', 'Beto Dos'], $names(''));
-        $this->assertSame(['Ana Uno'], $names("year_id={$old->id}"));
-        $this->assertSame(['Ana Uno'], $names("year_id={$old->id}&course_id={$quinto->id}"));
+        $this->assertSame(['ANA UNO', 'BETO DOS'], $names(''));
+        $this->assertSame(['ANA UNO'], $names("year_id={$old->id}"));
+        $this->assertSame(['ANA UNO'], $names("year_id={$old->id}&course_id={$quinto->id}"));
         $this->assertSame([], $names("year_id={$old->id}&course_id={$ana->course_id}"));
     }
 }
