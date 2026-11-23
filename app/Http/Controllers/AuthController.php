@@ -28,6 +28,17 @@ class AuthController extends Controller
 
             /** @var \App\Models\User $authenticatedUser */
             $authenticatedUser = Auth::user();
+            // El robot no es una persona: entra con su llave de API, nunca al panel.
+            if (($authenticatedUser->role ?? $authenticatedUser->rol) === 'robot') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Las credenciales proporcionadas no coinciden con nuestros registros.',
+                ])->onlyInput('email');
+            }
+
             $userStatus = $authenticatedUser->status ?? $authenticatedUser->estado;
 
             if (! in_array(strtolower(trim((string) $userStatus)), ['active', 'activo'], true)) {

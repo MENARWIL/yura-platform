@@ -30,6 +30,13 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // El robot ya no inicia sesión: entra con su llave de API (contrato v1.3).
+        if (($user->role ?? $user->rol) === 'robot') {
+            return response()->json([
+                'message' => 'Las credenciales son incorrectas.'
+            ], 401);
+        }
+
         $userStatus = $user->status ?? $user->estado;
 
         if (! in_array(strtolower(trim((string) $userStatus)), ['active', 'activo'], true)) {
@@ -52,8 +59,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // El robot (cerebro) no debe perder acceso solo por el paso del tiempo.
-        $expiresAt = ($user->role ?? $user->rol) === 'robot' ? null : now()->addDays($user->isAdmin() ? self::ADMIN_TOKEN_DAYS : self::TOKEN_DAYS);
+        $expiresAt = now()->addDays($user->isAdmin() ? self::ADMIN_TOKEN_DAYS : self::TOKEN_DAYS);
         $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([

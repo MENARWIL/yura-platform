@@ -9,6 +9,7 @@ class RobotActivityAttempt extends Model
 {
     protected $fillable = [
         'robot_activity_id',
+        'robot_device_id',
         'attempt_number',
         'attempt_id',
         'status',

@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Grade;
 use App\Models\RobotActivity;
 use App\Models\RobotActivityAttempt;
+use App\Models\RobotDevice;
+use App\Support\RobotAccess;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,13 +18,45 @@ use Illuminate\Validation\ValidationException;
 
 class RobotActivityQueueController extends Controller
 {
+    /** Fecha del robot (ISO 8601, p. ej. 2026-11-23T05:10:59Z) en la zona horaria de la plataforma. */
+    private function localTime(string $value): Carbon
+    {
+        return Carbon::parse($value)->setTimezone(config('app.timezone'));
+    }
+
+    /** Prueba de conexión: quién es el robot, su materia y el estado de su llave. */
+    public function me(Request $request): JsonResponse
+    {
+        $device = RobotAccess::device($request);
+        if (! $device && ! RobotAccess::isLegacy($request)) {
+            return response()->json(['message' => 'Solo Yura puede usar esta ruta.'], 403);
+        }
+
+        if (! $device) {
+            return response()->json(['name' => $request->user()->name, 'legacy' => true, 'contract' => '1.3']);
+        }
+
+        return response()->json([
+            'name' => $device->name,
+            'subject' => ['id' => $device->subject_id, 'name' => $device->subject?->name],
+            'status' => $device->status,
+            'abilities' => $request->user()->currentAccessToken()?->abilities ?? [],
+            'last_used_at' => $device->last_used_at?->toISOString(),
+            'contract' => '1.3',
+        ]);
+    }
+
     public function status(Request $request, string $activityId, string $attemptId): JsonResponse
     {
-        if ($request->user()?->role !== 'robot') {
+        if (! RobotAccess::allows($request, RobotDevice::ABILITY_RECEIVE)) {
             return response()->json(['message' => 'Solo Yura puede consultar actividades.'], 403);
         }
 
         $activity = RobotActivity::query()->findOrFail($activityId);
+        $device = RobotAccess::device($request);
+        if ($device && (int) $activity->subject_id !== (int) $device->subject_id) {
+            return response()->json(['message' => 'Esta actividad no es de la materia de este robot.'], 403);
+        }
         $attempt = RobotActivityAttempt::query()
             ->where('robot_activity_id', $activity->id)
             ->where('attempt_id', $attemptId)
@@ -40,15 +75,39 @@ class RobotActivityQueueController extends Controller
         ]);
     }
 
+    /**
+     * Contrato v1.2 (transición): GET que reclama. Solo lo usa el usuario antiguo con rol «robot»;
+     * un robot registrado reclama con POST /v1/robot/claims.
+     */
     public function next(Request $request)
     {
-        if ($request->user()?->role !== 'robot') {
+        if (! RobotAccess::isLegacy($request)) {
             return response()->json(['message' => 'Solo Yura puede reclamar actividades.'], 403);
         }
 
-        $activity = DB::transaction(function () {
+        return $this->claimNext($request);
+    }
+
+    /** Contrato v1.3: POST que reclama la siguiente actividad de la materia del robot. */
+    public function claim(Request $request)
+    {
+        if (! RobotAccess::allows($request, RobotDevice::ABILITY_RECEIVE)) {
+            return response()->json(['message' => 'Solo Yura puede reclamar actividades.'], 403);
+        }
+
+        $response = $this->claimNext($request);
+
+        return $response->getStatusCode() === 200 ? $response->setStatusCode(201) : $response;
+    }
+
+    private function claimNext(Request $request)
+    {
+        $device = RobotAccess::device($request);
+
+        $activity = DB::transaction(function () use ($device) {
             $activity = RobotActivity::query()
                 ->whereIn('status', ['pending', 'in_progress'])
+                ->when($device, fn ($query) => $query->where('subject_id', $device->subject_id))
                 ->orderByRaw("CASE WHEN status = 'in_progress' THEN 0 ELSE 1 END")
                 ->orderBy('created_at')
                 ->lockForUpdate()
@@ -66,6 +125,7 @@ class RobotActivityQueueController extends Controller
                 $activity->save();
                 RobotActivityAttempt::create([
                     'robot_activity_id' => $activity->id,
+                    'robot_device_id' => $device?->id,
                     'attempt_number' => $activity->attempt_number,
                     'attempt_id' => $activity->current_attempt_id,
                     'status' => 'in_progress',
@@ -90,11 +150,28 @@ class RobotActivityQueueController extends Controller
 
     public function results(Request $request, string $activityId): JsonResponse
     {
-        if ($request->user()?->role !== 'robot') {
+        if (! RobotAccess::allows($request, RobotDevice::ABILITY_SEND)) {
             return response()->json(['message' => 'Solo Yura puede enviar resultados.'], 403);
         }
 
         $activity = RobotActivity::findOrFail($activityId);
+
+        // Un robot registrado solo entrega notas de su materia y de actividades que él mismo reclamó.
+        $device = RobotAccess::device($request);
+        if ($device) {
+            $claimedBy = RobotActivityAttempt::query()
+                ->where('robot_activity_id', $activity->id)
+                ->where('attempt_id', $activity->current_attempt_id)
+                ->value('robot_device_id');
+            if ((int) $activity->subject_id !== (int) $device->subject_id
+                || ($claimedBy !== null && (int) $claimedBy !== (int) $device->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta actividad no fue reclamada por este robot.',
+                ], 403);
+            }
+        }
+
         if ($activity->status === 'cancelled') {
             return response()->json([
                 'success' => false,
@@ -200,8 +277,8 @@ class RobotActivityQueueController extends Controller
             $lockedActivity->status = $data['status'];
             $lockedActivity->result_payload = $data;
             $lockedActivity->result_hash = $fingerprint;
-            $lockedActivity->started_at = $data['started_at'];
-            $lockedActivity->completed_at = $data['finished_at'];
+            $lockedActivity->started_at = $this->localTime($data['started_at']);
+            $lockedActivity->completed_at = $this->localTime($data['finished_at']);
             $lockedActivity->save();
             RobotActivityAttempt::query()
                 ->where('robot_activity_id', $lockedActivity->id)
@@ -210,8 +287,8 @@ class RobotActivityQueueController extends Controller
                     'status' => $data['status'],
                     'result_payload' => json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
                     'result_hash' => $fingerprint,
-                    'started_at' => $data['started_at'],
-                    'completed_at' => $data['finished_at'],
+                    'started_at' => $this->localTime($data['started_at'])->format('Y-m-d H:i:s'),
+                    'completed_at' => $this->localTime($data['finished_at'])->format('Y-m-d H:i:s'),
                     'updated_at' => now(),
                 ]);
 

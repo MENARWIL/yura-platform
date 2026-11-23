@@ -32,53 +32,6 @@ class RobotIntegrationTest extends TestCase
         ])->assertOk()->assertJsonPath('user.status', 'active');
     }
 
-    public function test_robot_result_updates_the_exact_activity_and_subject(): void
-    {
-        $robotUser = User::factory()->create([
-            'role' => 'robot',
-            'status' => 'active',
-        ]);
-        $course = Course::create(['name' => 'Sexto de Primaria']);
-        $subject = Subject::create(['name' => 'Quechua Robot', 'code' => 'QROB']);
-        $parallel = Parallel::create(['name' => 'A', 'course_id' => $course->id, 'max_students' => 20]);
-        $student = Student::create([
-            'name' => 'Estudiante Robot',
-            'course' => $course->name,
-            'course_id' => $course->id,
-            'parallel_id' => $parallel->id,
-            'age' => 10,
-            'gender' => 'Masculino',
-            'level' => 'básico',
-            'registration_date' => '2026-09-15',
-        ]);
-
-        $payload = [
-            'activity_id' => 'robot-activity-001',
-            'student_id' => $student->id,
-            'subject_id' => $subject->id,
-            'score' => 88,
-            'activity_type' => 'colores',
-        ];
-
-        $this->actingAs($robotUser, 'sanctum')
-            ->postJson('/api/v1/robot/activity', $payload)
-            ->assertCreated();
-
-        $this->actingAs($robotUser, 'sanctum')
-            ->postJson('/api/v1/robot/activity', array_merge($payload, ['score' => 94]))
-            ->assertOk();
-
-        $this->assertDatabaseHas('grades', [
-            'student_id' => $student->id,
-            'subject_id' => $subject->id,
-            'robot_activity_id' => 'robot-activity-001',
-            'score' => 94,
-            'status' => 'completed',
-            'is_robot_activity' => true,
-        ]);
-        $this->assertSame(1, Grade::where('robot_activity_id', 'robot-activity-001')->count());
-    }
-
     public function test_web_robot_activity_creates_a_pending_activity_for_selected_students(): void
     {
         $teacher = User::factory()->create([

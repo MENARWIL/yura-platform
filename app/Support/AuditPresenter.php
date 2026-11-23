@@ -25,6 +25,9 @@ class AuditPresenter
         'user.force_delete' => ['Eliminado definitivamente', 'danger'],
         'user.temporary_password' => ['Contraseña temporal enviada', 'normal'],
         'user.password_changed' => ['Contraseña cambiada', 'normal'],
+        'robot.create' => ['Robot registrado', 'normal'],
+        'robot.rotate' => ['Llave del robot renovada', 'normal'],
+        'robot.revoke' => ['Llave del robot revocada', 'danger'],
         'year.create' => ['Gestión creada', 'normal'],
         'year.current' => ['Gestión actual cambiada', 'normal'],
         'year.close' => ['Gestión cerrada', 'danger'],
@@ -46,6 +49,7 @@ class AuditPresenter
     private const ENTITIES = [
         'user' => 'Usuarios',
         'academic_year' => 'Gestiones',
+        'robot_device' => 'Robot YURA',
         'student' => 'Estudiantes',
     ];
 

@@ -286,6 +286,12 @@ class User extends Authenticatable
         return in_array($this->role, ['admin', 'director'], true);
     }
 
+    /** Registrar, renovar y revocar la llave del robot: la Secretaría solo la consulta. */
+    public function canManageRobot(): bool
+    {
+        return in_array($this->role, ['admin', 'director'], true);
+    }
+
     /** Agregar usuarios y profesores: la Secretaría no puede (sí registra familiares al inscribir). */
     public function canCreateAccounts(): bool
     {

@@ -20,7 +20,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'panel.es' => \App\Http\Middleware\PanelInSpanish::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordIsChanged::class,
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
+            'robot.key' => \App\Http\Middleware\RobotKeyHeader::class,
         ]);
+
+        // La llave del robot lleva un prefijo que se quita antes de que Sanctum busque el token.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: \App\Http\Middleware\RobotKeyHeader::class,
+        );
 
         $middleware->web(append: [\App\Http\Middleware\SetLocale::class, 'throttle:global']);
         $middleware->api(append: ['throttle:global']);
