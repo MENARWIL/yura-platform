@@ -71,6 +71,6 @@
         </tbody>
     </table>
 
-    <div class="pie">Nota de cada trimestre sobre 100 (SER 10, SABER 45, HACER 40, autoevaluación 5). Generado por YURA Platform el {{ now()->format('d/m/Y H:i') }} — {{ Auth::user()?->name }}</div>
+    <div class="pie">Nota de cada trimestre sobre 100 (SER 10, SABER 45, HACER 40, autoevaluación 5). Promedio anual: suma de los 3 trimestres entre 3 (el trimestre sin notas cuenta como 0). Generado por YURA Platform el {{ now()->format('d/m/Y H:i') }} — {{ Auth::user()?->name }}</div>
 </body>
 </html>

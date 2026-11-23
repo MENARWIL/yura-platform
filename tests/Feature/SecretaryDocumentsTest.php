@@ -106,11 +106,12 @@ class SecretaryDocumentsTest extends TestCase
 
         $rows = TrimesterReport::forStudent($this->ana)->keyBy(fn ($row) => $row['subject']->name);
 
+        // El promedio anual siempre divide entre 3: el trimestre sin notas cuenta como 0.
         $this->assertSame([1 => 45.0, 2 => 10.0, 3 => null], $rows['Quechua']['quarters']);
-        $this->assertSame(27.5, $rows['Quechua']['annual']);
+        $this->assertSame(18.33, $rows['Quechua']['annual']); // (45 + 10 + 0) / 3
         $this->assertSame([1 => null, 2 => null, 3 => 24.0], $rows['Matemática']['quarters']);
-        $this->assertSame(24.0, $rows['Matemática']['annual']);
-        $this->assertSame(25.75, TrimesterReport::columnAverage($rows->values()));
+        $this->assertSame(8.0, $rows['Matemática']['annual']); // (0 + 0 + 24) / 3
+        $this->assertSame(13.17, TrimesterReport::columnAverage($rows->values()));
     }
 
     public function test_director_and_secretary_download_the_parallel_sheet_as_pdf_and_excel(): void
