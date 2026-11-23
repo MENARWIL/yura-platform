@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Course;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Tests\TestCase;
 
 /** Mensajes de validación en castellano: el año de gestión avisa igual que la web y el servidor ya no responde en inglés. */
@@ -67,5 +68,21 @@ class SpanishValidationMessagesTest extends TestCase
         ]);
         $this->actingAs($this->admin())->from('/courses/create')->post('/courses', [])
             ->assertSessionHasErrors(['name' => 'El campo nombre es obligatorio.']);
+    }
+
+    public function test_the_app_api_answers_in_spanish_including_the_summary(): void
+    {
+        $this->postJson('/api/login', [])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'El campo correo electrónico es obligatorio. (y 1 error más)')
+            ->assertJsonPath('errors.password.0', 'El campo contraseña es obligatorio.');
+    }
+
+    public function test_pagination_labels_are_in_spanish(): void
+    {
+        $html = (new LengthAwarePaginator(range(1, 30), 30, 10, 1))->links()->toHtml();
+
+        $this->assertStringContainsString('Siguiente', $html);
+        $this->assertStringNotContainsString('Next', $html);
     }
 }
