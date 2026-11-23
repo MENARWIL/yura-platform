@@ -40,17 +40,17 @@ class AppAdminStudentCrudTest extends TestCase
         // Crear: 201 y el nombre completo se arma solo.
         $id = $api->postJson('/api/v1/app/admin/students', $this->payload())
             ->assertCreated()
-            ->assertJsonPath('data.name', 'Quispe Mamani Ana María')
+            ->assertJsonPath('data.name', 'QUISPE MAMANI ANA MARÍA')
             ->assertJsonPath('data.course', 'Sexto de Primaria')
             ->json('data.id');
 
         // Mostrar.
-        $api->getJson("/api/v1/app/admin/students/{$id}")->assertOk()->assertJsonPath('data.first_name', 'Ana María');
+        $api->getJson("/api/v1/app/admin/students/{$id}")->assertOk()->assertJsonPath('data.first_name', 'ANA MARÍA');
 
         // Actualizar solo lo que cambia.
         $api->putJson("/api/v1/app/admin/students/{$id}", ['age' => 12, 'level' => 'intermedio'])
             ->assertOk()->assertJsonPath('data.age', 12)->assertJsonPath('data.level', 'intermedio')
-            ->assertJsonPath('data.last_name', 'Quispe');
+            ->assertJsonPath('data.last_name', 'QUISPE');
 
         // Listar con búsqueda y paginación.
         $api->getJson('/api/v1/app/admin/students?q=quispe&per_page=5')

@@ -204,11 +204,11 @@ class QaWebImprovementsTest extends TestCase
         $filters = '?subject_id=' . $this->subject->id . '&parallel_id=' . $this->parallel->id;
 
         $this->actingAs($this->teacher)->get('/attendance' . $filters)
-            ->assertOk()->assertSee('Quispe Ana')->assertDontSee('Fuera Delparalelo');
+            ->assertOk()->assertSee('QUISPE ANA')->assertDontSee('FUERA DELPARALELO');
         $this->actingAs($this->teacher)->get('/grades' . $filters)
-            ->assertOk()->assertSee('Quispe Ana')->assertDontSee('Fuera Delparalelo');
+            ->assertOk()->assertSee('QUISPE ANA')->assertDontSee('FUERA DELPARALELO');
         $this->actingAs($this->teacher)->get('/students')
-            ->assertOk()->assertSee('Quispe')->assertDontSee('Delparalelo');
+            ->assertOk()->assertSee('QUISPE')->assertDontSee('DELPARALELO');
 
         $response = $this->actingAs($this->teacher)->get('/dashboard')->assertOk();
         $this->assertSame(1, $response->viewData('data')['mis_estudiantes_count']);
@@ -256,7 +256,7 @@ class QaWebImprovementsTest extends TestCase
         $this->assertSame([$student->id], $ids->all());
 
         $this->getJson('/api/v1/app/students', $auth)->assertOk()->assertJsonFragment(['id' => $student->id])
-            ->assertJsonMissing(['name' => 'Fuera Delparalelo']);
+            ->assertJsonMissing(['name' => 'FUERA DELPARALELO']);
         $this->assertSame(1, $this->getJson('/api/dashboard', $auth)->assertOk()->json('metrics.mis_estudiantes_count'));
         $this->getJson('/api/students/' . $student->id, $auth)->assertOk();
     }
@@ -274,7 +274,7 @@ class QaWebImprovementsTest extends TestCase
         $response->assertSee('Mostrando 1–5 de 7 estudiantes');
 
         $page2 = $this->actingAs($this->teacher)->get('/dashboard?estudiantes=2')->viewData('data')['mis_estudiantes'];
-        $this->assertSame(['Apellido06 Nombre6', 'Apellido07 Nombre7'], collect($page2->items())->pluck('name')->all());
+        $this->assertSame(['APELLIDO06 NOMBRE6', 'APELLIDO07 NOMBRE7'], collect($page2->items())->pluck('name')->all());
     }
 
     public function test_attendance_pdf_exports_a_date_range_chosen_by_the_teacher(): void
@@ -375,10 +375,10 @@ class QaWebImprovementsTest extends TestCase
             ->assertOk()->assertSee('Mostrando 1–5 de 6 relaciones');
 
         $this->actingAs($admin)->get('/family-members?student_name=Apellido3')
-            ->assertOk()->assertSee('Apellido3 Nombre3')->assertDontSee('Apellido4 Nombre4');
+            ->assertOk()->assertSee('APELLIDO3 NOMBRE3')->assertDontSee('APELLIDO4 NOMBRE4');
 
         $this->actingAs($admin)->get('/family-members?student_name=Numero5')
-            ->assertOk()->assertSee('Apellido5 Nombre5')->assertDontSee('Apellido2 Nombre2');
+            ->assertOk()->assertSee('APELLIDO5 NOMBRE5')->assertDontSee('APELLIDO2 NOMBRE2');
     }
 
     public function test_user_list_is_paginated_and_searchable_on_the_server(): void
@@ -393,7 +393,7 @@ class QaWebImprovementsTest extends TestCase
 
         // Busca en todas las páginas, no solo en la visible.
         $this->actingAs($admin)->get('/users?q=tutor6@example.test')
-            ->assertOk()->assertSee('Persona Tutor6')->assertDontSee('Persona Tutor1');
+            ->assertOk()->assertSee('PERSONA TUTOR6')->assertDontSee('PERSONA TUTOR1');
 
         $familia = $this->actingAs($admin)->get('/users?role=familia&per_page=20')->viewData('users');
         $this->assertSame(6, $familia->total());
@@ -405,17 +405,17 @@ class QaWebImprovementsTest extends TestCase
         $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('students', 'name'));
 
         $student = $this->student('cualquier cosa', ['first_name' => 'Ana  María', 'last_name' => ' Quispe', 'second_last_name' => 'Mamani']);
-        $this->assertSame('Quispe Mamani Ana María', $student->fresh()->name);
-        $this->assertSame('Quispe Mamani Ana María', $student->fresh()->toArray()['name']); // la API lo sigue recibiendo
+        $this->assertSame('QUISPE MAMANI ANA MARÍA', $student->fresh()->name);
+        $this->assertSame('QUISPE MAMANI ANA MARÍA', $student->fresh()->toArray()['name']); // la API lo sigue recibiendo
 
         // Al cambiar una parte, el nombre completo cambia solo.
         $student->update(['second_last_name' => 'Condori']);
-        $this->assertSame('Quispe Condori Ana María', $student->fresh()->name);
+        $this->assertSame('QUISPE CONDORI ANA MARÍA', $student->fresh()->name);
 
         // El apellido se respeta donde viene (si solo hay materno, queda como materno).
         $single = $this->student('x', ['first_name' => 'Zarai', 'last_name' => null, 'second_last_name' => 'Berrios']);
         $this->assertNull($single->fresh()->last_name);
-        $this->assertSame('Berrios Zarai', $single->fresh()->name);
+        $this->assertSame('BERRIOS ZARAI', $single->fresh()->name);
 
         // Un cliente antiguo que solo manda el nombre completo: se guarda en «nombres».
         $legacy = $this->student('NOMBRE COMPLETO ANTIGUO');
@@ -423,8 +423,8 @@ class QaWebImprovementsTest extends TestCase
         $this->assertSame('NOMBRE COMPLETO ANTIGUO', $legacy->fresh()->name);
 
         // Búsquedas por nombre completo, sin columna.
-        $this->assertTrue(Student::whereFullName('Quispe Condori Ana María')->exists());
-        $this->assertTrue(Student::searchName('Quispe Ana')->exists());
+        $this->assertTrue(Student::whereFullName('QUISPE CONDORI ANA MARÍA')->exists());
+        $this->assertTrue(Student::searchName('QUISPE ANA')->exists());
     }
 
     public function test_student_with_a_single_surname_can_be_registered(): void
@@ -441,8 +441,8 @@ class QaWebImprovementsTest extends TestCase
             'parallel_id' => $this->parallel->id,
         ])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('students', ['first_name' => 'Zarai Mishel', 'last_name' => 'Berrios', 'second_last_name' => null]);
-        $this->assertTrue(Student::whereFullName('Berrios Zarai Mishel')->exists());
+        $this->assertDatabaseHas('students', ['first_name' => 'ZARAI MISHEL', 'last_name' => 'BERRIOS', 'second_last_name' => null]);
+        $this->assertTrue(Student::whereFullName('BERRIOS ZARAI MISHEL')->exists());
     }
 
     public function test_clearing_the_student_search_shows_the_full_list(): void
@@ -452,10 +452,10 @@ class QaWebImprovementsTest extends TestCase
         $this->student('Luis Mamani', ['first_name' => 'Luis', 'last_name' => 'Mamani']);
 
         $this->actingAs($admin)->get('/students?student_name=')
-            ->assertOk()->assertSee('Quispe')->assertSee('Mamani');
+            ->assertOk()->assertSee('QUISPE')->assertSee('MAMANI');
 
         $this->actingAs($admin)->get('/students?student_name=mamani')
-            ->assertOk()->assertSee('Mamani')->assertDontSee('Quispe');
+            ->assertOk()->assertSee('MAMANI')->assertDontSee('QUISPE');
     }
 
     public function test_student_list_is_paginated_with_selectable_page_size(): void
@@ -467,12 +467,12 @@ class QaWebImprovementsTest extends TestCase
 
         $this->actingAs($admin)->get('/students?per_page=5')
             ->assertOk()
-            ->assertSee('Apellido05')
-            ->assertDontSee('Apellido06')
+            ->assertSee('APELLIDO05')
+            ->assertDontSee('APELLIDO06')
             ->assertSee('Mostrando 1–5 de 7 estudiantes');
 
         $this->actingAs($admin)->get('/students?per_page=5&page=2')
-            ->assertOk()->assertSee('Apellido07')->assertDontSee('Apellido01');
+            ->assertOk()->assertSee('APELLIDO07')->assertDontSee('APELLIDO01');
 
         $this->actingAs($admin)->get('/students?per_page=1000')->assertSessionHasErrors('per_page');
     }

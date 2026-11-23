@@ -64,7 +64,7 @@ class RobotActivityQueueTest extends TestCase
             ->get(route('robot-activities.show', $activity->id))
             ->assertOk()
             ->assertSee('Actividad de Colores')
-            ->assertSee('Estudiante1')
+            ->assertSee('ESTUDIANTE1')
             ->assertSee('Sorteado para responder')
             ->assertSee('Intentos registrados');
 

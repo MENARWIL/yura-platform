@@ -18,8 +18,8 @@ class StudentModelNamingCompatibilityTest extends TestCase
         $student->writing_score = 80;
         $student->exam_score = 90;
 
-        $this->assertSame('Ana Pérez', $student->full_name);
-        $this->assertSame('Ana Pérez', $student->nombre);
+        $this->assertSame('ANA PÉREZ', $student->full_name);
+        $this->assertSame('ANA PÉREZ', $student->nombre);
         $this->assertSame(42, $student->parent_user_id);
         $this->assertSame(42, $student->usuario_id);
         $this->assertSame(7, $student->teacher_user_id);

@@ -93,8 +93,8 @@ class AuditLogViewTest extends TestCase
             [$this->log('year.close', 'academic_year', $year->id, ['year' => 2026, 'next_current' => 2027]), 'Se cerró la Gestión 2026. La nueva gestión actual es la 2027.'],
             [$this->log('year.reopen', 'academic_year', $year->id, ['year' => 2026]), 'Se reabrió la Gestión 2026.'],
             [$this->log('year.export', 'academic_year', $year->id, ['year' => 2026, 'closed' => true]), 'Respaldo en Excel de la Gestión 2026 (cerrada).'],
-            [$this->log('student_info_updated', 'student', $student->id, ['fields' => ['level', 'age']]), 'Se completó el nivel y la edad de Alanes Cruz Raul.'],
-            [$this->log('guardian_assigned', 'student', $student->id, ['guardian_user_id' => $tutor->id, 'relation_type' => 'tutor', 'is_primary' => true, 'guardian_created' => true]), 'Juan Mamani Paz quedó como tutor principal de Alanes Cruz Raul. Se creó su cuenta.'],
+            [$this->log('student_info_updated', 'student', $student->id, ['fields' => ['level', 'age']]), 'Se completó el nivel y la edad de ALANES CRUZ RAUL.'],
+            [$this->log('guardian_assigned', 'student', $student->id, ['guardian_user_id' => $tutor->id, 'relation_type' => 'tutor', 'is_primary' => true, 'guardian_created' => true]), 'JUAN MAMANI PAZ quedó como tutor principal de ALANES CRUZ RAUL. Se creó su cuenta.'],
             [$this->log('students.import', 'student', null, ['created' => 98, 'skipped' => 2, 'test_deleted' => 5]), 'Lista de estudiantes importada: 98 nuevos, 2 omitidos y 5 de prueba eliminados.'],
         ];
 

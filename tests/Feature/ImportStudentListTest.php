@@ -47,17 +47,17 @@ class ImportStudentListTest extends TestCase
 
         $this->artisan('students:import', ['file' => $path, '--apply' => true])->assertSuccessful();
 
-        $ana = Student::where('first_name', 'Ana Maria')->firstOrFail();
-        $this->assertSame('Ficticio Uno Ana Maria', $ana->name);
-        $this->assertSame('Ficticio', $ana->last_name);
-        $this->assertSame('Uno', $ana->second_last_name);
+        $ana = Student::where('first_name', 'ANA MARIA')->firstOrFail();
+        $this->assertSame('FICTICIO UNO ANA MARIA', $ana->name);
+        $this->assertSame('FICTICIO', $ana->last_name);
+        $this->assertSame('UNO', $ana->second_last_name);
         $this->assertSame('B', $ana->parallel->name);
         $this->assertSame('activo', $ana->status);
 
-        $luis = Student::where('first_name', 'Luis Pedro')->firstOrFail();
-        $this->assertSame('Solo Luis Pedro', $luis->name);
+        $luis = Student::where('first_name', 'LUIS PEDRO')->firstOrFail();
+        $this->assertSame('SOLO LUIS PEDRO', $luis->name);
         $this->assertNull($luis->last_name);
-        $this->assertSame('Solo', $luis->second_last_name);
+        $this->assertSame('SOLO', $luis->second_last_name);
     }
 
     public function test_capacity_is_raised_so_a_full_class_fits(): void
@@ -104,7 +104,7 @@ class ImportStudentListTest extends TestCase
 
         $log = AuditLog::where('action', 'students.import')->firstOrFail();
         $this->assertSame(1, $log->details['created']);
-        $this->assertStringNotContainsString('Ficticio', json_encode($log->details));
+        $this->assertStringNotContainsString('FICTICIO', json_encode($log->details));
     }
 
     public function test_rejects_bad_header_and_incomplete_rows(): void

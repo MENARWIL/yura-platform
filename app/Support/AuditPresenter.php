@@ -113,7 +113,7 @@ class AuditPresenter
         }
 
         return [
-            'user' => $ids['user'] ? User::withTrashed()->whereIn('id', array_unique($ids['user']))->pluck('name', 'id')->all() : [],
+            'user' => $ids['user'] ? User::withTrashed()->whereIn('id', array_unique($ids['user']))->get(['id', 'name', 'role'])->pluck('name', 'id')->all() : [],
             'student' => $ids['student'] ? Student::withTrashed()->whereIn('id', array_unique($ids['student']))->get(['id', 'last_name', 'second_last_name', 'first_name'])->pluck('name', 'id')->all() : [],
             'academic_year' => $ids['academic_year'] ? AcademicYear::whereIn('id', array_unique($ids['academic_year']))->pluck('name', 'id')->all() : [],
         ];

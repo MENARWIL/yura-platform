@@ -31,7 +31,8 @@ class Student extends Model
     protected static function booted(): void
     {
         static::saving(function (Student $student) {
-            $clean = fn ($value) => ($v = preg_replace('/\s+/', ' ', trim((string) $value))) === '' ? null : $v;
+            // Sin espacios de más y siempre en MAYÚSCULAS (con tildes y Ñ).
+            $clean = fn ($value) => ($v = preg_replace('/\s+/', ' ', trim((string) $value))) === '' ? null : mb_strtoupper($v, 'UTF-8');
             foreach (['last_name', 'second_last_name', 'first_name'] as $part) {
                 $student->setAttribute($part, $clean($student->getAttribute($part)));
             }
@@ -176,7 +177,7 @@ class Student extends Model
      */
     public function scopeSearchName($query, string $term)
     {
-        $like = '%' . $term . '%';
+        $like = '%' . mb_strtoupper($term, 'UTF-8') . '%';
         $full = self::fullNameSql($query, ['last_name', 'second_last_name', 'first_name']);
         $short = self::fullNameSql($query, ['last_name', 'first_name']);
 
@@ -194,7 +195,8 @@ class Student extends Model
     {
         $full = self::fullNameSql($query, ['last_name', 'second_last_name', 'first_name']);
 
-        return $query->whereRaw("{$full} = ?", [preg_replace('/\s+/', ' ', trim($fullName))]);
+        // Los nombres se guardan en MAYÚSCULAS: se compara igual en cualquier motor.
+        return $query->whereRaw("{$full} = ?", [mb_strtoupper(preg_replace('/\s+/', ' ', trim($fullName)), 'UTF-8')]);
     }
 
     /** SQL que une las columnas con un espacio, saltando las vacías (MySQL y SQLite de las pruebas). */
@@ -344,7 +346,28 @@ class Student extends Model
         ], fn ($part) => $part !== null && $part !== ''));
 
         // Aún sin guardar y con solo el nombre completo de un cliente antiguo.
-        return $full !== '' ? $full : (string) $this->legacyFullName;
+        return self::upper($full !== '' ? $full : (string) $this->legacyFullName);
+    }
+
+    // Las partes se leen siempre en MAYÚSCULAS, también las guardadas antes de esta regla.
+    public function getLastNameAttribute($value): ?string
+    {
+        return self::upper($value);
+    }
+
+    public function getSecondLastNameAttribute($value): ?string
+    {
+        return self::upper($value);
+    }
+
+    public function getFirstNameAttribute($value): ?string
+    {
+        return self::upper($value);
+    }
+
+    private static function upper(?string $value): ?string
+    {
+        return $value === null ? null : mb_strtoupper($value, 'UTF-8');
     }
 
     /**

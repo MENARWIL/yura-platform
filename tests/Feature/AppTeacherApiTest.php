@@ -76,7 +76,7 @@ class AppTeacherApiTest extends TestCase
 
         $this->api()->getJson("/api/v1/app/teacher/attendance?{$query}")
             ->assertOk()
-            ->assertJsonPath('data.students.0.name', 'Alanes Luis') // orden de lista
+            ->assertJsonPath('data.students.0.name', 'ALANES LUIS') // orden de lista
             ->assertJsonPath('data.students.0.number', 1)
             ->assertJsonPath('data.students.0.status', null)
             ->assertJsonPath('data.statuses', Attendance::STATUSES);

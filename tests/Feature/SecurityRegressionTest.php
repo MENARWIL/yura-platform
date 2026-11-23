@@ -171,8 +171,8 @@ class SecurityRegressionTest extends TestCase
         $this->actingAs($parentA)
             ->get('/students')
             ->assertOk()
-            ->assertSee('Hijo de Familia A')
-            ->assertDontSee('Hijo de Familia B');
+            ->assertSee('HIJO DE FAMILIA A')
+            ->assertDontSee('HIJO DE FAMILIA B');
     }
 
     /**
@@ -276,7 +276,7 @@ class SecurityRegressionTest extends TestCase
         $this->actingAs($parentA)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('Hijo Real de A');
+            ->assertSee('HIJO REAL DE A');
 
         // GET /api/tutor/my-children devuelve 200 con los hijos reales, no 403.
         $response = $this->actingAs($parentA, 'sanctum')
@@ -285,14 +285,14 @@ class SecurityRegressionTest extends TestCase
             ->assertJsonPath('success', true);
 
         $names = collect($response->json('data'))->pluck('name');
-        $this->assertTrue($names->contains('Hijo Real de A'));
-        $this->assertFalse($names->contains('Hijo Real de B'));
+        $this->assertTrue($names->contains('HIJO REAL DE A'));
+        $this->assertFalse($names->contains('HIJO REAL DE B'));
 
         // /family-members solo muestra el registro de la propia familia.
         $this->actingAs($parentA)
             ->get('/family-members')
             ->assertOk()
-            ->assertSee('Hijo Real de A')
-            ->assertDontSee('Hijo Real de B');
+            ->assertSee('HIJO REAL DE A')
+            ->assertDontSee('HIJO REAL DE B');
     }
 }

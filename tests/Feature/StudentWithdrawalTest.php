@@ -67,15 +67,15 @@ class StudentWithdrawalTest extends TestCase
         $this->assertDatabaseHas('students', ['id' => $this->ana->id]); // no se borra
         $baja = StudentWithdrawal::firstOrFail();
         $this->assertSame('U.E. Simón Bolívar', $baja->destination);
-        $this->assertSame('Quispe Ana', $baja->snapshot['student']['name']);
+        $this->assertSame('QUISPE ANA', $baja->snapshot['student']['name']);
         $this->assertEquals(85, $baja->snapshot['grades'][0]['score']);
         $this->assertDatabaseHas('audit_logs', ['action' => 'student_withdrawn', 'entity_id' => $this->ana->id]);
         $this->assertSame('Transferencia a otra unidad educativa. Se muda a El Alto', $baja->reason);
         $this->forgetNotice();
 
         // Desaparece de las listas, pero el administrador lo encuentra en «Dados de baja».
-        $this->actingAs($this->admin)->get('/students')->assertOk()->assertDontSee('Quispe')->assertSee('Mamani');
-        $this->actingAs($this->admin)->get('/students?estado=baja')->assertOk()->assertSee('Quispe Ana')->assertSee('Transferido')->assertDontSee('Mamani');
+        $this->actingAs($this->admin)->get('/students')->assertOk()->assertDontSee('QUISPE')->assertSee('MAMANI');
+        $this->actingAs($this->admin)->get('/students?estado=baja')->assertOk()->assertSee('QUISPE ANA')->assertSee('Transferido')->assertDontSee('MAMANI');
         $this->actingAs($this->admin)->get(route('grades.show', $this->ana))->assertOk()->assertSee('Reincorporar');
     }
 
@@ -85,8 +85,8 @@ class StudentWithdrawalTest extends TestCase
         $this->forgetNotice();
         $filters = "subject_id={$this->subject->id}&parallel_id={$this->parallel->id}";
 
-        $this->actingAs($this->teacher)->get("/attendance?{$filters}")->assertOk()->assertDontSee('Quispe Ana')->assertSee('Mamani Luis');
-        $this->actingAs($this->teacher)->get("/grades?{$filters}")->assertOk()->assertDontSee('Quispe Ana');
+        $this->actingAs($this->teacher)->get("/attendance?{$filters}")->assertOk()->assertDontSee('QUISPE ANA')->assertSee('MAMANI LUIS');
+        $this->actingAs($this->teacher)->get("/grades?{$filters}")->assertOk()->assertDontSee('QUISPE ANA');
         $this->actingAs($this->teacher, 'sanctum')->getJson("/api/v1/app/teacher/attendance?{$filters}")
             ->assertOk()->assertJsonCount(1, 'data.students');
 
@@ -113,7 +113,7 @@ class StudentWithdrawalTest extends TestCase
 
         $this->assertSame('activo', $this->ana->fresh()->status);
         $this->assertNotNull(StudentWithdrawal::firstOrFail()->reverted_at);
-        $this->actingAs($this->admin)->get('/students')->assertSee('Quispe');
+        $this->actingAs($this->admin)->get('/students')->assertSee('QUISPE');
     }
 
     public function test_only_the_admin_can_withdraw_and_a_transfer_needs_a_destination(): void

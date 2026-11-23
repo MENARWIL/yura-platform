@@ -19,6 +19,52 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
 
+    /** Roles de familiares: su nombre se guarda y se lee siempre en MAYÚSCULAS, como el de los estudiantes. */
+    public const FAMILY_ROLES = ['padre', 'madre', 'tutor'];
+
+    // Lectura en MAYÚSCULAS para familiares, también los guardados antes de esta regla.
+    public function getNameAttribute($value): ?string
+    {
+        return $this->familyUpper($value);
+    }
+
+    public function getFirstNameAttribute($value): ?string
+    {
+        return $this->familyUpper($value);
+    }
+
+    public function getLastNameAttribute($value): ?string
+    {
+        return $this->familyUpper($value);
+    }
+
+    public function getSecondLastNameAttribute($value): ?string
+    {
+        return $this->familyUpper($value);
+    }
+
+    private function familyUpper(?string $value): ?string
+    {
+        return $value !== null && in_array($this->attributes['role'] ?? null, self::FAMILY_ROLES, true)
+            ? mb_strtoupper($value, 'UTF-8')
+            : $value;
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if (! in_array($user->role, self::FAMILY_ROLES, true)) {
+                return;
+            }
+            foreach (['name', 'first_name', 'last_name', 'second_last_name'] as $part) {
+                $value = $user->getAttribute($part);
+                if (is_string($value)) {
+                    $user->setAttribute($part, mb_strtoupper($value, 'UTF-8'));
+                }
+            }
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *

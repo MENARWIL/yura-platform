@@ -85,11 +85,12 @@ class ImportStudentList extends Command
                 }
                 [$course, $parallel] = $parallels[$key];
 
-                $part = fn (string $value) => $value !== '' ? $value : null;
+                // Se compara en MAYÚSCULAS, como se guardan los nombres.
+                $part = fn (string $value) => $value !== '' ? mb_strtoupper($value, 'UTF-8') : null;
                 $exists = Student::where('parallel_id', $parallel->id)
-                    ->where('first_name', $row['nombres'])
-                    ->where(fn ($q) => $part($row['paterno']) === null ? $q->whereNull('last_name') : $q->where('last_name', $row['paterno']))
-                    ->where(fn ($q) => $part($row['materno']) === null ? $q->whereNull('second_last_name') : $q->where('second_last_name', $row['materno']))
+                    ->where('first_name', $part($row['nombres']))
+                    ->where(fn ($q) => $part($row['paterno']) === null ? $q->whereNull('last_name') : $q->where('last_name', $part($row['paterno'])))
+                    ->where(fn ($q) => $part($row['materno']) === null ? $q->whereNull('second_last_name') : $q->where('second_last_name', $part($row['materno'])))
                     ->exists();
                 if ($exists) {
                     $skipped++; // ya estaba: se puede volver a correr sin duplicar

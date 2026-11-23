@@ -45,7 +45,7 @@ class FamilyAndStudentAuthTest extends TestCase
         $this->actingAs($teacher)
             ->get('/students')
             ->assertOk()
-            ->assertSee('Ana Paz');
+            ->assertSee('ANA PAZ');
     }
 
     public function test_admin_can_view_family_members_index(): void
@@ -74,7 +74,7 @@ class FamilyAndStudentAuthTest extends TestCase
             ->get('/family-members')
             ->assertOk();
 
-        $this->assertSame('Ana Paz', $student->fresh()->name);
+        $this->assertSame('ANA PAZ', $student->fresh()->name);
     }
 
     public function test_admin_can_create_student_and_assign_a_family_member(): void
@@ -171,8 +171,8 @@ class FamilyAndStudentAuthTest extends TestCase
         $this->actingAs($teacher)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('Alumno de profesor')
-            ->assertDontSee('Alumno de otro profesor');
+            ->assertSee('ALUMNO DE PROFESOR')
+            ->assertDontSee('ALUMNO DE OTRO PROFESOR');
     }
 
     public function test_professor_student_list_is_scoped_to_his_students_and_hides_register_button(): void
@@ -219,8 +219,8 @@ class FamilyAndStudentAuthTest extends TestCase
         $this->actingAs($teacher)
             ->get('/students')
             ->assertOk()
-            ->assertSee('Estudiante del profesor')
-            ->assertDontSee('Estudiante de otro profesor')
+            ->assertSee('ESTUDIANTE DEL PROFESOR')
+            ->assertDontSee('ESTUDIANTE DE OTRO PROFESOR')
             ->assertDontSeeText('Registrar Estudiante');
     }
 
@@ -250,7 +250,7 @@ class FamilyAndStudentAuthTest extends TestCase
         $this->actingAs($tutor)
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('Hijo del tutor')
+            ->assertSee('HIJO DEL TUTOR')
             ->assertSee('Mis hijos');
 
         $this->actingAs($tutor)
@@ -287,8 +287,8 @@ class FamilyAndStudentAuthTest extends TestCase
             ->get('/dashboard')
             ->assertOk()
             ->assertSee('id="child-selector"', false)
-            ->assertSee('Hijo 1')
-            ->assertSee('Hijo 4');
+            ->assertSee('HIJO 1')
+            ->assertSee('HIJO 4');
     }
 
     public function test_student_can_be_registered_with_primary_and_secondary_tutors(): void

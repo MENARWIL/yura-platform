@@ -54,10 +54,10 @@ class AppRolesApiTest extends TestCase
         $theirs = $this->student('Hijo Ajeno', $this->user('profesor'));
 
         $names = collect($this->actingAs($teacher, 'sanctum')->getJson('/api/v1/app/students')->assertOk()->json('data'))->pluck('name');
-        $this->assertSame(['Ana Paz'], $names->all());
+        $this->assertSame(['ANA PAZ'], $names->all());
 
         $this->actingAs($teacher, 'sanctum')->getJson("/api/v1/app/students/{$mine->id}/summary")->assertOk()
-            ->assertJsonPath('data.name', 'Ana Paz')->assertJsonStructure(['data' => ['report' => ['average', 'quarter_averages', 'subjects']]]);
+            ->assertJsonPath('data.name', 'ANA PAZ')->assertJsonStructure(['data' => ['report' => ['average', 'quarter_averages', 'subjects']]]);
         $this->actingAs($teacher, 'sanctum')->getJson("/api/v1/app/students/{$theirs->id}/summary")->assertForbidden();
     }
 
@@ -72,7 +72,7 @@ class AppRolesApiTest extends TestCase
         $this->assertSame(1, $all->json('meta.page'));
 
         $found = $this->actingAs($admin, 'sanctum')->getJson('/api/v1/app/students?q=Luis')->assertOk();
-        $this->assertSame(['Luis Rojas'], collect($found->json('data'))->pluck('name')->all());
+        $this->assertSame(['LUIS ROJAS'], collect($found->json('data'))->pluck('name')->all());
     }
 
     public function test_students_can_be_filtered_by_course_and_parallel(): void
@@ -93,12 +93,12 @@ class AppRolesApiTest extends TestCase
 
         $names = fn ($user, $qs) => collect($this->actingAs($user, 'sanctum')->getJson("/api/v1/app/students?$qs")->assertOk()->json('data'))->pluck('name')->sort()->values()->all();
 
-        $this->assertSame(['Ana Uno', 'Beto Dos'], $names($admin, "course_id={$course->id}"));
-        $this->assertSame(['Beto Dos'], $names($admin, "parallel_id={$b->id}"));
-        $this->assertSame(['Caro Tres'], $names($admin, "course_id={$other->id}&parallel_id={$c5->id}"));
+        $this->assertSame(['ANA UNO', 'BETO DOS'], $names($admin, "course_id={$course->id}"));
+        $this->assertSame(['BETO DOS'], $names($admin, "parallel_id={$b->id}"));
+        $this->assertSame(['CARO TRES'], $names($admin, "course_id={$other->id}&parallel_id={$c5->id}"));
         $this->assertSame([], $names($admin, "course_id={$other->id}&parallel_id={$a->id}"));
         // El profesor filtra solo dentro de lo suyo, aunque pida el paralelo de otro curso.
-        $this->assertSame(['Ana Uno'], $names($teacher, "parallel_id={$a->id}"));
+        $this->assertSame(['ANA UNO'], $names($teacher, "parallel_id={$a->id}"));
         $this->assertSame([], $names($teacher, "parallel_id={$c5->id}"));
     }
 
@@ -210,7 +210,7 @@ class AppRolesApiTest extends TestCase
         $this->assertSame(2, $data['families']);
         $this->assertSame(3, $data['users_active']);
         $this->assertSame(1, $data['users_suspended']);
-        $this->assertSame('Ana Paz', $data['recent_students'][0]['name']);
+        $this->assertSame('ANA PAZ', $data['recent_students'][0]['name']);
     }
 
     public function test_user_list_filters_and_flags_self(): void
@@ -234,10 +234,10 @@ class AppRolesApiTest extends TestCase
         $this->assertSame(['Carlos Vargas'], collect($byQ)->pluck('name')->all());
 
         $suspended = $this->actingAs($admin, 'sanctum')->getJson('/api/v1/app/admin/users?status=inactive')->json('data');
-        $this->assertSame(['Juan Quispe'], collect($suspended)->pluck('name')->all());
+        $this->assertSame(['JUAN QUISPE'], collect($suspended)->pluck('name')->all());
 
         $trashed = $this->actingAs($admin, 'sanctum')->getJson('/api/v1/app/admin/users?trashed=1')->json('data');
-        $this->assertSame(['Rosa Vega'], collect($trashed)->pluck('name')->all());
+        $this->assertSame(['ROSA VEGA'], collect($trashed)->pluck('name')->all());
         $this->assertNotNull($trashed[0]['deleted_at']);
     }
 
