@@ -90,12 +90,14 @@
         <div class="card shadow-sm border-0">
             <div class="card-body px-4">
                 <h6 class="font-weight-bold">Crear una gestión</h6>
-                <form method="POST" action="{{ route('admin.years.store') }}" class="form-inline">
+                {{-- novalidate: avisa la web (texto rojo debajo del campo), no el globo del navegador. --}}
+                <form method="POST" action="{{ route('admin.years.store') }}" class="form-inline" novalidate>
                     @csrf
-                    <input type="number" name="year" min="2000" max="2100" placeholder="Año, por ejemplo {{ ($maxYear ?? 2026) + 1 }}"
-                           class="form-control mr-2 @error('year') is-invalid @enderror" required>
+                    <input type="number" name="year" min="2000" max="2100" value="{{ old('year') }}" placeholder="Año, por ejemplo {{ ($maxYear ?? 2026) + 1 }}"
+                           class="form-control mr-2 js-user-field @error('year') is-invalid @enderror" data-rule="year"
+                           aria-label="Año de la gestión" aria-describedby="year-feedback" required>
                     <button class="btn btn-primary"><i class="fas fa-plus mr-1"></i>Crear</button>
-                    @error('year')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                    <small id="year-feedback" class="invalid-feedback w-100">@error('year'){{ $message }}@enderror</small>
                 </form>
                 <p class="text-muted small mt-2 mb-0">La gestión nueva se crea abierta y sin ser la actual; podrás ponerla como actual cuando corresponda.</p>
             </div>
@@ -105,4 +107,5 @@
         @endif
     </div>
 </div>
+<script src="{{ asset('js/user-form-validation.js') }}?v={{ @filemtime(public_path('js/user-form-validation.js')) }}"></script>
 @endsection
