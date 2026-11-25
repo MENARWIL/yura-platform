@@ -154,7 +154,7 @@ class TeacherRecords
     }
 
     /**
-     * Puntos de cada dimensión y nota bimestral, igual que el cuaderno de la web: cada nota (0-100)
+     * Puntos de cada dimensión y nota trimestral, igual que el cuaderno de la web: cada nota (0-100)
      * se promedia y se escala a los puntos de su dimensión; la autoevaluación se suma tal cual.
      *
      * @param  array<string, array<int, float|int|null>>  $scores  tipo => [n => nota]

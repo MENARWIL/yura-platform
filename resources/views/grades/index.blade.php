@@ -32,7 +32,7 @@
     .cuaderno-ser-saber-hacer .dim-cell.dim-saber,
     .cuaderno-ser-saber-hacer .dim-cell.dim-hacer { background-color: #FEF6F7; }
     .cuaderno-ser-saber-hacer .total-cell { background-color: var(--yura-blue-light); }
-    .cuaderno-ser-saber-hacer .nota-bimestral-cell { background-color: var(--yura-blue-light); font-size: 0.95rem; }
+    .cuaderno-ser-saber-hacer .nota-trimestral-cell { background-color: var(--yura-blue-light); font-size: 0.95rem; }
     .cuaderno-ser-saber-hacer .robot-hint { color: #1f9d55; margin-left: 2px; font-size: 0.7rem; }
 
 </style>
@@ -134,9 +134,9 @@
                             <th rowspan="3" class="px-4 align-middle">{{ __('messages.student_name') }}</th>
                             <th rowspan="3" class="align-middle">{{ __('messages.level') }}</th>
                             <th colspan="{{ 3 + $colsTotal }}" class="text-center banner-evaluacion" id="banner-evaluacion">EVALUACIÓN MAESTRO(A)</th>
-                            <th rowspan="3" class="text-center align-middle col-total">TOTAL<br>(90 PTS)</th>
+                            <th rowspan="3" class="text-center align-middle col-total">TOTAL<br>(95 PTS)</th>
                             <th rowspan="3" class="text-center align-middle col-autoeval">AUTOEVALUACIÓN<br>TOTAL (5 PTS)</th>
-                            <th rowspan="3" class="text-center align-middle col-nota">NOTA<br>BIMESTRAL<br>(100 PTS)</th>
+                            <th rowspan="3" class="text-center align-middle col-nota">NOTA<br>TRIMESTRAL<br>(100 PTS)</th>
                         </tr>
                         <tr>
                             @foreach(['ser' => '10', 'saber' => '45', 'hacer' => '40'] as $dim => $pts)
@@ -171,7 +171,7 @@
                             $promSaber = $nota['prom_saber'];
                             $promHacer = $nota['prom_hacer'];
                             $total = $nota['total'];
-                            $notaBimestral = $nota['nota'];
+                            $notaTrimestral = $nota['nota'];
                         @endphp
                         <tr data-student-id="{{ $student->id }}">
                             <td class="text-center align-middle">{{ method_exists($students, 'firstItem') ? $students->firstItem() + $loop->index : $loop->iteration }}</td>
@@ -215,7 +215,7 @@
                             <td class="text-center align-middle">
                                 <input type="number" step="1" min="1" max="5" inputmode="numeric" class="form-control form-control-sm text-center grade-input mx-auto" style="width:60px;" data-student="{{ $student->id }}" data-type="autoeval" data-number="1" data-dimension="autoeval" value="{{ $autoeval }}" {{ auth()->user()->isProfesor() ? '' : 'disabled' }}>
                             </td>
-                            <td class="text-center font-weight-bold align-middle nota-bimestral-cell">{{ $notaBimestral ?? '-' }}</td>
+                            <td class="text-center font-weight-bold align-middle nota-trimestral-cell">{{ $notaTrimestral ?? '-' }}</td>
                         </tr>
                         @empty
                         <tr>
@@ -372,13 +372,13 @@
 
             const autoevalInput = row.querySelector('.grade-input[data-dimension="autoeval"]');
             const autoeval = autoevalInput ? parseGradeValue(autoevalInput.value) : null;
-            const notaBimestralCell = row.querySelector('.nota-bimestral-cell');
-            if (notaBimestralCell) {
+            const notaTrimestralCell = row.querySelector('.nota-trimestral-cell');
+            if (notaTrimestralCell) {
                 if (total === null && autoeval === null) {
-                    notaBimestralCell.textContent = '-';
+                    notaTrimestralCell.textContent = '-';
                 } else {
                     const nota = Math.round(((total ?? 0) + (autoeval ?? 0)) * 100) / 100;
-                    notaBimestralCell.textContent = nota.toFixed(2);
+                    notaTrimestralCell.textContent = nota.toFixed(2);
                 }
             }
         }

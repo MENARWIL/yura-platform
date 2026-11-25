@@ -44,9 +44,9 @@
                 <th rowspan="2" class="banner">Prom. SABER<br>(45)</th>
                 <th colspan="{{ $columns['hacer'] }}" class="grupo-hacer">HACER</th>
                 <th rowspan="2" class="banner">Prom. HACER<br>(40)</th>
-                <th rowspan="2" class="col-total">TOTAL<br>(90)</th>
+                <th rowspan="2" class="col-total">TOTAL<br>(95)</th>
                 <th rowspan="2" class="col-autoeval">AUTOEVAL.<br>(5)</th>
-                <th rowspan="2" class="col-nota">NOTA<br>BIMESTRAL<br>(100)</th>
+                <th rowspan="2" class="col-nota">NOTA<br>TRIMESTRAL<br>(100)</th>
             </tr>
             <tr>
                 @foreach(['ser', 'saber', 'hacer'] as $dim)
@@ -64,7 +64,7 @@
                     $promSaber = $nota['prom_saber'];
                     $promHacer = $nota['prom_hacer'];
                     $total = $nota['total'];
-                    $notaBimestral = $nota['nota'];
+                    $notaTrimestral = $nota['nota'];
                 @endphp
                 <tr>
                     <td>{{ $loop->iteration }}</td>
@@ -77,7 +77,7 @@
                     <td class="banner">{{ $promHacer ?? '-' }}</td>
                     <td class="col-total">{{ $total ?? '-' }}</td>
                     <td class="col-autoeval">{{ $autoeval !== '' ? $autoeval : '-' }}</td>
-                    <td class="col-nota">{{ $notaBimestral ?? '-' }}</td>
+                    <td class="col-nota">{{ $notaTrimestral ?? '-' }}</td>
                 </tr>
             @empty
                 <tr><td colspan="{{ 9 + array_sum($columns) }}">No hay estudiantes para mostrar.</td></tr>
