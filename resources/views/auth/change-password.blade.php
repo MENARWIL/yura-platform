@@ -9,7 +9,8 @@
             <div class="card-header card-header-quechua">
                 <h3 class="card-title"><i class="fas fa-lock mr-2" aria-hidden="true"></i> Cambia tu contraseña</h3>
             </div>
-            <form action="{{ route('password.change.update') }}" method="POST">
+            {{-- novalidate: avisa la web (texto rojo debajo del campo), no el globo del navegador. --}}
+            <form action="{{ route('password.change.update') }}" method="POST" novalidate>
                 @csrf
                 @method('PUT')
                 <div class="card-body p-4">
@@ -24,15 +25,16 @@
                     <div class="form-group mb-3">
                         <label for="password" class="font-weight-bold small">Nueva contraseña</label>
                         <input type="password" id="password" name="password" autocomplete="new-password" required minlength="8"
-                               class="form-control form-control-lg @error('password') is-invalid @enderror">
-                        @error('password') <span class="invalid-feedback">{{ $message }}</span> @enderror
-                        <small class="form-text text-muted">Al menos 8 caracteres, con letras y números.</small>
+                               class="form-control form-control-lg js-user-field @error('password') is-invalid @enderror" data-rule="password">
+                        <span class="invalid-feedback">@error('password'){{ $message }}@enderror</span>
+                        <small class="form-text text-muted">Al menos 8 caracteres, con una mayúscula, una minúscula, un número y un símbolo (por ejemplo ! ? # @).</small>
                     </div>
 
                     <div class="form-group mb-0">
                         <label for="password_confirmation" class="font-weight-bold small">Repite la nueva contraseña</label>
                         <input type="password" id="password_confirmation" name="password_confirmation" autocomplete="new-password" required minlength="8"
-                               class="form-control form-control-lg">
+                               class="form-control form-control-lg js-user-field" data-rule="confirm" data-match="password">
+                        <span class="invalid-feedback"></span>
                     </div>
                 </div>
                 <div class="card-footer bg-white d-flex justify-content-between align-items-center">
@@ -46,4 +48,5 @@
         </div>
     </div>
 </div>
+<script src="{{ asset('js/user-form-validation.js') }}?v={{ @filemtime(public_path('js/user-form-validation.js')) }}"></script>
 @endsection

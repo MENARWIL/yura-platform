@@ -142,7 +142,7 @@ return [
         'integer' => 'Este campo debe ser un número entero.',
         'invalid' => 'El valor seleccionado no es válido.',
         'unique' => 'Este valor ya está registrado.',
-        'password' => 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
+        'password' => 'La contraseña debe tener al menos 8 caracteres, con una mayúscula, una minúscula, un número y un símbolo.',
         'password_confirm' => 'Las contraseñas no coinciden. Escríbelas igual en ambos campos.',
         'password_confirm_required' => 'Repite la contraseña para confirmarla.',
     ],

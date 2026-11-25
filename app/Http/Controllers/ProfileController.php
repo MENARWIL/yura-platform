@@ -23,7 +23,12 @@ class ProfileController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'password' => ['nullable', 'confirmed', Password::defaults()],
+            // La misma regla que al crear usuarios: mayúscula, minúscula, número y símbolo.
+            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+        ], [
+            'password.confirmed' => 'Las dos contraseñas no coinciden.',
+        ], [
+            'password' => 'nueva contraseña',
         ]);
 
         $user->name = $request->name;

@@ -149,13 +149,13 @@ class TemporaryPasswordTest extends TestCase
         $this->put(route('password.change.update'), ['password' => $password, 'password_confirmation' => $password])
             ->assertSessionHasErrors('password');
 
-        $this->put(route('password.change.update'), ['password' => 'NuevaClave2026', 'password_confirmation' => 'NuevaClave2026'])
+        $this->put(route('password.change.update'), ['password' => 'NuevaClave2026!', 'password_confirmation' => 'NuevaClave2026!'])
             ->assertRedirect(route('dashboard'));
 
         $padre->refresh();
         $this->assertFalse($padre->password_must_change);
         $this->assertNull($padre->temporary_password_expires_at);
-        $this->assertTrue(Hash::check('NuevaClave2026', $padre->password));
+        $this->assertTrue(Hash::check('NuevaClave2026!', $padre->password));
         $this->get('/dashboard')->assertOk();
     }
 

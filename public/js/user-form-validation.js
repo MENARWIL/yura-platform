@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         email: 'Ingresa un correo válido.',
         phone: 'El teléfono solo acepta números y símbolos permitidos.',
         ci: 'La C.I. solo acepta letras, números y guiones.',
-        password: 'La contraseña debe tener 8 caracteres, mayúsculas, números y símbolos.',
+        password: 'La contraseña debe tener al menos 8 caracteres, con una mayúscula, una minúscula, un número y un símbolo.',
         confirm: 'Las contraseñas no coinciden. Escríbelas igual en ambos campos.',
         confirmRequired: 'Repite la contraseña para confirmarla.',
         // Los mismos que da el servidor para el año de una gestión.
