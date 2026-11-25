@@ -29,7 +29,8 @@ class PasswordChangeController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            // La misma regla que al crear usuarios: mayúscula, minúscula, número y símbolo.
+            'password' => ['required', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ], [
             'password.required' => 'Escribe tu nueva contraseña.',
             'password.confirmed' => 'Las dos contraseñas no coinciden.',
